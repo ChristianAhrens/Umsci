@@ -26,7 +26,7 @@
           "image-name" : "Umsci.svg",
           "name" : "Umsci",
           "position" : {
-            "scale" : 1.1,
+            "scale" : 1.55,
             "translation-in-points" : [
               0,
               0
@@ -49,6 +49,7 @@
       "layers" : [
         {
           "glass" : true,
+          "hidden" : true,
           "image-name" : "Black circle_Black circle.svg",
           "name" : "Black circle",
           "position" : {
@@ -87,6 +88,7 @@
         },
         {
           "glass" : true,
+          "hidden" : true,
           "image-name" : "Outer grey circle_Outer grey circle.svg",
           "name" : "Outer grey circle",
           "position" : {
