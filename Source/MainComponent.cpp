@@ -36,6 +36,8 @@
 MainComponent::MainComponent()
     : juce::Component()
 {
+    m_deviceMatrixSize = { 128, 64 };
+
     // create the configuration object (is being initialized from disk automatically)
     m_config = std::make_unique<UmsciAppConfiguration>(JUCEAppBasics::AppConfigurationBase::getDefaultConfigFilePath());
     m_config->addDumper(this);
@@ -126,16 +128,44 @@ MainComponent::MainComponent()
     m_connectionToggleButton = std::make_unique<juce::DrawableButton>("ConnectionToggle", juce::DrawableButton::ButtonStyle::ImageFitted);
     m_connectionToggleButton->setTooltip("Toggle connection to device.");
     m_connectionToggleButton->onClick = [this] {
-        if (DeviceController::getInstance()->isFullyOnline())
-            DeviceController::getInstance()->disconnect();
-        else
+        if (m_connectionToggleButton->getToggleState())
             DeviceController::getInstance()->connect();
+        else
+            DeviceController::getInstance()->disconnect();
+        lookAndFeelChanged();
     };
     m_connectionToggleButton->setAlwaysOnTop(true);
     m_connectionToggleButton->setClickingTogglesState(true);
     m_connectionToggleButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
     m_connectionToggleButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(m_connectionToggleButton.get());
+
+    DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
+        switch (s)
+        {
+            case DeviceController::State::Disconnected:
+                m_connectionToggleButton->setToggleState(false, juce::dontSendNotification);
+                m_connectingComponent->setVisible(false);
+                m_controlComponent->setVisible(false);
+                m_discoverHintComponent->setVisible(true);
+                break;
+            case DeviceController::State::Connecting:
+            case DeviceController::State::Subscribing:
+                m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
+                m_controlComponent->setVisible(false);
+                m_discoverHintComponent->setVisible(false);
+                m_connectingComponent->setVisible(true);
+                break;
+            case DeviceController::State::Subscribed:
+                m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
+                m_connectingComponent->setVisible(false);
+                m_discoverHintComponent->setVisible(false);
+                m_controlComponent->setVisible(true);
+                break;
+            default:
+                break;
+        }
+    };
 
 #ifdef RUN_MESSAGE_TESTS
     Mema::runTests();
@@ -180,29 +210,9 @@ void MainComponent::resized()
     safeBounds.removeFromLeft(safety._left);
     safeBounds.removeFromRight(safety._right);
     
-    switch (DeviceController::getInstance()->getState())
-    {
-        case DeviceController::State::Subscribed:
-            m_connectingComponent->setVisible(false);
-            m_discoverHintComponent->setVisible(false);
-            m_controlComponent->setVisible(true);
-            m_controlComponent->setBounds(safeBounds);
-            break;
-        case DeviceController::State::Connecting:
-        case DeviceController::State::Subscribing:
-            m_controlComponent->setVisible(false);
-            m_discoverHintComponent->setVisible(false);
-            m_connectingComponent->setVisible(true);
-            m_connectingComponent->setBounds(safeBounds);
-            break;
-        case DeviceController::State::Disconnected:
-        default:
-            m_connectingComponent->setVisible(false);
-            m_controlComponent->setVisible(false);
-            m_discoverHintComponent->setVisible(true);
-            m_discoverHintComponent->setBounds(safeBounds);
-            break;
-    }
+    m_controlComponent->setBounds(safeBounds);
+    m_connectingComponent->setBounds(safeBounds);
+    m_discoverHintComponent->setBounds(safeBounds);
 
     auto leftButtons = safeBounds.removeFromLeft(36);
     auto rightButtons = safeBounds.removeFromLeft(36);
@@ -230,7 +240,10 @@ void MainComponent::lookAndFeelChanged()
     connectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
     auto disconnectedDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::link_24dp_svg).get());
     disconnectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOffId));
-    m_connectionToggleButton->setImages(connectedDrawable.get(), nullptr, disconnectedDrawable.get());
+    if (m_connectionToggleButton->getToggleState())
+        m_connectionToggleButton->setImages(connectedDrawable.get());
+    else
+        m_connectionToggleButton->setImages(disconnectedDrawable.get());
 
     applyControlColour();
 }
@@ -347,16 +360,14 @@ void MainComponent::showConnectionSettings()
         "Enter remote control parameters to connect to a signal engine.\nInfo: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
         juce::MessageBoxIconType::NoIcon);
 
-    auto currentOCP1remoteIP = juce::IPAddress("127.0.0.1");//m_ocp1Connection->getConnectionIP();
-    auto currentOCP1port = 50014;//m_ocp1Connection->getConnectionPort();
-    auto currentOCP1IOsize = "128x64";//m_ocp1Connection->getConnectionIOsize();
+    auto currentOCP1connPar = DeviceController::getInstance()->getConnectionParameters();
 
     m_messageBox->addTextBlock("\nOCA/OCP.1 connection parameters:");
     if (m_controlComponent)
     {
-        m_messageBox->addTextEditor("Device IP", currentOCP1remoteIP.toString(), "OCP.1 IP");
-        m_messageBox->addTextEditor("Device port", juce::String(currentOCP1port), "OCP.1 port");
-        m_messageBox->addTextEditor("Device IO size", juce::String(currentOCP1IOsize), "OCP.1 IOSize");
+        m_messageBox->addTextEditor("Device IP", std::get<0>(currentOCP1connPar).toString(), "OCP.1 IP");
+        m_messageBox->addTextEditor("Device port", juce::String(std::get<1>(currentOCP1connPar)), "OCP.1 port");
+        m_messageBox->addTextEditor("Device IO size", juce::String(m_deviceMatrixSize.first) + "x" + juce::String(m_deviceMatrixSize.second), "OCP.1 IOSize");
     }
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
@@ -364,12 +375,13 @@ void MainComponent::showConnectionSettings()
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
-            auto ocp1remoteIP = juce::IPAddress(m_messageBox->getTextEditorContents("OCP.1 IP"));
-            auto ocp1port = m_messageBox->getTextEditorContents("OCP.1 port").getIntValue();
-            auto ocp1IOsize = m_messageBox->getTextEditorContents("OCP.1 IOSize");
+            auto ocp1remoteIP = juce::IPAddress(m_messageBox->getTextEditorContents("Device IP"));
+            auto ocp1port = m_messageBox->getTextEditorContents("Device port").getIntValue();
+            auto ocp1IOsize = m_messageBox->getTextEditorContents("Device IO size");
             if (m_controlComponent)
             {
-                //m_ocp1Connection->setConnection(ocp1remoteIP, ocp1port, ocp1IOsize);
+                m_deviceMatrixSize = { ocp1IOsize.upToFirstOccurrenceOf("x", false,true).getIntValue(), ocp1IOsize.fromLastOccurrenceOf("x", false,true).getIntValue() };
+                DeviceController::getInstance()->setConnectionParameters(ocp1remoteIP, ocp1port);
 
                 if (m_config)
                     m_config->triggerConfigurationDump();
@@ -425,10 +437,11 @@ void MainComponent::performConfigurationDump()
     {
         // connection config
         auto connectionConfigXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
-        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::ENABLED), 1 /*m_ocp1connection->*/);
-        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP), "127.0.0.1" /*m_ocp1connection->*/);
-        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT), 50014 /*m_ocp1connection->*/);
-        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), "128x64" /*m_ocp1connection->*/);
+        auto params = DeviceController::getInstance()->getConnectionParameters();
+        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::ENABLED), m_connectionToggleButton->getToggleState() ? 1 : 0);
+        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP), std::get<0>(params).toString());
+        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT), std::get<1>(params));
+        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), juce::String(m_deviceMatrixSize.first) + "x" + juce::String(m_deviceMatrixSize.second));
         m_config->setConfigState(std::move(connectionConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
 
         // visu config
@@ -464,11 +477,16 @@ void MainComponent::onConfigUpdated()
         auto ocp1Port = connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT));
         auto ocp1IOSize = connectionConfigState->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE));
 
-        //if (m_ocp1Connection)
-        //    m_ocp1Connection->setConnection whatever
+        DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
 
-        if (ocp1ConnectionEnabled)
-            DeviceController::getInstance()->connect();
+        if (ocp1ConnectionEnabled != m_connectionToggleButton->getToggleState())
+        {
+            m_connectionToggleButton->setToggleState(ocp1ConnectionEnabled, juce::dontSendNotification);
+            if (ocp1ConnectionEnabled)
+                DeviceController::getInstance()->connect();
+            else
+                DeviceController::getInstance()->disconnect();
+        }
     }
 
     auto visuConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));

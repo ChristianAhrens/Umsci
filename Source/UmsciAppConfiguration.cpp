@@ -57,14 +57,6 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 	auto visuConfigSectionElement = xmlConfig->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 	if (visuConfigSectionElement)
 	{
-		auto controlSizeXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSSIZE));
-		if (controlSizeXmlElement)
-		{
-			//validate
-		}
-		else
-			return false;
-
 		auto controlColourXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCOLOUR));
 		if (controlColourXmlElement)
 		{

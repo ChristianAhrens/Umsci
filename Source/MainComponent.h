@@ -113,7 +113,9 @@ private:
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 
-    std::unique_ptr<UmsciAppConfiguration>         m_config;
+    std::unique_ptr<UmsciAppConfiguration>          m_config;
+
+    std::pair<int, int>                             m_deviceMatrixSize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

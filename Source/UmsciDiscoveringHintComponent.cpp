@@ -32,5 +32,6 @@ void UmsciDiscoveringHintComponent::paint(Graphics &g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
 
-    g.drawText("Toggle on the connection with the parameters specified in settings\nto start controlling the signal engine.", juce::Rectangle<float>(200.0f, 25.0f).withCentre(getLocalBounds().getCentre().toFloat()), juce::Justification::centred);
+    g.setColour(getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
+    g.drawText("Toggle on the connection with the parameters\nspecified in settings to start\ncontrolling the signal engine.", juce::Rectangle<float>(250.0f, 250.0f).withCentre(getLocalBounds().getCentre().toFloat()), juce::Justification::centred);
 }

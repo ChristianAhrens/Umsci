@@ -36,22 +36,23 @@ public:
         Subscribed
     };
 
-	enum Ds100Model
+	enum DbDeviceModel
 	{
-		DM_INVALID = 0,
-		DM_DS100,
-		DM_DS100D,
-		DM_DS100M,
-		DM_MAX
+		InvalidDev = 0,
+		DS100,
+		DS100D,
+		DS100M,
+		InvalidDev_max
 	};
 
 	enum MappingAreaId
 	{
-		Invalid = -1,
+		InvalidMapId = -1,
 		First = 1,
 		Second,
 		Third,
 		Fourth,
+		InvaliMapId_max
 	};
 
 	static constexpr std::uint16_t sc_MAX_INPUTS_CHANNELS = 128;
@@ -484,9 +485,16 @@ public:
     void connect();
     void disconnect();
 
+	void setConnectionParameters(juce::IPAddress ip, int port, int timeoutMs = 150);
+	const std::tuple<juce::IPAddress, int, int> getConnectionParameters();
+
     //==============================================================================
     const State getState() const;
     bool isFullyOnline() const;
+
+	//==============================================================================
+	bool SetActiveRemoteObjects(const std::vector<RemoteObject>& remObjs);
+	const std::vector<RemoteObject>& GetActiveRemoteObjects();
 
     //==============================================================================
     std::function<bool(const RemoteObject&)>	onRemoteObjectReceived;
@@ -506,9 +514,6 @@ private:
 	bool DeleteObjectSubscriptions();
 	bool QueryObjectValues();
 	bool QueryObjectValue(const RemoteObject::RemObjIdent roi, const RemObjAddr& addr);
-
-	//==============================================================================
-	const std::vector<RemoteObject> GetOcp1SupportedActiveRemoteObjects();
 
 	//==============================================================================
 	void AddPendingSubscriptionHandle(const std::uint32_t handle);
@@ -536,6 +541,10 @@ private:
 		const std::pair<RemObjAddr, NanoOcp1::Ocp1CommandDefinition>& objectDetails);
 
 	//==============================================================================
+	void ProcessGuidAndSubscribe(const juce::String newGuid);
+	bool SetOcaRevisionAndDeviceModel(const juce::String& guid);
+
+	//==============================================================================
 	std::mutex                                              m_pendingHandlesMutex;
 	std::vector<std::uint32_t>								m_pendingSubscriptionHandles;
 	std::map<std::uint32_t, std::uint32_t>					m_pendingGetValueHandlesWithONo;
@@ -544,23 +553,19 @@ private:
 	//==============================================================================
 	std::map<RemoteObject::RemObjIdent, std::map<RemObjAddr, NanoOcp1::Ocp1CommandDefinition>>	m_ROIsToDefsMap;
 
-	//==============================================================================
-	juce::String m_ocp1Mode; // stores current OCP1 mode (client or server)
-
-	void ProcessGuidAndSubscribe(const juce::String newGuid);
-
-	juce::String m_guid; //!< stores the current GUID
-
-	bool SetOcaRevisionAndDeviceModel(const juce::String& guid);
-
-	int m_internalOcaRevision = -1; //!< stores an internal OCA revision to distinguish objects (currently only relevant for speakerpositions which would be a value of 1 for newer Firmware with scalability)
-	Ds100Model m_connectedDs100Model = DM_INVALID; //!< stores the model of the currently connected DS100
+	std::vector<RemoteObject>					m_activeRemoteObjects;
 
     //==============================================================================
-    std::unique_ptr<NanoOcp1::NanoOcp1Client>       m_ocp1Connection;
-    std::pair<int, int>                             m_matrixIOsize = { 128, 64 };
+    std::unique_ptr<NanoOcp1::NanoOcp1Client>   m_ocp1Connection;
+	juce::IPAddress								m_ocp1IPAddress;
+	int											m_ocp1Port;
+	int											m_ocp1Timeout;
 
-    State                                           m_currentState = State::Disconnected;
+	juce::String								m_ocp1DeviceGUID;
+	int											m_ocp1DeviceStackIdent = -1;
+	DbDeviceModel								m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
+
+    State                                       m_currentState = State::Disconnected;
 
 
 };

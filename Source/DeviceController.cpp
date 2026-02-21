@@ -25,28 +25,34 @@ JUCE_IMPLEMENT_SINGLETON(DeviceController)
 
 DeviceController::DeviceController()
 {
+    m_ocp1IPAddress = juce::IPAddress("127.0.0.1");
+    m_ocp1Port = 50014;
 
-    m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(juce::String("127.0.0.1"), 50014, false);
+    m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
     m_ocp1Connection->onConnectionEstablished = [=]() {
         DBG(__FUNCTION__);
 
-        //if (m_controlComponent)
-        //{
-        //    m_controlComponent->createObjectSubscriptions();
-        //    m_controlComponent->queryObjectValues();
-        //}
-        //
-        //setState(State::Running);
+        m_ocp1DeviceGUID = "";
+        m_ocp1DeviceStackIdent = -1;
+        m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
+
+        QueryObjectValue(RemoteObject::Fixed_GUID, {});
+
+        setState(State::Subscribing);
     };
     m_ocp1Connection->onConnectionLost = [=]() {
         DBG(__FUNCTION__);
 
-        //if (m_controlComponent)
-        //    return m_controlComponent->setConnectionState(DeviceController::Disconnected);
-        //
-        //connectToDevice();
-        //
-        //setState(State::Connecting);
+        DeleteObjectSubscriptions();
+        ClearPendingHandles();
+
+        m_ocp1DeviceGUID = "";
+        m_ocp1DeviceStackIdent = -1;
+        m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
+
+        setState(State::Connecting);
+
+        connect();
     };
     m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
         return ocp1MessageReceived(data);
@@ -83,43 +89,54 @@ bool DeviceController::isFullyOnline() const
 
 void DeviceController::connect()
 {
-    //if (m_connectingComponent)
-    //    m_connectingComponent->setMasterServiceDescription(m_selectedService.description);
-    //if (m_discoverComponent)
-    //    m_discoverComponent->setMasterServiceDescription(m_selectedService.description);
+    if (State::Disconnected != getState())
+    {
+        jassertfalse;
+        disconnect();
+    }
 
     setState(State::Connecting);
 
     timerCallback(); // avoid codeclones by manually trigger the timed connection attempt once
 
-    // restart connection attempt after 5s, in case something got stuck...
-    startTimer(5000);
+    // restart connection attempt after some large timeout, in case something got stuck...
+    startTimer(m_ocp1Timeout * 20);
 }
 
 void DeviceController::disconnect()
 {
+    if (m_ocp1Connection)
+        m_ocp1Connection->disconnect(m_ocp1Timeout);
+
+    stopTimer();
+
+    setState(State::Disconnected);
+}
+
+void DeviceController::setConnectionParameters(juce::IPAddress ip, int port, int timeoutMs)
+{
+    DBG(juce::String(__FUNCTION__) << " new connection params: " << ip.toString() << ":" << port << " (t:" << timeoutMs << ")");
+    m_ocp1IPAddress = ip;
+    m_ocp1Port = port;
+    m_ocp1Timeout = timeoutMs;
+}
+
+const std::tuple<juce::IPAddress, int, int> DeviceController::getConnectionParameters()
+{
+    return { m_ocp1IPAddress, m_ocp1Port, m_ocp1Timeout };
 }
 
 void DeviceController::timerCallback()
 {
     if (State::Connecting == getState())
     {
-        //auto sl = m_discoverComponent->getAvailableServices();
-        //auto const& iter = std::find_if(sl.begin(), sl.end(), [=](const auto& service) { return service.description == m_selectedService.description; });
-        //if (iter != sl.end())
-        {
-            //if ((m_selectedService.address != iter->address && m_selectedService.port != iter->port && m_selectedService.description != iter->description) || !m_networkConnection->isConnected())
-            //{
-            //    m_selectedService = *iter;
-            //    if (m_networkConnection)
-            //        m_networkConnection->ConnectToSocket(m_selectedService.address.toString(), m_selectedService.port);
-            //}
-            //else if (m_networkConnection && !m_networkConnection->isConnected())
-            //    m_networkConnection->RetryConnectToSocket();
-        }
+        m_ocp1Connection->connectToSocket(m_ocp1IPAddress.toString(), m_ocp1Port, m_ocp1Timeout);
     }
     else
-        stopTimer();
+    {
+        jassertfalse;
+        disconnect();
+    }
 }
 
 void DeviceController::CreateKnownONosMap()
@@ -305,7 +322,7 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
     case RemoteObject::Positioning_SourceDelayMode:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_DelayMode(first));
     case RemoteObject::Positioning_SpeakerPosition:
-        if (m_internalOcaRevision >= 1) // newer oca revision needs newer oca object definition
+        if (m_ocp1DeviceStackIdent >= 1) // newer oca revision needs newer oca object definition
             return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first));
         else
             return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Speaker_Position(first));
@@ -518,7 +535,7 @@ bool DeviceController::CreateObjectSubscriptions()
     auto handle = std::uint32_t(0);
     auto success = true;
 
-    for (auto const& activeObj : GetOcp1SupportedActiveRemoteObjects())
+    for (auto const& activeObj : GetActiveRemoteObjects())
     {
         // Get the object definition
         auto objDefOpt = GetObjectDefinition(activeObj.Id, activeObj.Addr);
@@ -555,7 +572,7 @@ bool DeviceController::QueryObjectValues()
 
     auto success = true;
 
-    for (auto const& activeObj : GetOcp1SupportedActiveRemoteObjects())
+    for (auto const& activeObj : GetActiveRemoteObjects())
     {
         success = QueryObjectValue(activeObj.Id, activeObj.Addr) && success;
     }
@@ -770,27 +787,33 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     return true;
 }
 
-const std::vector<DeviceController::RemoteObject> DeviceController::GetOcp1SupportedActiveRemoteObjects()
+const std::vector<DeviceController::RemoteObject>& DeviceController::GetActiveRemoteObjects()
 {
-    auto ocp1SupportedActiveObjects = std::vector<RemoteObject>();
+    return m_activeRemoteObjects;
+}
 
-    // list of objs
+bool DeviceController::SetActiveRemoteObjects(const std::vector<DeviceController::RemoteObject>& remObjs)
+{
+    if (getState() != DeviceController::State::Disconnected)
+        return false;
 
-    return ocp1SupportedActiveObjects;
+    m_activeRemoteObjects = remObjs;
+
+    return true;
 }
 
 void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
 {
-    if (newGuid == m_guid) // on new connection guid is reset so when receiving a guid again the connection/subscriptions should already be established
+    if (newGuid == m_ocp1DeviceGUID) // on new connection guid is reset so when receiving a guid again the connection/subscriptions should already be established
         return;
 
     if (SetOcaRevisionAndDeviceModel(newGuid)) // validate guid and determines revision and device model
-        m_guid = newGuid;
+        m_ocp1DeviceGUID = newGuid;
     else
         return; // close connection ?
 
     auto roa = RemObjAddr(RemObjAddr::sc_INV, RemObjAddr::sc_INV);
-    if (m_internalOcaRevision >= 1) // update internal map with the right definitions
+    if (m_ocp1DeviceStackIdent >= 1) // update internal map with the right definitions
     {
         for (std::uint16_t first = 1; first <= sc_MAX_OUTPUT_CHANNELS; first++)
         {
@@ -819,48 +842,48 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
         return false;
 
     int deviceBytes = 2;
-    Ds100Model ds100Model; // last two characters decide the model
+    DbDeviceModel dbDeviceModel; // last two characters decide the model
     if (guid.getLastCharacters(deviceBytes) == "D0") // DS100
-        ds100Model = DM_DS100;
+        dbDeviceModel = DbDeviceModel::DS100;
     else if (guid.getLastCharacters(deviceBytes) == "D1") // DS100D
-        ds100Model = DM_DS100D;
+        dbDeviceModel = DbDeviceModel::DS100D;
     else if (guid.getLastCharacters(deviceBytes) == "D2") // DS100M
-        ds100Model = DM_DS100M;
+        dbDeviceModel = DbDeviceModel::DS100M;
     else
         return false;
 
     int versionBytesIndexStart = 4; // in the Guid the version is after "DB00" and has two bytes/characters
     auto versionChars = guid.substring(versionBytesIndexStart, versionBytesIndexStart + 2); // will get two characters
-    int internalOcaRevision;
-    switch (ds100Model)
+    int ocp1DeviceStackIdent;
+    switch (dbDeviceModel)
     {
-    case DM_DS100:
-    {
-        if (versionChars >= "0C") // DS100 added scalability with FW version "0C"
-            internalOcaRevision = 1;
-        else
-            internalOcaRevision = 0;
-    }
-    break;
-    case DM_DS100D:
-    {
-        internalOcaRevision = 1; // this was implemented pre-release of DS100D and assuming there will be no FW-version without scalability
-    }
-    break;
-    case DM_DS100M:
-    {
-        if (versionChars >= "02") // DS100M added scalability with FW version "02"
-            internalOcaRevision = 1;
-        else
-            internalOcaRevision = 0;
-    }
-    break;
+    case DbDeviceModel::DS100:
+        {
+            if (versionChars >= "0C") // DS100 added scalability with FW version "0C"
+                ocp1DeviceStackIdent = 1;
+            else
+                ocp1DeviceStackIdent = 0;
+        }
+        break;
+    case DbDeviceModel::DS100D:
+        {
+        ocp1DeviceStackIdent = 1; // this was implemented pre-release of DS100D and assuming there will be no FW-version without scalability
+        }
+        break;
+    case DbDeviceModel::DS100M:
+        {
+            if (versionChars >= "02") // DS100M added scalability with FW version "02"
+                ocp1DeviceStackIdent = 1;
+            else
+                ocp1DeviceStackIdent = 0;
+        }
+        break;
     default:
         return false;
 
     }
-    m_connectedDs100Model = ds100Model;
-    m_internalOcaRevision = internalOcaRevision;
+    m_connectedDbDeviceModel = dbDeviceModel;
+    m_ocp1DeviceStackIdent = ocp1DeviceStackIdent;
     return true;
 }
 
