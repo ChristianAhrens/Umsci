@@ -40,7 +40,7 @@ public:
 
 #if JUCE_MAC
         // Ignore SIGPIPE globally, to prevent occasional unexpected app
-        // termination when Mema.Mo instances disconnect while sending by
+        // termination when Umsci instances disconnect while sending by
         // writing to socket is ongoing
         signal(SIGPIPE, SIG_IGN);
 #endif

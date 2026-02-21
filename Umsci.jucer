@@ -2,12 +2,67 @@
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
               jucerFormatVersion="1" version="0.1.0" companyWebsite="github.com/ChristianAhrens/Umsci"
-              bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source"
+              bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
   <MAINGROUP id="YIs3Nm" name="Umsci">
     <GROUP id="{60526C8C-38C9-8A62-4BE8-08FDFBF21423}" name="submodules">
+      <GROUP id="{7653811E-D730-658E-A565-A564209E34FD}" name="NanoOcp">
+        <GROUP id="{ED3C7B2D-D3DA-B577-38E0-E342CE2B3A4C}" name="Source">
+          <FILE id="naRI53" name="NanoOcp1.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/NanoOcp1.cpp"/>
+          <FILE id="ZAOmYF" name="NanoOcp1.h" compile="0" resource="0" file="submodules/NanoOcp/Source/NanoOcp1.h"/>
+          <FILE id="VYZiQq" name="Ocp1Connection.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Connection.cpp"/>
+          <FILE id="TwiIAY" name="Ocp1Connection.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Connection.h"/>
+          <FILE id="qMN9zs" name="Ocp1ConnectionServer.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1ConnectionServer.cpp"/>
+          <FILE id="dYYfNN" name="Ocp1ConnectionServer.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1ConnectionServer.h"/>
+          <FILE id="a4qF5T" name="Ocp1DataTypes.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1DataTypes.cpp"/>
+          <FILE id="MKGJMw" name="Ocp1DataTypes.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Ocp1DataTypes.h"/>
+          <FILE id="Yn40HQ" name="Ocp1DS100ObjectDefinitions.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1DS100ObjectDefinitions.h"/>
+          <FILE id="M7wJRg" name="Ocp1Message.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Ocp1Message.cpp"/>
+          <FILE id="FeLwOk" name="Ocp1Message.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Ocp1Message.h"/>
+          <FILE id="Fh6FFx" name="Ocp1ObjectDefinitions.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1ObjectDefinitions.h"/>
+          <FILE id="aoCcc9" name="Variant.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Variant.cpp"/>
+          <FILE id="MLaA5Q" name="Variant.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Variant.h"/>
+        </GROUP>
+      </GROUP>
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">
+        <GROUP id="{36706580-EB97-426D-6CA8-72022124062F}" name="Source">
+          <FILE id="OjfnR4" name="AppConfigurationBase.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/AppConfigurationBase.cpp"/>
+          <FILE id="OKeXGj" name="AppConfigurationBase.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/AppConfigurationBase.h"/>
+          <FILE id="yDtzqn" name="CustomLookAndFeel.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/CustomLookAndFeel.cpp"/>
+          <FILE id="cnfPnI" name="CustomLookAndFeel.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/CustomLookAndFeel.h"/>
+          <FILE id="U4KfXJ" name="FixedFontTextEditor.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/FixedFontTextEditor.cpp"/>
+          <FILE id="XaAmpq" name="FixedFontTextEditor.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/FixedFontTextEditor.h"/>
+          <FILE id="ODU8Yr" name="Image_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.cpp"/>
+          <FILE id="TT1rKA" name="Image_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.h"/>
+          <FILE id="k1LZHM" name="iOS_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.cpp"/>
+          <FILE id="ovl1VU" name="iOS_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.h"/>
+          <FILE id="WHNX6e" name="ToggleStateSlider.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.cpp"/>
+          <FILE id="nDHk4a" name="ToggleStateSlider.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.h"/>
+          <FILE id="ete2s5" name="WebUpdateDetector.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/WebUpdateDetector.cpp"/>
+          <FILE id="pjsxmD" name="WebUpdateDetector.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/WebUpdateDetector.h"/>
+          <FILE id="lr2lbZ" name="ZeroconfDiscoverComponent.cpp" compile="1"
+                resource="0" file="submodules/JUCE-AppBasics/Source/ZeroconfDiscoverComponent.cpp"/>
+          <FILE id="fli9gx" name="ZeroconfDiscoverComponent.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/ZeroconfDiscoverComponent.h"/>
+        </GROUP>
         <GROUP id="{9C8B2C1C-6AE6-EC24-8CF2-305F923B024B}" name="submodules">
           <GROUP id="{3B6BF99F-4C76-5120-3A5D-E59717235429}" name="ZeroconfSearcher">
             <FILE id="L0Gh6R" name="ZeroconfSearcher.cpp" compile="1" resource="0"
@@ -16,40 +71,13 @@
                   file="submodules/JUCE-AppBasics/submodules/ZeroconfSearcher/Source/ZeroconfSearcher.h"/>
           </GROUP>
         </GROUP>
-        <FILE id="OjfnR4" name="AppConfigurationBase.cpp" compile="1" resource="0"
-              file="submodules/JUCE-AppBasics/Source/AppConfigurationBase.cpp"/>
-        <FILE id="OKeXGj" name="AppConfigurationBase.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/AppConfigurationBase.h"/>
-        <FILE id="yDtzqn" name="CustomLookAndFeel.cpp" compile="1" resource="0"
-              file="submodules/JUCE-AppBasics/Source/CustomLookAndFeel.cpp"/>
-        <FILE id="cnfPnI" name="CustomLookAndFeel.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/CustomLookAndFeel.h"/>
-        <FILE id="U4KfXJ" name="FixedFontTextEditor.cpp" compile="1" resource="0"
-              file="submodules/JUCE-AppBasics/Source/FixedFontTextEditor.cpp"/>
-        <FILE id="XaAmpq" name="FixedFontTextEditor.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/FixedFontTextEditor.h"/>
-        <FILE id="ODU8Yr" name="Image_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.cpp"/>
-        <FILE id="TT1rKA" name="Image_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.h"/>
-        <FILE id="k1LZHM" name="iOS_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.cpp"/>
-        <FILE id="ovl1VU" name="iOS_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.h"/>
-        <FILE id="WHNX6e" name="ToggleStateSlider.cpp" compile="1" resource="0"
-              file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.cpp"/>
-        <FILE id="nDHk4a" name="ToggleStateSlider.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.h"/>
-        <FILE id="ete2s5" name="WebUpdateDetector.cpp" compile="1" resource="0"
-              file="submodules/JUCE-AppBasics/Source/WebUpdateDetector.cpp"/>
-        <FILE id="pjsxmD" name="WebUpdateDetector.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/WebUpdateDetector.h"/>
-        <FILE id="lr2lbZ" name="ZeroconfDiscoverComponent.cpp" compile="1"
-              resource="0" file="submodules/JUCE-AppBasics/Source/ZeroconfDiscoverComponent.cpp"/>
-        <FILE id="fli9gx" name="ZeroconfDiscoverComponent.h" compile="0" resource="0"
-              file="submodules/JUCE-AppBasics/Source/ZeroconfDiscoverComponent.h"/>
       </GROUP>
     </GROUP>
     <GROUP id="{72AB56DC-8637-938F-3846-2BD91435687D}" name="Resources">
       <GROUP id="{5418C8BA-AFDC-83EF-A716-D3FB9CE9A772}" name="Images">
         <FILE id="yFUubM" name="find_replace-24px.svg" compile="0" resource="1"
               file="submodules/JUCE-AppBasics/Resources/Images/find_replace-24px.svg"/>
+        <FILE id="UhDnz2" name="link_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/link_24dp.svg"/>
         <FILE id="bGAn9R" name="link_off_24dp.svg" compile="0" resource="1"
               file="submodules/JUCE-AppBasics/Resources/Images/link_off_24dp.svg"/>
         <FILE id="PYu57Z" name="question_mark_24dp.svg" compile="0" resource="1"
@@ -64,6 +92,10 @@
             file="Resources/UmsciDefault.config"/>
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
+      <FILE id="OmQ8H9" name="DeviceController.cpp" compile="1" resource="0"
+            file="Source/DeviceController.cpp"/>
+      <FILE id="j4rQTY" name="DeviceController.h" compile="0" resource="0"
+            file="Source/DeviceController.h"/>
       <FILE id="ruad7x" name="AboutComponent.cpp" compile="1" resource="0"
             file="Source/AboutComponent.cpp"/>
       <FILE id="vTcKqR" name="AboutComponent.h" compile="0" resource="0"
@@ -74,10 +106,10 @@
             file="Source/UmsciConnectingComponent.cpp"/>
       <FILE id="pq5xmP" name="UmsciConnectingComponent.h" compile="0" resource="0"
             file="Source/UmsciConnectingComponent.h"/>
-      <FILE id="SP05qm" name="UmsciDiscoverComponent.cpp" compile="1" resource="0"
-            file="Source/UmsciDiscoverComponent.cpp"/>
-      <FILE id="CKX6UJ" name="UmsciDiscoverComponent.h" compile="0" resource="0"
-            file="Source/UmsciDiscoverComponent.h"/>
+      <FILE id="SP05qm" name="UmsciDiscoveringHintComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciDiscoveringHintComponent.cpp"/>
+      <FILE id="CKX6UJ" name="UmsciDiscoveringHintComponent.h" compile="0"
+            resource="0" file="Source/UmsciDiscoveringHintComponent.h"/>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>

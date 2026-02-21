@@ -33,15 +33,10 @@ public:
     enum TagID
     {
         CONNECTIONCONFIG,
-        SERVICEDESCRIPTION,
         VISUCONFIG,
-        CONTROLFORMAT,
         CONTROLCOLOUR,
         LOOKANDFEEL,
         CONTROLSSIZE,
-        EXTCTRLCONFIG,
-        ADMOSCHOST,
-        ADMOSCCLIENT,
     };
     static juce::String getTagName(TagID ID)
     {
@@ -49,24 +44,14 @@ public:
         {
         case CONNECTIONCONFIG:
             return "CONNECTIONCONFIG";
-        case SERVICEDESCRIPTION:
-            return "SERVICEDESCRIPTION";
         case VISUCONFIG:
             return "VISUCONFIG";
-        case CONTROLFORMAT:
-            return "CONTROLFORMAT";
         case CONTROLCOLOUR:
             return "CONTROLCOLOUR";
         case LOOKANDFEEL:
             return "LOOKANDFEEL";
         case CONTROLSSIZE:
             return "CONTROLSSIZE";
-        case EXTCTRLCONFIG:
-            return "EXTCTRLCONFIG";
-        case ADMOSCHOST:
-            return "ADMOSCHOST";
-        case ADMOSCCLIENT:
-            return "ADMOSCCLIENT";
         default:
             return "INVALID";
         }
@@ -77,6 +62,7 @@ public:
         ENABLED,
         IP,
         PORT,
+        IOSIZE
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -88,6 +74,8 @@ public:
             return "IP";
         case PORT:
             return "PORT";
+        case IOSIZE:
+            return "IOSIZE";
         default:
             return "-";
         }

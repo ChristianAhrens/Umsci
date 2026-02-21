@@ -16,28 +16,21 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#pragma once
-
-#include <JuceHeader.h>
+#include "UmsciDiscoveringHintComponent.h"
 
 
-#include "UmsciAppConfiguration.h"
-
-
-
-class UmsciComponent :   public juce::Component
+UmsciDiscoveringHintComponent::UmsciDiscoveringHintComponent()
+    : juce::Component()
 {
-public:
-    UmsciComponent();
-    ~UmsciComponent() override;
+}
 
-    //==============================================================================
-    void resized() override;
-    void paint(juce::Graphics& g) override;
+UmsciDiscoveringHintComponent::~UmsciDiscoveringHintComponent()
+{
+}
 
-private:
-    //==============================================================================
+void UmsciDiscoveringHintComponent::paint(Graphics &g)
+{
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciComponent)
-};
-
+    g.drawText("Toggle on the connection with the parameters specified in settings\nto start controlling the signal engine.", juce::Rectangle<float>(200.0f, 25.0f).withCentre(getLocalBounds().getCentre().toFloat()), juce::Justification::centred);
+}

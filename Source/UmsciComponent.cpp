@@ -28,20 +28,6 @@ UmsciComponent::~UmsciComponent()
 {
 }
 
-//void UmsciComponent::setExternalAdmOscSettings(const int ADMOSCport, const juce::IPAddress& ADMOSCremoteIP, const int ADMOSCremotePort)
-//{
-//    std::get<0>(m_externalAdmOscSettings) = ADMOSCport;
-//    std::get<1>(m_externalAdmOscSettings) = ADMOSCremoteIP;
-//    std::get<2>(m_externalAdmOscSettings) = ADMOSCremotePort;
-//
-//    m_panningCtrlComponent->setExternalControlSettings(ADMOSCport, ADMOSCremoteIP, ADMOSCremotePort);
-//}
-//
-//std::tuple<int, juce::IPAddress, int> UmsciComponent::getExternalAdmOscSettings()
-//{
-//    return m_externalAdmOscSettings;
-//}
-
 void UmsciComponent::paint(Graphics &g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::LookAndFeel_V4::ColourScheme::widgetBackground));
@@ -55,24 +41,5 @@ void UmsciComponent::resized()
     //    m_panningCtrlComponent->setBounds(getLocalBounds());
     //if (m_pluginCtrlComponent && m_pluginCtrlComponent->isVisible())
     //    m_pluginCtrlComponent->setBounds(getLocalBounds());
-}
-
-void UmsciComponent::handleMessage(const Message& message)
-{
-    if (RunningStatus::Active != m_runningStatus)
-    {
-        m_runningStatus = RunningStatus::Active;
-        resized();
-    }
-    
-    //if ()
-    //{
-    //    DBG(juce::String(__FUNCTION__) + " handling PluginParameterValueMessage (" + juce::String(ppvm->getParameterIndex()) + "; " + ppvm->getParameterId() + "; " + juce::String(ppvm->getCurrentValue()) + ") ...");
-    //
-    //    if (m_pluginCtrlComponent && m_pluginCtrlComponent->isVisible())
-    //        m_pluginCtrlComponent->setParameterValue(ppvm->getParameterIndex(), ppvm->getParameterId().toStdString(), ppvm->getCurrentValue());
-    //
-    //    resized();
-    //}
 }
 

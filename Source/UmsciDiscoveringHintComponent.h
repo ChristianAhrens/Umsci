@@ -21,23 +21,18 @@
 #include <JuceHeader.h>
 
 
-#include "UmsciAppConfiguration.h"
-
-
-
-class UmsciComponent :   public juce::Component
+class UmsciDiscoveringHintComponent :   public juce::Component
 {
 public:
-    UmsciComponent();
-    ~UmsciComponent() override;
+    UmsciDiscoveringHintComponent();
+    ~UmsciDiscoveringHintComponent() override;
 
     //==============================================================================
-    void resized() override;
-    void paint(juce::Graphics& g) override;
+    void paint(Graphics&) override;
 
 private:
     //==============================================================================
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciDiscoveringHintComponent)
 };
 

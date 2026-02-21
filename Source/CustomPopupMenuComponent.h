@@ -1,6 +1,6 @@
-/* Copyright (c) 2024-2025, Christian Ahrens
+/* Copyright (c) 2026, Christian Ahrens
  *
- * This file is part of Mema <https://github.com/ChristianAhrens/Mema>
+ * This file is part of Umsci <https://github.com/ChristianAhrens/Umsci>
  *
  * This tool is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 3.0 as published

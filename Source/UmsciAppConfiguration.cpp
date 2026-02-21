@@ -42,13 +42,14 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 	auto connectionConfigSectionElement = xmlConfig->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
 	if (connectionConfigSectionElement)
 	{
-		auto serviceDescriptonXmlElement = connectionConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::SERVICEDESCRIPTION));
-		if (serviceDescriptonXmlElement)
-		{
-			//validate
-		}
-		else
+		if (juce::String("ERROR") == connectionConfigSectionElement->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP), "ERROR"))
 			return false;
+		if (-1 == connectionConfigSectionElement->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT), -1))
+			return false;
+		if (juce::String("ERROR") == connectionConfigSectionElement->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), "ERROR"))
+			return false;
+		
+		// positive validation outcome - continue
 	}
 	else
 		return false;
@@ -56,16 +57,16 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 	auto visuConfigSectionElement = xmlConfig->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 	if (visuConfigSectionElement)
 	{
-		auto outputPanningXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLFORMAT));
-		if (outputPanningXmlElement)
+		auto controlSizeXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSSIZE));
+		if (controlSizeXmlElement)
 		{
 			//validate
 		}
 		else
 			return false;
 
-		auto panningColourXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCOLOUR));
-		if (panningColourXmlElement)
+		auto controlColourXmlElement = visuConfigSectionElement->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCOLOUR));
+		if (controlColourXmlElement)
 		{
 			// validate
 		}
