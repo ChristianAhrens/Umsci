@@ -36,7 +36,7 @@
 MainComponent::MainComponent()
     : juce::Component()
 {
-    m_deviceMatrixSize = { 128, 64 };
+    setOcp1IOSize({ 128, 64 });
 
     // create the configuration object (is being initialized from disk automatically)
     m_config = std::make_unique<UmsciAppConfiguration>(JUCEAppBasics::AppConfigurationBase::getDefaultConfigFilePath());
@@ -48,6 +48,7 @@ MainComponent::MainComponent()
         m_config->ResetToDefault();
     }
 
+    // create different main components and add them
     m_controlComponent = std::make_unique<UmsciComponent>();
     addAndMakeVisible(m_controlComponent.get());
 
@@ -56,6 +57,11 @@ MainComponent::MainComponent()
 
     m_connectingComponent = std::make_unique<UmsciConnectingComponent>();
     addAndMakeVisible(m_connectingComponent.get());
+
+    // initially activate the 'offline state' reg. component configuration
+    m_connectingComponent->setVisible(false);
+    m_controlComponent->setVisible(false);
+    m_discoverHintComponent->setVisible(true);
 
     m_aboutComponent = std::make_unique<AboutComponent>(BinaryData::UmsciRect_png, BinaryData::UmsciRect_pngSize);
     m_aboutButton = std::make_unique<juce::DrawableButton>("About", juce::DrawableButton::ButtonStyle::ImageFitted);
@@ -91,7 +97,7 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
 #if JUCE_WINDOWS || JUCE_MAC
     // fullscreen toggling
-    m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings", 0);
+    m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
 #endif
     // Further components
     m_settingsButton = std::make_unique<juce::DrawableButton>("Settings", juce::DrawableButton::ButtonStyle::ImageFitted);
@@ -132,7 +138,11 @@ MainComponent::MainComponent()
             DeviceController::getInstance()->connect();
         else
             DeviceController::getInstance()->disconnect();
+
         lookAndFeelChanged();
+
+        if (m_config)
+            m_config->triggerConfigurationDump();
     };
     m_connectionToggleButton->setAlwaysOnTop(true);
     m_connectionToggleButton->setClickingTogglesState(true);
@@ -150,11 +160,18 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(true);
                 break;
             case DeviceController::State::Connecting:
+                m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
+                m_controlComponent->setVisible(false);
+                m_discoverHintComponent->setVisible(false);
+                m_connectingComponent->setVisible(true);
+                m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
+                break;
             case DeviceController::State::Subscribing:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
+                m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
                 break;
             case DeviceController::State::Subscribed:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -195,6 +212,8 @@ MainComponent::MainComponent()
 
     // we want keyboard focus for fullscreen toggle shortcut
     setWantsKeyboardFocus(true);
+
+    lookAndFeelChanged();
 }
 
 MainComponent::~MainComponent()
@@ -252,6 +271,18 @@ void MainComponent::applySettingsOption(const UmsciSettingsOption& option)
 {
     // use the settings menu item call infrastructure to set the option
     handleSettingsMenuResult(option);
+}
+
+const std::pair<int, int>& MainComponent::getOcp1IOSize()
+{
+    return m_ocp1IOSize;
+}
+
+void MainComponent::setOcp1IOSize(const std::pair<int, int>& ioSize)
+{
+    m_ocp1IOSize = ioSize;
+
+    // todo react to changes
 }
 
 void MainComponent::handleSettingsMenuResult(int selectedId)
@@ -356,7 +387,7 @@ void MainComponent::toggleFullscreenMode()
 void MainComponent::showConnectionSettings()
 {
     m_messageBox = std::make_unique<juce::AlertWindow>(
-        "Control connection setup",
+        "Control connection settings",
         "Enter remote control parameters to connect to a signal engine.\nInfo: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
         juce::MessageBoxIconType::NoIcon);
 
@@ -367,7 +398,7 @@ void MainComponent::showConnectionSettings()
     {
         m_messageBox->addTextEditor("Device IP", std::get<0>(currentOCP1connPar).toString(), "OCP.1 IP");
         m_messageBox->addTextEditor("Device port", juce::String(std::get<1>(currentOCP1connPar)), "OCP.1 port");
-        m_messageBox->addTextEditor("Device IO size", juce::String(m_deviceMatrixSize.first) + "x" + juce::String(m_deviceMatrixSize.second), "OCP.1 IOSize");
+        m_messageBox->addTextEditor("Device IO size", juce::String(getOcp1IOSize().first) + "x" + juce::String(getOcp1IOSize().second), "OCP.1 IOSize");
     }
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
@@ -375,17 +406,18 @@ void MainComponent::showConnectionSettings()
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
-            auto ocp1remoteIP = juce::IPAddress(m_messageBox->getTextEditorContents("Device IP"));
-            auto ocp1port = m_messageBox->getTextEditorContents("Device port").getIntValue();
+            auto ocp1IP = juce::IPAddress(m_messageBox->getTextEditorContents("Device IP"));
+            auto ocp1Port = m_messageBox->getTextEditorContents("Device port").getIntValue();
             auto ocp1IOsize = m_messageBox->getTextEditorContents("Device IO size");
-            if (m_controlComponent)
-            {
-                m_deviceMatrixSize = { ocp1IOsize.upToFirstOccurrenceOf("x", false,true).getIntValue(), ocp1IOsize.fromLastOccurrenceOf("x", false,true).getIntValue() };
-                DeviceController::getInstance()->setConnectionParameters(ocp1remoteIP, ocp1port);
 
-                if (m_config)
-                    m_config->triggerConfigurationDump();
-            }
+            setOcp1IOSize({ ocp1IOsize.upToFirstOccurrenceOf("x", false, true).getIntValue(), ocp1IOsize.fromLastOccurrenceOf("x", false, true).getIntValue() });
+            DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
+
+            if (m_connectingComponent)
+                m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
+
+            if (m_config)
+                m_config->triggerConfigurationDump();
         }
 
         m_messageBox.reset();
@@ -441,7 +473,7 @@ void MainComponent::performConfigurationDump()
         connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::ENABLED), m_connectionToggleButton->getToggleState() ? 1 : 0);
         connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP), std::get<0>(params).toString());
         connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT), std::get<1>(params));
-        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), juce::String(m_deviceMatrixSize.first) + "x" + juce::String(m_deviceMatrixSize.second));
+        connectionConfigXmlElement->setAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), juce::String(getOcp1IOSize().first) + "x" + juce::String(getOcp1IOSize().second));
         m_config->setConfigState(std::move(connectionConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
 
         // visu config
@@ -472,12 +504,22 @@ void MainComponent::onConfigUpdated()
     auto connectionConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
     if (connectionConfigState)
     {
-        auto ocp1ConnectionEnabled = 1 ==connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::ENABLED));
+        auto ocp1ConnectionEnabled = 1 == connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::ENABLED));
         auto ocp1IP = juce::IPAddress(connectionConfigState->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP)));
         auto ocp1Port = connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT));
         auto ocp1IOSize = connectionConfigState->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE));
 
-        DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
+        auto ocp1ConParams = DeviceController::getInstance()->getConnectionParameters();
+        if (std::get<0>(ocp1ConParams) != ocp1IP || std::get<1>(ocp1ConParams) != ocp1Port)
+        {
+            DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
+            if (m_connectingComponent)
+                m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
+        }
+
+        auto newIoSize = std::make_pair(ocp1IOSize.upToFirstOccurrenceOf("x", false, true).getIntValue(), ocp1IOSize.fromLastOccurrenceOf("x", false, true).getIntValue());
+        if (getOcp1IOSize() != newIoSize)
+            setOcp1IOSize(newIoSize);
 
         if (ocp1ConnectionEnabled != m_connectionToggleButton->getToggleState())
         {

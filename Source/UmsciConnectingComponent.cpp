@@ -18,6 +18,8 @@
 
 #include "UmsciConnectingComponent.h"
 
+#include <CustomLookAndFeel.h>
+
 UmsciConnectingComponent::UmsciConnectingComponent()
     : juce::Component()
 {
@@ -29,10 +31,35 @@ UmsciConnectingComponent::~UmsciConnectingComponent()
 {
 }
 
-void UmsciConnectingComponent::setMasterServiceDescription(const juce::String& serviceDescription)
+void UmsciConnectingComponent::setConnectionStatus(Status status)
 {
-    m_serviceDescription = serviceDescription;
+    juce::String statusDescription;
+    switch (status)
+    {
+    case Status::Subscribing:
+        statusDescription = "Subscribing to";
+        break;
+    case Status::Connecting:
+    default:
+        statusDescription = "Connecting to";
+        break;
+    }
+
+    m_connectionStatusDescription = statusDescription;
+}
+
+void UmsciConnectingComponent::setConnectionParameters(const juce::IPAddress& ip, int port)
+{
+    m_connectionParametersDescription = ip.toString() + ":" + juce::String(port);
     repaint();
+}
+
+void UmsciConnectingComponent::paint(Graphics& g)
+{
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
+
+    g.setColour(getLookAndFeel().findColour(juce::TextEditor::ColourIds::textColourId));
+    g.drawFittedText(m_connectionStatusDescription + "\n" + (m_connectionParametersDescription.isNotEmpty() ? m_connectionParametersDescription : "UNKNOWN"), getLocalBounds().reduced(35), juce::Justification::centred, 2);
 }
 
 void UmsciConnectingComponent::resized()
@@ -49,11 +76,9 @@ void UmsciConnectingComponent::resized()
 
 }
 
-void UmsciConnectingComponent::paint(Graphics& g)
+void UmsciConnectingComponent::lookAndFeelChanged()
 {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
-
-    g.setColour(getLookAndFeel().findColour(juce::TextEditor::ColourIds::textColourId));
-    g.drawFittedText("Waiting for\n" + (m_serviceDescription.isNotEmpty() ? m_serviceDescription : "UNKNOWN"), getLocalBounds().reduced(35), juce::Justification::centred, 2);
+    if (m_startupProgressIndicator)
+        m_startupProgressIndicator->setColour(juce::ProgressBar::ColourIds::foregroundColourId, getLookAndFeel().findColour(JUCEAppBasics::CustomLookAndFeel::ColourIds::MeteringRmsColourId));
 }
 

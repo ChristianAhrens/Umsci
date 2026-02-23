@@ -482,7 +482,7 @@ public:
     void timerCallback() override;
 
     //==============================================================================
-    void connect();
+    bool connect();
     void disconnect();
 
 	void setConnectionParameters(juce::IPAddress ip, int port, int timeoutMs = 150);

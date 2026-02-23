@@ -61,6 +61,9 @@ public:
 
     void applySettingsOption(const UmsciSettingsOption& option);
 
+    const std::pair<int, int>& getOcp1IOSize();
+    void setOcp1IOSize(const std::pair<int, int>& ioSize);
+
     //==============================================================================
     void resized() override;
     void paint(juce::Graphics& g) override;
@@ -115,7 +118,7 @@ private:
 
     std::unique_ptr<UmsciAppConfiguration>          m_config;
 
-    std::pair<int, int>                             m_deviceMatrixSize;
+    std::pair<int, int>                             m_ocp1IOSize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

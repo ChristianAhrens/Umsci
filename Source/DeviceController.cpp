@@ -25,23 +25,27 @@ JUCE_IMPLEMENT_SINGLETON(DeviceController)
 
 DeviceController::DeviceController()
 {
+    CreateKnownONosMap();
+
     m_ocp1IPAddress = juce::IPAddress("127.0.0.1");
     m_ocp1Port = 50014;
 
     m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
     m_ocp1Connection->onConnectionEstablished = [=]() {
-        DBG(__FUNCTION__);
+        DBG("onConnectionEstablished");
+
+        stopTimer();
+
+        setState(State::Subscribing);
 
         m_ocp1DeviceGUID = "";
         m_ocp1DeviceStackIdent = -1;
         m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
 
         QueryObjectValue(RemoteObject::Fixed_GUID, {});
-
-        setState(State::Subscribing);
     };
     m_ocp1Connection->onConnectionLost = [=]() {
-        DBG(__FUNCTION__);
+        DBG("onConnectionLost");
 
         DeleteObjectSubscriptions();
         ClearPendingHandles();
@@ -55,12 +59,16 @@ DeviceController::DeviceController()
         connect();
     };
     m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
+        DBG("onDataReceived");
+
         return ocp1MessageReceived(data);
     };
 }
 
 DeviceController::~DeviceController()
 {
+    disconnect();
+
     // this ensures that no dangling pointers are left when the
     // singleton is deleted.
     clearSingletonInstance();
@@ -68,6 +76,23 @@ DeviceController::~DeviceController()
 
 void DeviceController::setState(const State& s)
 {
+    std::function<juce::String(State)> stateToString = [=](State state) {
+        switch (state)
+        {
+        case Disconnected:
+            return "disco";
+        case Connecting:
+            return "cntng";
+        case Subscribing:
+            return "sbscrbng";
+        case Subscribed:
+            return "sbscrbd";
+        default:
+            return "ERR";
+        }
+    };
+
+    DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
     if (m_currentState != s)
     {
         m_currentState = s;
@@ -87,24 +112,28 @@ bool DeviceController::isFullyOnline() const
     return State::Subscribed == m_currentState;
 }
 
-void DeviceController::connect()
+bool DeviceController::connect()
 {
     if (State::Disconnected != getState())
     {
-        jassertfalse;
-        disconnect();
+        DBG(juce::String(__FUNCTION__) << " - nothing to do as we're not disconnected");
+        return false;
     }
+    DBG(__FUNCTION__);
 
     setState(State::Connecting);
 
+    // prepare to restart connection attempt after some large timeout, in case something got stuck...
+    startTimer(m_ocp1Timeout * 20);
+
     timerCallback(); // avoid codeclones by manually trigger the timed connection attempt once
 
-    // restart connection attempt after some large timeout, in case something got stuck...
-    startTimer(m_ocp1Timeout * 20);
+    return true;
 }
 
 void DeviceController::disconnect()
 {
+    DBG(__FUNCTION__);
     if (m_ocp1Connection)
         m_ocp1Connection->disconnect(m_ocp1Timeout);
 
@@ -461,6 +490,8 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                     // All subscriptions were confirmed
                     //DBG(juce::String(__FUNCTION__) << " All NanoOcp1 subscriptions were confirmed (handle:"
                     //    << NanoOcp1::HandleToString(handle) << ")");
+
+                    setState(State::Subscribed);
                 }
                 return true;
             }

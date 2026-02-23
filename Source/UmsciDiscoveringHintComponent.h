@@ -29,9 +29,11 @@ public:
 
     //==============================================================================
     void paint(Graphics&) override;
+    void resized() override;
 
 private:
     //==============================================================================
+    std::unique_ptr<juce::Label>    m_hintLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciDiscoveringHintComponent)
 };

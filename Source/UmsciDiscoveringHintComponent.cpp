@@ -22,16 +22,22 @@
 UmsciDiscoveringHintComponent::UmsciDiscoveringHintComponent()
     : juce::Component()
 {
+    m_hintLabel = std::make_unique<juce::Label>("Discover hint label", "Toggle on the connection with the parameters specified in settings to start controlling the signal engine.");
+    m_hintLabel->setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(m_hintLabel.get());
 }
 
 UmsciDiscoveringHintComponent::~UmsciDiscoveringHintComponent()
 {
 }
 
-void UmsciDiscoveringHintComponent::paint(Graphics &g)
+void UmsciDiscoveringHintComponent::paint(juce::Graphics &g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
-
-    g.setColour(getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    g.drawText("Toggle on the connection with the parameters\nspecified in settings to start\ncontrolling the signal engine.", juce::Rectangle<float>(250.0f, 250.0f).withCentre(getLocalBounds().getCentre().toFloat()), juce::Justification::centred);
 }
+
+void UmsciDiscoveringHintComponent::resized()
+{
+    m_hintLabel->setBounds(getLocalBounds());
+}
+

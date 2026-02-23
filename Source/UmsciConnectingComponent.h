@@ -24,19 +24,29 @@
 class UmsciConnectingComponent :   public juce::Component
 {
 public:
+    enum Status
+    {
+        Connecting,
+        Subscribing
+    };
+
+public:
     UmsciConnectingComponent();
     ~UmsciConnectingComponent() override;
 
-    void setMasterServiceDescription(const juce::String& serviceDescription);
+    void setConnectionStatus(Status status);
+    void setConnectionParameters(const juce::IPAddress& ip, int port);
 
     //==============================================================================
-    void resized() override;
     void paint(juce::Graphics& g) override;
+    void resized() override;
+    void lookAndFeelChanged() override;
 
 private:
     double                                  m_progress = -1.0;
     std::unique_ptr<juce::ProgressBar>      m_startupProgressIndicator;
-    juce::String                            m_serviceDescription;
+    juce::String                            m_connectionStatusDescription;
+    juce::String                            m_connectionParametersDescription;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciConnectingComponent)
 };
