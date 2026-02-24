@@ -32,8 +32,6 @@ DeviceController::DeviceController()
 
     m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
     m_ocp1Connection->onConnectionEstablished = [=]() {
-        DBG("onConnectionEstablished");
-
         stopTimer();
 
         setState(State::Subscribing);
@@ -45,8 +43,6 @@ DeviceController::DeviceController()
         QueryObjectValue(RemoteObject::Fixed_GUID, {});
     };
     m_ocp1Connection->onConnectionLost = [=]() {
-        DBG("onConnectionLost");
-
         DeleteObjectSubscriptions();
         ClearPendingHandles();
 
@@ -59,8 +55,6 @@ DeviceController::DeviceController()
         connect();
     };
     m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
-        DBG("onDataReceived");
-
         return ocp1MessageReceived(data);
     };
 }
@@ -165,6 +159,19 @@ void DeviceController::timerCallback()
     {
         jassertfalse;
         disconnect();
+    }
+}
+
+void DeviceController::handleMessage(const juce::Message& message)
+{
+    if (auto const scm = dynamic_cast<const StateChangeMessage*>(&message))
+    {
+        setState(scm->getState());
+    }
+    else if (auto const rorm = dynamic_cast<const RemoteObjectReceivedMessage*>(&message))
+    {
+        if (onRemoteObjectReceived)
+            onRemoteObjectReceived(rorm->getRemoteObject());
     }
 }
 
@@ -491,7 +498,7 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                     //DBG(juce::String(__FUNCTION__) << " All NanoOcp1 subscriptions were confirmed (handle:"
                     //    << NanoOcp1::HandleToString(handle) << ")");
 
-                    setState(State::Subscribed);
+                    postMessage(new StateChangeMessage(State::Subscribed));
                 }
                 return true;
             }
@@ -580,9 +587,9 @@ bool DeviceController::CreateObjectSubscriptions()
             return false;
 
         success = success && m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->AddSubscriptionCommand(), handle).GetMemoryBlock());
-        //DBG(juce::String(__FUNCTION__) << " " << ProcessingEngineConfig::GetObjectTagName(activeObj._Id) << "("
-        //    << (first >= 0 ? (" first:" + juce::String(first)) : "")
-        //    << (second >= 0 ? (" second:" + juce::String(second)) : "")
+        //DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(activeObj.Id) << "("
+        //    << (activeObj.Addr.pri >= 0 ? (" pri:" + juce::String(activeObj.Addr.pri)) : "")
+        //    << (activeObj.Addr.sec >= 0 ? (" sec:" + juce::String(activeObj.Addr.sec)) : "")
         //    << " handle:" << NanoOcp1::HandleToString(handle) << ")");
 
         AddPendingSubscriptionHandle(handle);
@@ -629,7 +636,7 @@ bool DeviceController::QueryObjectValue(const RemoteObject::RemObjIdent roi, con
     // Send GetValue command
     bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->GetValueCommand(), handle).GetMemoryBlock());
     AddPendingGetValueHandle(handle, objDef->m_targetOno);
-    //DBG(juce::String(__FUNCTION__) + " " + ProcessingEngineConfig::GetObjectTagName(roi) + "(handle: " + NanoOcp1::HandleToString(handle) + ")");
+    //DBG(juce::String(__FUNCTION__) + " " + RemoteObject::GetObjectDescription(roi) + "(handle: " + NanoOcp1::HandleToString(handle) + ")");
     return success;
 }
 
@@ -741,9 +748,8 @@ const std::optional<std::pair<std::uint32_t, int>> DeviceController::HasPendingS
     auto it = std::find_if(m_pendingSetValueHandlesWithONo.begin(), m_pendingSetValueHandlesWithONo.end(), [ONo](const auto& val) { return val.second.first == ONo; });
     if (it != m_pendingSetValueHandlesWithONo.end())
     {
-        //auto ONo = it->second.first;
         //DBG(juce::String(__FUNCTION__)
-        //    << " (handle:" << NanoOcp1::HandleToString(handle)
+        //    << " (handle:" << juce::String(NanoOcp1::HandleToString(it->first))
         //    << ", targetONo:0x" << juce::String::toHexString(ONo) << ")");
         return std::optional<std::pair<std::uint32_t, int>>(std::make_pair(it->first, it->second.second));
     }
@@ -795,8 +801,9 @@ bool DeviceController::UpdateObjectValue(const std::uint32_t ONo, NanoOcp1::Ocp1
 bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, NanoOcp1::Ocp1Message* msgObj, const std::pair<RemObjAddr, NanoOcp1::Ocp1CommandDefinition>& objectDetails)
 {
     //DBG(juce::String(__FUNCTION__)
-    //    << " (targetONo:0x" << juce::String::toHexString(cmdDef.m_targetOno) << ")");
+    //    << " (targetONo:0x" << juce::String::toHexString(objectDetails.second.m_targetOno) << ")");
 
+    NanoOcp1::Ocp1DataType datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_NONE;
     switch (roi)
     {
     case RemoteObject::Fixed_GUID:
@@ -805,15 +812,97 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
             auto guid = NanoOcp1::DataToString(msgObj->GetParameterData(), &ok);
             if (ok)
                 ProcessGuidAndSubscribe(guid);
+
+            return ok;
         }
+    case RemoteObject::CoordinateMapping_SourcePosition:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
+        break;
+    case RemoteObject::Positioning_SpeakerPosition:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
+        break;
+    case RemoteObject::Positioning_SourcePosition:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
+        break;
+    case RemoteObject::Status_AudioNetworkSampleStatus:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32;
+        break;
+    case RemoteObject::Error_GnrlErr:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
+        break;
+    case RemoteObject::MatrixInput_Polarity:
+    case RemoteObject::MatrixOutput_Polarity:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
+        break;
+    case RemoteObject::CoordinateMappingSettings_Flip:
+    case RemoteObject::MatrixNode_Enable:
+    case RemoteObject::MatrixNode_DelayEnable:
+    case RemoteObject::MatrixInput_DelayEnable:
+    case RemoteObject::MatrixInput_EqEnable:
+    case RemoteObject::MatrixOutput_DelayEnable:
+    case RemoteObject::MatrixOutput_EqEnable:
+    case RemoteObject::Positioning_SourceDelayMode:
+    case RemoteObject::MatrixSettings_ReverbRoomId:
+    case RemoteObject::ReverbInputProcessing_EqEnable:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16;
+        break;
+    case RemoteObject::MatrixInput_Mute:
+    case RemoteObject::MatrixOutput_Mute:
+    case RemoteObject::ReverbInputProcessing_Mute:
+    case RemoteObject::SoundObjectRouting_Mute:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
+        break;
+    case RemoteObject::MatrixNode_Delay:
+    case RemoteObject::MatrixInput_Delay:
+    case RemoteObject::MatrixOutput_Delay:
+    case RemoteObject::FunctionGroup_Delay:
+    case RemoteObject::MatrixNode_Gain:
+    case RemoteObject::Positioning_SourceSpread:
+    case RemoteObject::MatrixInput_ReverbSendGain:
+    case RemoteObject::MatrixInput_Gain:
+    case RemoteObject::MatrixInput_LevelMeterPreMute:
+    case RemoteObject::MatrixInput_LevelMeterPostMute:
+    case RemoteObject::MatrixOutput_Gain:
+    case RemoteObject::MatrixOutput_LevelMeterPreMute:
+    case RemoteObject::MatrixOutput_LevelMeterPostMute:
+    case RemoteObject::MatrixSettings_ReverbPredelayFactor:
+    case RemoteObject::MatrixSettings_ReverbRearLevel:
+    case RemoteObject::FunctionGroup_SpreadFactor:
+    case RemoteObject::ReverbInput_Gain:
+    case RemoteObject::ReverbInputProcessing_Gain:
+    case RemoteObject::ReverbInputProcessing_LevelMeter:
+    case RemoteObject::SoundObjectRouting_Gain:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32;
+        break;
+    case RemoteObject::CoordinateMappingSettings_Name:
+    case RemoteObject::Settings_DeviceName:
+    case RemoteObject::Status_StatusText:
+    case RemoteObject::Error_ErrorText:
+    case RemoteObject::MatrixInput_ChannelName:
+    case RemoteObject::MatrixOutput_ChannelName:
+    case RemoteObject::Scene_SceneIndex:
+    case RemoteObject::Scene_SceneName:
+    case RemoteObject::Scene_SceneComment:
+    case RemoteObject::FunctionGroup_Name:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING;
+        break;
+    case RemoteObject::CoordinateMappingSettings_P1real:
+    case RemoteObject::CoordinateMappingSettings_P2real:
+    case RemoteObject::CoordinateMappingSettings_P3real:
+    case RemoteObject::CoordinateMappingSettings_P4real:
+    case RemoteObject::CoordinateMappingSettings_P1virtual:
+    case RemoteObject::CoordinateMappingSettings_P3virtual:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
         break;
     default:
-        {
-            if (onRemoteObjectReceived)
-                onRemoteObjectReceived(RemoteObject(roi, objectDetails.first, NanoOcp1::Variant(msgObj->GetParameterData())));
-        }
-        break;
+        DBG(juce::String(__FUNCTION__) << " unknown: " << RemoteObject::GetObjectDescription(roi)
+            << " (" << static_cast<int>(objectDetails.first.pri) << "," << static_cast<int>(objectDetails.first.pri) << ") ");
+        return false;
     }
+
+    auto val = NanoOcp1::Variant(msgObj->GetParameterData(), datatype);
+    auto ro = RemoteObject(roi, objectDetails.first, val);
+    postMessage(new RemoteObjectReceivedMessage(ro));
 
     return true;
 }
@@ -889,25 +978,22 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
     switch (dbDeviceModel)
     {
     case DbDeviceModel::DS100:
-        {
-            if (versionChars >= "0C") // DS100 added scalability with FW version "0C"
-                ocp1DeviceStackIdent = 1;
-            else
-                ocp1DeviceStackIdent = 0;
-        }
+        if (versionChars >= "0C") // DS100 added scalability with FW version "0C"
+            ocp1DeviceStackIdent = 1;
+        else
+            ocp1DeviceStackIdent = 0;
+        DBG(juce::String(__FUNCTION__) << " detected DS100 (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
     case DbDeviceModel::DS100D:
-        {
         ocp1DeviceStackIdent = 1; // this was implemented pre-release of DS100D and assuming there will be no FW-version without scalability
-        }
+        DBG(juce::String(__FUNCTION__) << " detected DS100D (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
     case DbDeviceModel::DS100M:
-        {
-            if (versionChars >= "02") // DS100M added scalability with FW version "02"
-                ocp1DeviceStackIdent = 1;
-            else
-                ocp1DeviceStackIdent = 0;
-        }
+        if (versionChars >= "02") // DS100M added scalability with FW version "02"
+            ocp1DeviceStackIdent = 1;
+        else
+            ocp1DeviceStackIdent = 0;
+        DBG(juce::String(__FUNCTION__) << " detected DS100M (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
     default:
         return false;

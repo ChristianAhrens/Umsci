@@ -46,8 +46,6 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 			return false;
 		if (-1 == connectionConfigSectionElement->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT), -1))
 			return false;
-		if (juce::String("ERROR") == connectionConfigSectionElement->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), "ERROR"))
-			return false;
 		
 		// positive validation outcome - continue
 	}
@@ -72,6 +70,17 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 		}
 		else
 			return false;
+	}
+	else
+		return false;
+
+	auto controlConfigSectionElement = xmlConfig->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+	if (controlConfigSectionElement)
+	{
+		if (juce::String("ERROR") == controlConfigSectionElement->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IOSIZE), "ERROR"))
+			return false;
+
+		// positive validation outcome - continue
 	}
 	else
 		return false;

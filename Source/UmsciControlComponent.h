@@ -22,22 +22,35 @@
 
 
 #include "UmsciAppConfiguration.h"
+#include "DeviceController.h"
 
 
-
-class UmsciComponent :   public juce::Component
+class UmsciControlComponent :   public juce::Component, public UmsciAppConfiguration::XmlConfigurableElement
 {
 public:
-    UmsciComponent();
-    ~UmsciComponent() override;
+    UmsciControlComponent();
+    ~UmsciControlComponent() override;
 
     //==============================================================================
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    std::unique_ptr<XmlElement> createStateXml() override;
+    bool setStateXml(XmlElement* stateXml) override;
+
+    //==============================================================================
+    const std::pair<int, int>& getOcp1IOSize();
+    void setOcp1IOSize(const std::pair<int, int>& ioSize);
+
 private:
     //==============================================================================
+    void rebuildOcp1ObjectTree();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciComponent)
+    void setRemoteObject(const DeviceController::RemoteObject& obj);
+
+    //==============================================================================
+    std::pair<int, int>                             m_ocp1IOSize;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciControlComponent)
 };
 

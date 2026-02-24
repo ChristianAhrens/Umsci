@@ -26,7 +26,7 @@
  /**
   * Fwd. Decls
   */
-class UmsciComponent;
+class UmsciControlComponent;
 class UmsciDiscoveringHintComponent;
 class UmsciConnectingComponent;
 class AboutComponent;
@@ -60,9 +60,6 @@ public:
     ~MainComponent() override;
 
     void applySettingsOption(const UmsciSettingsOption& option);
-
-    const std::pair<int, int>& getOcp1IOSize();
-    void setOcp1IOSize(const std::pair<int, int>& ioSize);
 
     //==============================================================================
     void resized() override;
@@ -99,7 +96,7 @@ private:
     void toggleFullscreenMode();
 
     //==============================================================================
-    std::unique_ptr<UmsciComponent>                 m_controlComponent;
+    std::unique_ptr<UmsciControlComponent>          m_controlComponent;
     std::unique_ptr<UmsciDiscoveringHintComponent>  m_discoverHintComponent;
     std::unique_ptr<UmsciConnectingComponent>       m_connectingComponent;
 
@@ -117,8 +114,6 @@ private:
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 
     std::unique_ptr<UmsciAppConfiguration>          m_config;
-
-    std::pair<int, int>                             m_ocp1IOSize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

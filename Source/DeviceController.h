@@ -25,7 +25,7 @@
 #include <Variant.h>
 
 
-class DeviceController : public juce::Timer
+class DeviceController : public juce::Timer, public juce::MessageListener
 {
 public:
     enum State
@@ -65,7 +65,7 @@ public:
 		std::int16_t	pri;
 		std::int16_t	sec;
 
-		static constexpr std::int16_t sc_INV = -1;
+		static constexpr std::int16_t sc_INV = 0;
 
 		RemObjAddr()
 		{
@@ -245,16 +245,7 @@ public:
 			Positioning_SpeakerPosition,			// 6-float loudspeaker position (x, y, z, hor, vert, rot)
 			SoundObjectRouting_Mute,
 			SoundObjectRouting_Gain,
-			BridgingMAX,							/**< Value to mark max enum iteration scope. ROIs greater than this can/will not be bridged.*/
 			Device_Clear,
-			RemoteProtocolBridge_SoundObjectSelect,
-			RemoteProtocolBridge_MatrixInputSelect,
-			RemoteProtocolBridge_MatrixOutputSelect,
-			RemoteProtocolBridge_UIElementIndexSelect,
-			RemoteProtocolBridge_GetAllKnownValues,
-			RemoteProtocolBridge_SoundObjectGroupSelect,
-			RemoteProtocolBridge_MatrixInputGroupSelect,
-			RemoteProtocolBridge_MatrixOutputGroupSelect,
 			InvalidMAX
 		};
 
@@ -423,22 +414,6 @@ public:
 				return "Scene SceneName";
 			case Scene_SceneComment:
 				return "Scene SceneComment";
-			case RemoteProtocolBridge_SoundObjectSelect:
-				return "RPB Sound Object Select";
-			case RemoteProtocolBridge_MatrixInputSelect:
-				return "RPB Matrix Input Select";
-			case RemoteProtocolBridge_MatrixOutputSelect:
-				return "RPB Matrix Output Select";
-			case RemoteProtocolBridge_UIElementIndexSelect:
-				return "RPB UI Element Select";
-			case RemoteProtocolBridge_GetAllKnownValues:
-				return "RPB get all known values";
-			case RemoteProtocolBridge_SoundObjectGroupSelect:
-				return "RPB SO Selection Select";
-			case RemoteProtocolBridge_MatrixInputGroupSelect:
-				return "RPB MI Selection Select";
-			case RemoteProtocolBridge_MatrixOutputGroupSelect:
-				return "RPB MO Selection Select";
 			case CoordinateMappingSettings_P1real:
 				return "Mapping Area P1 real";
 			case CoordinateMappingSettings_P2real:
@@ -472,6 +447,34 @@ public:
 		JUCE_LEAK_DETECTOR(RemoteObject)
 	};
 
+	class StateChangeMessage : public juce::Message
+	{
+	public:
+		StateChangeMessage(State s) { setState(s); };
+		StateChangeMessage() = default;
+		virtual ~StateChangeMessage() = default;
+
+		void setState(State s) { m_state = s; };
+		State getState() const { return m_state; };
+
+	private:
+		State m_state = Disconnected;
+	};
+
+	class RemoteObjectReceivedMessage : public juce::Message
+	{
+	public:
+		RemoteObjectReceivedMessage(const RemoteObject& r) { setRemoteObject(r); };
+		RemoteObjectReceivedMessage() = default;
+		virtual ~RemoteObjectReceivedMessage() = default;
+
+		void setRemoteObject(const RemoteObject& r) { m_remoteObject = r; };
+		const RemoteObject& getRemoteObject() const { return m_remoteObject; };
+
+	private:
+		RemoteObject m_remoteObject;
+	};
+
 public:
     DeviceController();
     virtual ~DeviceController();
@@ -480,6 +483,9 @@ public:
 
     //==============================================================================
     void timerCallback() override;
+
+	//==============================================================================
+	void handleMessage(const juce::Message& message) override;
 
     //==============================================================================
     bool connect();

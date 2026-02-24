@@ -92,6 +92,26 @@
             file="Resources/UmsciDefault.config"/>
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
+      <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+      <FILE id="jjkLLp" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="D8bpYt" name="UmsciControlComponent.cpp" compile="1" resource="0"
+            file="Source/UmsciControlComponent.cpp"/>
+      <FILE id="khKIzT" name="UmsciControlComponent.h" compile="0" resource="0"
+            file="Source/UmsciControlComponent.h"/>
+      <FILE id="Ham3on" name="UmsciConnectingComponent.cpp" compile="1" resource="0"
+            file="Source/UmsciConnectingComponent.cpp"/>
+      <FILE id="pq5xmP" name="UmsciConnectingComponent.h" compile="0" resource="0"
+            file="Source/UmsciConnectingComponent.h"/>
+      <FILE id="SP05qm" name="UmsciDiscoveringHintComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciDiscoveringHintComponent.cpp"/>
+      <FILE id="CKX6UJ" name="UmsciDiscoveringHintComponent.h" compile="0"
+            resource="0" file="Source/UmsciDiscoveringHintComponent.h"/>
+      <FILE id="DRXaE3" name="UmsciAppConfiguration.cpp" compile="1" resource="0"
+            file="Source/UmsciAppConfiguration.cpp"/>
+      <FILE id="i1JOYd" name="UmsciAppConfiguration.h" compile="0" resource="0"
+            file="Source/UmsciAppConfiguration.h"/>
       <FILE id="OmQ8H9" name="DeviceController.cpp" compile="1" resource="0"
             file="Source/DeviceController.cpp"/>
       <FILE id="j4rQTY" name="DeviceController.h" compile="0" resource="0"
@@ -102,26 +122,6 @@
             file="Source/AboutComponent.h"/>
       <FILE id="nutmhe" name="CustomPopupMenuComponent.h" compile="0" resource="0"
             file="Source/CustomPopupMenuComponent.h"/>
-      <FILE id="Ham3on" name="UmsciConnectingComponent.cpp" compile="1" resource="0"
-            file="Source/UmsciConnectingComponent.cpp"/>
-      <FILE id="pq5xmP" name="UmsciConnectingComponent.h" compile="0" resource="0"
-            file="Source/UmsciConnectingComponent.h"/>
-      <FILE id="SP05qm" name="UmsciDiscoveringHintComponent.cpp" compile="1"
-            resource="0" file="Source/UmsciDiscoveringHintComponent.cpp"/>
-      <FILE id="CKX6UJ" name="UmsciDiscoveringHintComponent.h" compile="0"
-            resource="0" file="Source/UmsciDiscoveringHintComponent.h"/>
-      <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
-            file="Source/MainComponent.cpp"/>
-      <FILE id="jjkLLp" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
-      <FILE id="D8bpYt" name="UmsciComponent.cpp" compile="1" resource="0"
-            file="Source/UmsciComponent.cpp"/>
-      <FILE id="khKIzT" name="UmsciComponent.h" compile="0" resource="0"
-            file="Source/UmsciComponent.h"/>
-      <FILE id="DRXaE3" name="UmsciAppConfiguration.cpp" compile="1" resource="0"
-            file="Source/UmsciAppConfiguration.cpp"/>
-      <FILE id="i1JOYd" name="UmsciAppConfiguration.h" compile="0" resource="0"
-            file="Source/UmsciAppConfiguration.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
