@@ -135,7 +135,10 @@ MainComponent::MainComponent()
         if (m_connectionToggleButton->getToggleState())
             DeviceController::getInstance()->connect();
         else
+        {
             DeviceController::getInstance()->disconnect();
+            m_controlComponent->resetData();
+        }
 
         lookAndFeelChanged();
 
@@ -154,6 +157,7 @@ MainComponent::MainComponent()
             case DeviceController::State::Disconnected:
                 m_connectionToggleButton->setToggleState(false, juce::dontSendNotification);
                 m_connectingComponent->setVisible(false);
+                m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(true);
                 break;
@@ -171,7 +175,14 @@ MainComponent::MainComponent()
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
                 break;
-            case DeviceController::State::Subscribed:
+            case DeviceController::State::GetValues:
+                m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
+                m_connectingComponent->setVisible(true);
+                m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Reading);
+                m_discoverHintComponent->setVisible(false);
+                m_controlComponent->setVisible(false);
+                break;
+            case DeviceController::State::Connected:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
                 m_connectingComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(false);
@@ -393,11 +404,11 @@ void MainComponent::showConnectionSettings()
             auto ocp1Port = m_messageBox->getTextEditorContents("Device port").getIntValue();
             auto ocp1IOsize = m_messageBox->getTextEditorContents("Device IO size");
 
-            m_controlComponent->setOcp1IOSize({ ocp1IOsize.upToFirstOccurrenceOf("x", false, true).getIntValue(), ocp1IOsize.fromLastOccurrenceOf("x", false, true).getIntValue() });
-            DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
-
             if (m_connectingComponent)
                 m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
+
+            m_controlComponent->setOcp1IOSize({ ocp1IOsize.upToFirstOccurrenceOf("x", false, true).getIntValue(), ocp1IOsize.fromLastOccurrenceOf("x", false, true).getIntValue() });
+            DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
 
             if (m_config)
                 m_config->triggerConfigurationDump();
@@ -411,7 +422,7 @@ void MainComponent::setControlColour(const juce::Colour& controlColour)
 {
     m_controlColour = controlColour;
 
-    applyControlColour();
+    lookAndFeelChanged();
 }
 
 void MainComponent::applyControlColour()

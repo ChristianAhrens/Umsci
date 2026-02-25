@@ -34,8 +34,6 @@ DeviceController::DeviceController()
     m_ocp1Connection->onConnectionEstablished = [=]() {
         stopTimer();
 
-        setState(State::Subscribing);
-
         m_ocp1DeviceGUID = "";
         m_ocp1DeviceStackIdent = -1;
         m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
@@ -50,9 +48,13 @@ DeviceController::DeviceController()
         m_ocp1DeviceStackIdent = -1;
         m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
 
-        setState(State::Connecting);
+        if (getState() > State::Connecting) // we have lost the connection while having just been connected or even fully running, so try to reestablish
+        {
+            postMessage(new StateChangeMessage(State::Connecting));
 
-        connect();
+            // prepare to restart connection attempt after some large timeout, in case something got stuck...
+            startTimer(m_ocp1Timeout * 20);
+        }
     };
     m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
         return ocp1MessageReceived(data);
@@ -68,7 +70,7 @@ DeviceController::~DeviceController()
     clearSingletonInstance();
 }
 
-void DeviceController::setState(const State& s)
+void DeviceController::setState(const State& s, juce::NotificationType notificationType)
 {
     std::function<juce::String(State)> stateToString = [=](State state) {
         switch (state)
@@ -81,17 +83,21 @@ void DeviceController::setState(const State& s)
             return "sbscrbng";
         case Subscribed:
             return "sbscrbd";
+        case GetValues:
+            return "gtvls";
+        case Connected:
+            return "cnctd";
         default:
             return "ERR";
         }
     };
 
-    DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
     if (m_currentState != s)
     {
+        DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
         m_currentState = s;
 
-        if (onStateChanged)
+        if (onStateChanged && juce::NotificationType::sendNotification == notificationType)
             onStateChanged(s);
     }
 }
@@ -99,11 +105,6 @@ void DeviceController::setState(const State& s)
 const DeviceController::State DeviceController::getState() const
 {
     return m_currentState;
-}
-
-bool DeviceController::isFullyOnline() const
-{
-    return State::Subscribed == m_currentState;
 }
 
 bool DeviceController::connect()
@@ -128,12 +129,13 @@ bool DeviceController::connect()
 void DeviceController::disconnect()
 {
     DBG(__FUNCTION__);
+    
+    setState(State::Disconnected);
+
     if (m_ocp1Connection)
         m_ocp1Connection->disconnect(m_ocp1Timeout);
 
     stopTimer();
-
-    setState(State::Disconnected);
 }
 
 void DeviceController::setConnectionParameters(juce::IPAddress ip, int port, int timeoutMs)
@@ -142,6 +144,12 @@ void DeviceController::setConnectionParameters(juce::IPAddress ip, int port, int
     m_ocp1IPAddress = ip;
     m_ocp1Port = port;
     m_ocp1Timeout = timeoutMs;
+
+    if (State::Disconnected != getState())
+    {
+        disconnect();
+        connect();
+    }
 }
 
 const std::tuple<juce::IPAddress, int, int> DeviceController::getConnectionParameters()
@@ -499,6 +507,10 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                     //    << NanoOcp1::HandleToString(handle) << ")");
 
                     postMessage(new StateChangeMessage(State::Subscribed));
+                    if (HasPendingGetValues())
+                        postMessage(new StateChangeMessage(State::GetValues));
+                    else
+                        postMessage(new StateChangeMessage(State::Connected));
                 }
                 return true;
             }
@@ -517,9 +529,14 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                     {
                         if (!HasPendingGetValues())
                         {
-                            // All subscriptions were confirmed
+                            // All getvalues were confirmed
                             //DBG(juce::String(__FUNCTION__) << " All pending NanoOcp1 getvalue commands were confirmed (handle:"
                             //    << NanoOcp1::HandleToString(handle) << ")");
+
+                            if (!HasPendingSubscriptions())
+                                postMessage(new StateChangeMessage(State::Connected));
+                            else
+                                postMessage(new StateChangeMessage(State::Subscribing));
                         }
                         return true;
                     }
@@ -595,6 +612,8 @@ bool DeviceController::CreateObjectSubscriptions()
         AddPendingSubscriptionHandle(handle);
     }
 
+    postMessage(new StateChangeMessage(State::Subscribing));
+
     return success;
 }
 
@@ -614,6 +633,8 @@ bool DeviceController::QueryObjectValues()
     {
         success = QueryObjectValue(activeObj.Id, activeObj.Addr) && success;
     }
+
+    postMessage(new StateChangeMessage(State::GetValues));
 
     return success;
 }
@@ -656,6 +677,8 @@ bool DeviceController::PopPendingSubscriptionHandle(const std::uint32_t handle)
     auto it = std::find(m_pendingSubscriptionHandles.begin(), m_pendingSubscriptionHandles.end(), handle);
     if (it != m_pendingSubscriptionHandles.end())
     {
+        //DBG(juce::String(__FUNCTION__)
+        //    << " (handle:" << NanoOcp1::HandleToString(handle) << ")");
         m_pendingSubscriptionHandles.erase(it);
         return true;
     }
@@ -702,7 +725,7 @@ bool DeviceController::HasPendingGetValues()
 {
     std::lock_guard<std::mutex> l(m_pendingHandlesMutex); // NanoOcp callback on JUCE IPC thread, safety required!
 
-    return m_pendingGetValueHandlesWithONo.empty();
+    return !m_pendingGetValueHandlesWithONo.empty();
 }
 
 void DeviceController::AddPendingSetValueHandle(const std::uint32_t handle, const std::uint32_t ONo, int externalId)
@@ -738,7 +761,7 @@ bool DeviceController::HasPendingSetValues()
 {
     std::lock_guard<std::mutex> l(m_pendingHandlesMutex); // NanoOcp callback on JUCE IPC thread, safety required!
 
-    return m_pendingGetValueHandlesWithONo.empty();
+    return !m_pendingGetValueHandlesWithONo.empty();
 }
 
 const std::optional<std::pair<std::uint32_t, int>> DeviceController::HasPendingSetValue(const std::uint32_t ONo)
@@ -815,23 +838,13 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
 
             return ok;
         }
-    case RemoteObject::CoordinateMapping_SourcePosition:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
-        break;
-    case RemoteObject::Positioning_SpeakerPosition:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
-        break;
-    case RemoteObject::Positioning_SourcePosition:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
-        break;
-    case RemoteObject::Status_AudioNetworkSampleStatus:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32;
-        break;
     case RemoteObject::Error_GnrlErr:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
-        break;
     case RemoteObject::MatrixInput_Polarity:
     case RemoteObject::MatrixOutput_Polarity:
+    case RemoteObject::MatrixInput_Mute:
+    case RemoteObject::MatrixOutput_Mute:
+    case RemoteObject::ReverbInputProcessing_Mute:
+    case RemoteObject::SoundObjectRouting_Mute:
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
         break;
     case RemoteObject::CoordinateMappingSettings_Flip:
@@ -846,11 +859,8 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     case RemoteObject::ReverbInputProcessing_EqEnable:
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16;
         break;
-    case RemoteObject::MatrixInput_Mute:
-    case RemoteObject::MatrixOutput_Mute:
-    case RemoteObject::ReverbInputProcessing_Mute:
-    case RemoteObject::SoundObjectRouting_Mute:
-        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
+    case RemoteObject::Status_AudioNetworkSampleStatus:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32;
         break;
     case RemoteObject::MatrixNode_Delay:
     case RemoteObject::MatrixInput_Delay:
@@ -886,6 +896,9 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     case RemoteObject::FunctionGroup_Name:
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING;
         break;
+    case RemoteObject::CoordinateMapping_SourcePosition:
+    case RemoteObject::Positioning_SpeakerPosition:
+    case RemoteObject::Positioning_SourcePosition:
     case RemoteObject::CoordinateMappingSettings_P1real:
     case RemoteObject::CoordinateMappingSettings_P2real:
     case RemoteObject::CoordinateMappingSettings_P3real:
@@ -896,7 +909,7 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
         break;
     default:
         DBG(juce::String(__FUNCTION__) << " unknown: " << RemoteObject::GetObjectDescription(roi)
-            << " (" << static_cast<int>(objectDetails.first.pri) << "," << static_cast<int>(objectDetails.first.pri) << ") ");
+            << " (" << static_cast<int>(objectDetails.first.pri) << "," << static_cast<int>(objectDetails.first.sec) << ") ");
         return false;
     }
 

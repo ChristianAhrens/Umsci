@@ -39,6 +39,9 @@ void UmsciConnectingComponent::setConnectionStatus(Status status)
     case Status::Subscribing:
         statusDescription = "Subscribing to";
         break;
+    case Status::Reading:
+        statusDescription = "Reading from";
+        break;
     case Status::Connecting:
     default:
         statusDescription = "Connecting to";

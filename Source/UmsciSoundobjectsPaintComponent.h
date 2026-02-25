@@ -21,34 +21,20 @@
 #include <JuceHeader.h>
 
 
-class UmsciConnectingComponent :   public juce::Component
+class UmsciSoundobjectsPaintComponent :   public juce::Component
 {
 public:
-    enum Status
-    {
-        Connecting,
-        Subscribing,
-        Reading
-    };
-
-public:
-    UmsciConnectingComponent();
-    ~UmsciConnectingComponent() override;
-
-    void setConnectionStatus(Status status);
-    void setConnectionParameters(const juce::IPAddress& ip, int port);
+    UmsciSoundobjectsPaintComponent();
+    ~UmsciSoundobjectsPaintComponent() override;
 
     //==============================================================================
-    void paint(juce::Graphics& g) override;
+    void paint(Graphics&) override;
     void resized() override;
-    void lookAndFeelChanged() override;
 
 private:
-    double                                  m_progress = -1.0;
-    std::unique_ptr<juce::ProgressBar>      m_startupProgressIndicator;
-    juce::String                            m_connectionStatusDescription;
-    juce::String                            m_connectionParametersDescription;
+    //==============================================================================
+    std::unique_ptr<juce::Label>    m_hintLabel;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciConnectingComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciSoundobjectsPaintComponent)
 };
 

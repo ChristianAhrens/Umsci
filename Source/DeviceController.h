@@ -33,7 +33,9 @@ public:
         Disconnected,
         Connecting,
         Subscribing,
-        Subscribed
+        Subscribed,
+		GetValues,
+		Connected
     };
 
 	enum DbDeviceModel
@@ -496,7 +498,6 @@ public:
 
     //==============================================================================
     const State getState() const;
-    bool isFullyOnline() const;
 
 	//==============================================================================
 	bool SetActiveRemoteObjects(const std::vector<RemoteObject>& remObjs);
@@ -508,7 +509,7 @@ public:
 
 private:
     //==============================================================================
-    void setState(const State& s);
+    void setState(const State& s, juce::NotificationType notificationType = juce::sendNotification);
 
 	//==============================================================================
 	void CreateKnownONosMap();
