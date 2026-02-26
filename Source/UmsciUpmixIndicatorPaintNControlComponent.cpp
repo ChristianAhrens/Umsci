@@ -41,3 +41,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::resized()
     m_hintLabel->setBounds(getLocalBounds());
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
+{
+    m_boundsRealRef = boundsRealRef;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setUpmixIndicatorParameters(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions)
+{
+}
+

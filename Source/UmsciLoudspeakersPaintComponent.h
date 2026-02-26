@@ -30,10 +30,24 @@ public:
     //==============================================================================
     void paint(Graphics&) override;
     void resized() override;
+    void lookAndFeelChanged() override;
+
+    //==============================================================================
+    void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
+    void setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions);
 
 private:
     //==============================================================================
-    std::unique_ptr<juce::Label>    m_hintLabel;
+    void PrerenderSpeakersInBounds();
+    juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
+
+    //==============================================================================
+    juce::Rectangle<float> m_boundsRealRef;
+
+    juce::Colour										    m_speakerDrawablesCurrentColour;
+    std::map<std::int16_t, std::array<std::float_t, 6>>     m_speakerPositions;
+    std::map<std::int16_t, std::unique_ptr<juce::Drawable>> m_speakerDrawables;
+    std::map<std::int16_t, juce::Rectangle<float>>		    m_speakerDrawableAreas;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciLoudspeakersPaintComponent)
 };

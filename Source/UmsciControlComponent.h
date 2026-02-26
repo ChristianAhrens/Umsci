@@ -78,6 +78,8 @@ private:
     bool isDatabaseComplete();
     void setDatabaseComplete(bool complete);
 
+    const juce::Rectangle<float> getRealBoundingRect();
+
     //==============================================================================
     std::unique_ptr<UmsciLoudspeakersPaintComponent>            m_loudspeakersInAreaPaintComponent;
     std::unique_ptr<UmsciSoundobjectsPaintComponent>            m_soundobjectsInAreaPaintComponent;
@@ -87,17 +89,19 @@ private:
 
     bool    m_databaseComplete = false;
 
+    juce::Rectangle<float> m_boundsRealRef;
+
     std::string                                         m_deviceName;
 
     std::map<std::int16_t, std::string>                 m_sourceName;
-    std::map<std::int16_t, std::uint8_t>                m_sourceMute;
+    std::map<std::int16_t, bool>                        m_sourceMute;
     std::map<std::int16_t, std::float_t>                m_sourceGain;
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePosition;
     std::map<std::int16_t, std::uint16_t>               m_sourceDelayMode;
     std::map<std::int16_t, std::float_t>                m_sourceSpread;
 
     std::map<std::int16_t, std::string>                 m_speakerName;
-    std::map<std::int16_t, std::uint8_t>                m_speakerMute;
+    std::map<std::int16_t, bool>                        m_speakerMute;
     std::map<std::int16_t, std::float_t>                m_speakerGain;
     std::map<std::int16_t, std::array<std::float_t, 6>> m_speakerPosition;
 

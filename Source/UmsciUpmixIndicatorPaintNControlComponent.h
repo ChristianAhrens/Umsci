@@ -31,9 +31,14 @@ public:
     void paint(Graphics&) override;
     void resized() override;
 
+    //==============================================================================
+    void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
+    void setUpmixIndicatorParameters(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
+
 private:
     //==============================================================================
     std::unique_ptr<juce::Label>    m_hintLabel;
+    juce::Rectangle<float> m_boundsRealRef;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

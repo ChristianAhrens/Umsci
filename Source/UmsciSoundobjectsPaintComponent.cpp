@@ -41,3 +41,12 @@ void UmsciSoundobjectsPaintComponent::resized()
     m_hintLabel->setBounds(getLocalBounds());
 }
 
+void UmsciSoundobjectsPaintComponent::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
+{
+    m_boundsRealRef = boundsRealRef;
+}
+
+void UmsciSoundobjectsPaintComponent::setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions)
+{
+}
+

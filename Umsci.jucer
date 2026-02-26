@@ -33,6 +33,23 @@
         </GROUP>
       </GROUP>
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">
+        <GROUP id="{685EBDF9-A066-9110-AD26-50B977D7D27C}" name="Resources">
+          <GROUP id="{16C5529F-D9E1-857B-0233-BD27FA4BBC8E}" name="Images">
+            <FILE id="yFUubM" name="find_replace-24px.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/find_replace-24px.svg"/>
+            <FILE id="UhDnz2" name="link_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/link_24dp.svg"/>
+            <FILE id="bGAn9R" name="link_off_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/link_off_24dp.svg"/>
+            <FILE id="PYu57Z" name="question_mark_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/question_mark_24dp.svg"/>
+            <FILE id="FefYZE" name="settings_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/settings_24dp.svg"/>
+            <FILE id="g7A5Pi" name="loudspeaker_hor-24px.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/loudspeaker_hor-24px.svg"/>
+            <FILE id="Xenppw" name="loudspeaker_vert-24px.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/loudspeaker_vert-24px.svg"/>
+          </GROUP>
+        </GROUP>
         <GROUP id="{36706580-EB97-426D-6CA8-72022124062F}" name="Source">
           <FILE id="OjfnR4" name="AppConfigurationBase.cpp" compile="1" resource="0"
                 file="submodules/JUCE-AppBasics/Source/AppConfigurationBase.cpp"/>
@@ -75,15 +92,6 @@
     </GROUP>
     <GROUP id="{72AB56DC-8637-938F-3846-2BD91435687D}" name="Resources">
       <GROUP id="{5418C8BA-AFDC-83EF-A716-D3FB9CE9A772}" name="Images">
-        <FILE id="yFUubM" name="find_replace-24px.svg" compile="0" resource="1"
-              file="submodules/JUCE-AppBasics/Resources/Images/find_replace-24px.svg"/>
-        <FILE id="UhDnz2" name="link_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/link_24dp.svg"/>
-        <FILE id="bGAn9R" name="link_off_24dp.svg" compile="0" resource="1"
-              file="submodules/JUCE-AppBasics/Resources/Images/link_off_24dp.svg"/>
-        <FILE id="PYu57Z" name="question_mark_24dp.svg" compile="0" resource="1"
-              file="submodules/JUCE-AppBasics/Resources/Images/question_mark_24dp.svg"/>
-        <FILE id="FefYZE" name="settings_24dp.svg" compile="0" resource="1"
-              file="submodules/JUCE-AppBasics/Resources/Images/settings_24dp.svg"/>
         <FILE id="nR9sVB" name="Umsci.png" compile="0" resource="1" file="Resources/Images/Umsci.png"/>
         <FILE id="Zt8DrC" name="Umsci.svg" compile="0" resource="1" file="Resources/Images/Umsci.svg"/>
         <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" file="Resources/Images/UmsciRect.png"/>

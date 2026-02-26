@@ -50,9 +50,9 @@ void UmsciControlComponent::paint(Graphics &g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
 
-    g.setColour(getLookAndFeel().findColour(juce::TextEditor::ColourIds::textColourId));
     if (!isDatabaseComplete())
     {
+        g.setColour(getLookAndFeel().findColour(juce::TextEditor::ColourIds::textColourId));
         g.drawFittedText("Data not ready...", getLocalBounds().reduced(35), juce::Justification::centred, 2);
         return;
     }
@@ -60,12 +60,19 @@ void UmsciControlComponent::paint(Graphics &g)
 
 void UmsciControlComponent::resized()
 {
+    auto bounds = getLocalBounds().toFloat();
+    auto aspectCorrectedBounds = juce::Rectangle<int>();
+    if (m_boundsRealRef.getAspectRatio() > bounds.getAspectRatio())
+        aspectCorrectedBounds = juce::Rectangle<float>(bounds.withSizeKeepingCentre(bounds.getWidth(), bounds.getWidth() / m_boundsRealRef.getAspectRatio())).toNearestInt();
+    else
+        aspectCorrectedBounds = juce::Rectangle<float>(bounds.withSizeKeepingCentre(bounds.getHeight() * m_boundsRealRef.getAspectRatio(), bounds.getHeight())).toNearestInt();
+
     if (m_loudspeakersInAreaPaintComponent && m_loudspeakersInAreaPaintComponent->isVisible())
-        m_loudspeakersInAreaPaintComponent->setBounds(getLocalBounds());
+        m_loudspeakersInAreaPaintComponent->setBounds(aspectCorrectedBounds);
     if (m_soundobjectsInAreaPaintComponent && m_soundobjectsInAreaPaintComponent->isVisible())
-        m_soundobjectsInAreaPaintComponent->setBounds(getLocalBounds());
+        m_soundobjectsInAreaPaintComponent->setBounds(aspectCorrectedBounds);
     if (m_upmixIndicatorPaintAndControlComponent && m_upmixIndicatorPaintAndControlComponent->isVisible())
-        m_upmixIndicatorPaintAndControlComponent->setBounds(getLocalBounds());
+        m_upmixIndicatorPaintAndControlComponent->setBounds(aspectCorrectedBounds);
 }
 
 std::unique_ptr<XmlElement> UmsciControlComponent::createStateXml()
@@ -261,19 +268,19 @@ bool UmsciControlComponent::checkIsDatabaseComplete()
 {
     bool complete = true;
 
-    complete = complete && !m_deviceName.empty();//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Settings_DeviceName, DeviceController::RemObjAddr(), NanoOcp1::Variant()));
+    complete = complete && !m_deviceName.empty();
 
-    complete = complete && m_sourceName.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_ChannelName, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_sourceMute.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_Mute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_sourceGain.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_Gain, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_sourceSpread.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceSpread, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_sourceDelayMode.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceDelayMode, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_sourcePosition.size() == m_ocp1IOSize.first;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourcePosition, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+    complete = complete && m_sourceName.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourceMute.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourceGain.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourceSpread.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourceDelayMode.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourcePosition.size() == m_ocp1IOSize.first;
 
-    complete = complete && m_speakerName.size() == m_ocp1IOSize.second;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_ChannelName, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_speakerMute.size() == m_ocp1IOSize.second;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Mute, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_speakerGain.size() == m_ocp1IOSize.second;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Gain, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-    complete = complete && m_speakerPosition.size() == m_ocp1IOSize.second;//ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerPosition, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+    complete = complete && m_speakerName.size() == m_ocp1IOSize.second;
+    complete = complete && m_speakerMute.size() == m_ocp1IOSize.second;
+    complete = complete && m_speakerGain.size() == m_ocp1IOSize.second;
+    complete = complete && m_speakerPosition.size() == m_ocp1IOSize.second;
 
     return complete;
 }
@@ -290,12 +297,23 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
 
     if (complete)
     {
-        //m_loudspeakersInAreaPaintComponent->setSpeakerPositions();
-        //m_soundobjectsInAreaPaintComponent->setSourcePositions();
-        //m_upmixIndicatorPaintAndControlComponent->setSpeakerPositions();
+        auto realBoundingRect = getRealBoundingRect();
+        auto expandAmount = ((realBoundingRect.getAspectRatio() > 1.0f) ? realBoundingRect.getWidth() * 0.1f : realBoundingRect.getHeight() * 0.1f);
+        m_boundsRealRef = realBoundingRect.expanded(expandAmount, expandAmount);
+
+        m_loudspeakersInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+        m_loudspeakersInAreaPaintComponent->setSpeakerPositions(m_speakerPosition);
+
+        m_soundobjectsInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+        m_soundobjectsInAreaPaintComponent->setSourcePositions(m_sourcePosition);
+
+        m_upmixIndicatorPaintAndControlComponent->setBoundsRealRef(m_boundsRealRef);
+        m_upmixIndicatorPaintAndControlComponent->setUpmixIndicatorParameters(m_sourcePosition);
 
         if (onDatabaseComplete)
             onDatabaseComplete();
+
+        resized();
     }
     else
     {
@@ -313,9 +331,27 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
         m_speakerGain.clear();
         m_speakerPosition.clear();
     }
+}
 
-    //tmp
-    repaint();
+const juce::Rectangle<float> UmsciControlComponent::getRealBoundingRect()
+{
+    if (m_speakerPosition.size() > 0)
+    {
+        juce::Range<float> xRange = { m_speakerPosition.begin()->second.at(3), m_speakerPosition.begin()->second.at(3) };
+        juce::Range<float> yRange = { m_speakerPosition.begin()->second.at(4), m_speakerPosition.begin()->second.at(4) };
+        juce::Range<float> zRange = { m_speakerPosition.begin()->second.at(5), m_speakerPosition.begin()->second.at(5) };
+
+        for (auto const& speakerPosition : m_speakerPosition)
+        {
+            xRange = xRange.getUnionWith(speakerPosition.second.at(3));
+            yRange = yRange.getUnionWith(speakerPosition.second.at(4));
+            zRange = zRange.getUnionWith(speakerPosition.second.at(5));
+        }
+
+        return juce::Rectangle<float>({ xRange.getStart(), yRange.getStart() }, { xRange.getEnd(), yRange.getEnd() });
+    }
+
+    return {};
 }
 
 void UmsciControlComponent::resetData()
@@ -333,9 +369,19 @@ void UmsciControlComponent::setSourceName(std::int16_t sourceId, const std::stri
     m_sourceName[sourceId] = name;
 }
 
-void UmsciControlComponent::setSourceMute(std::int16_t sourceId, const std::uint8_t& mute)
+void UmsciControlComponent::setSourceMute(std::int16_t sourceId, const std::uint8_t& ocp1MuteValue)
 {
-    m_sourceMute[sourceId] = mute;
+    switch (ocp1MuteValue)
+    {
+    case 2:
+        m_sourceMute[sourceId] = false;
+        break;
+    case 1:
+    default:
+        m_sourceMute[sourceId] = true;
+        break;
+    }
+    
 }
 
 void UmsciControlComponent::setSourceGain(std::int16_t sourceId, const std::float_t& gain)
@@ -363,9 +409,18 @@ void UmsciControlComponent::setSpeakerName(std::int16_t speakerId, const std::st
     m_speakerName[speakerId] = name;
 }
 
-void UmsciControlComponent::setSpeakerMute(std::int16_t speakerId, const std::uint8_t& mute)
+void UmsciControlComponent::setSpeakerMute(std::int16_t speakerId, const std::uint8_t& ocp1MuteValue)
 {
-    m_speakerMute[speakerId] = mute;
+    switch (ocp1MuteValue)
+    {
+    case 2:
+        m_speakerMute[speakerId] = false;
+        break;
+    case 1:
+    default:
+        m_speakerMute[speakerId] = true;
+        break;
+    }
 }
 
 void UmsciControlComponent::setSpeakerGain(std::int16_t speakerId, const std::float_t& gain)
