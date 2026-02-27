@@ -37,8 +37,14 @@ public:
 
 private:
     //==============================================================================
-    std::unique_ptr<juce::Label>    m_hintLabel;
+    void PrerenderSourcesInBounds();
+    juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
+
+    //==============================================================================
     juce::Rectangle<float> m_boundsRealRef;
+
+    std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
+    std::map<std::int16_t, juce::Point<int>>            m_sourceScreenPositions;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciSoundobjectsPaintComponent)
 };
