@@ -30,8 +30,6 @@ UmsciLoudspeakersPaintComponent::~UmsciLoudspeakersPaintComponent()
 
 void UmsciLoudspeakersPaintComponent::paint(juce::Graphics &g)
 {
-    //g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
-
     // paint Speaker positions
     g.setColour(m_speakerDrawablesCurrentColour);
     for (auto const& speakerDrawableKV : m_speakerDrawables)
@@ -80,24 +78,31 @@ void UmsciLoudspeakersPaintComponent::setSpeakerPositions(const std::map<std::in
         {
             auto& speakerId = speakerPositionKV.first;
             auto& speakerRotNPos = speakerPositionKV.second;
-            // check if speaker is set (position other than 0,0,0)
-            if (speakerRotNPos.at(3) != 0.0f && speakerRotNPos.at(4) != 0.0f && speakerRotNPos.at(5) != 0.0f)
+            auto& hor = speakerRotNPos.at(0);
+            auto& ver = speakerRotNPos.at(1);
+            auto& rot = speakerRotNPos.at(2);
+            auto& x = speakerRotNPos.at(3);
+            auto& y = speakerRotNPos.at(4);
+            auto& z = speakerRotNPos.at(5);
+            // check if speaker is set (position other than 0,0,0,0,0,0)
+            if (hor != 0.0f || ver != 0.0f || rot != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
             {
                 // use icon without directivity if angle is too steep (90deg +- 15deg)
-                if (juce::isWithin<int>((int(std::abs(speakerRotNPos.at(1))) % 180), 90, 15))
+                if (juce::isWithin<int>((int(std::abs(ver)) % 180), 90, 15))
                     m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_vert24px_svg));
                 else
                     m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_hor24px_svg));
                 auto& drawable = m_speakerDrawables.at(speakerId);
                 drawable->replaceColour(Colours::black, m_speakerDrawablesCurrentColour);
                 auto drawableBounds = drawable->getBounds().toFloat();
-                drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(speakerRotNPos.at(0)), drawableBounds.getCentreX(), drawableBounds.getCentreY()));
+                drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(hor + 90), drawableBounds.getCentreX(), drawableBounds.getCentreY())); // +90deg to adjust d&b to screen
             }
         }
 
         PrerenderSpeakersInBounds();
-        repaint();
     }
+
+    repaint();
 }
 
 void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
@@ -107,10 +112,14 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
     {
         auto& speakerId = speakerPositionKV.first;
         auto& speakerRotNPos = speakerPositionKV.second;
+        auto& hor = speakerRotNPos.at(0);
+        auto& ver = speakerRotNPos.at(1);
+        auto& rot = speakerRotNPos.at(2);
         auto& x = speakerRotNPos.at(3);
         auto& y = speakerRotNPos.at(4);
         auto& z = speakerRotNPos.at(5);
-        if (x != 0.0f && y != 0.0f && z != 0.0f)
+        // check if speaker is set (position other than 0,0,0,0,0,0)
+        if (hor != 0.0f || ver != 0.0f || rot != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
         {
             auto speakerArea = juce::Rectangle<float>(0.0f, 0.0f, 16.0f, 16.0f).withCentre(GetPointForRealCoordinate({ x, y, z }));
             m_speakerDrawableAreas[speakerId] = speakerArea;
@@ -118,17 +127,25 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
     }
 }
 
+/**
+ * @Brief   This method requires special attention, as its input parameter is expected to hold xyz coordinates
+ *          in d&b audiotechnik ArrayCalc coordinate system, which is x: towards audience and y: across stage.
+ *          To get a proper representation in screen coordindates, stage up top and audience below,
+ *          we must interpret incoming x as vertical and incoming y as horizontal coordinate. The output in relative
+ *          screen coordinates then is x horizontally and y vertically.
+ *          Also the horizontal output must be inverted, to compensate inverted d&b y coordinate.
+ */
 juce::Point<float> UmsciLoudspeakersPaintComponent::GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate)
 {
-    auto& x = realCoordinate.at(0);
-    auto& y = realCoordinate.at(1);
-    //auto& z = realCoordinate.at(2);
+    auto& xReal = realCoordinate.at(0);
+    auto& yReal = realCoordinate.at(1);
+    //auto& zReal = realCoordinate.at(2);
 
     if (m_boundsRealRef.getWidth() == 0.0f || m_boundsRealRef.getHeight() == 0.0f)
         return { 0.0f, 0.0f };
 
-    auto relativeX = (x - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
-    auto relativeY = (y - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
+    auto relativeX = 1 - ((yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight()); // 
+    auto relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
 
     return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();
 }
