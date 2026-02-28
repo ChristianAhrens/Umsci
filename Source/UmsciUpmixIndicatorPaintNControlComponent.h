@@ -31,6 +31,8 @@ public:
     //==============================================================================
     void paint(Graphics&) override;
     void resized() override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
 
     //==============================================================================
     void setSpeakersRealBoundingCube(const std::array<float, 6>& speakersRealBoundingCube);
@@ -46,11 +48,18 @@ private:
 
     juce::Path                  m_upmixIndicator;
     float                       m_upmixRot = 0.0f;
+    float                       m_upmixTrans = 1.0f;
     std::vector<std::string>    m_upmixPositionNames = { "l", "r", "c", "lfe", "lss", "rss", "lsr", "rsr", "tfl", "tfr", "trl", "trr" };
     std::vector<float>          m_upmixPositionAnglesDeg = { -30.0f,30.0f,0.0f,0.0f,-100.0f,100.0f,-145.0f,145.0f,-45.0f,45.0f,-135.0f,135.0f };
 
+    juce::Point<float>                                          m_upmixCenter;
     float                                                       m_subCircleRadius = 0.0f;
     std::vector<std::pair<juce::Point<float>, juce::String>>    m_renderedPositionLabels;
+
+    float                       m_dragStartAngle = 0.0f;
+    float                       m_dragStartDist  = 0.0f;
+    float                       m_dragStartRot   = 0.0f;
+    float                       m_dragStartTrans = 0.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

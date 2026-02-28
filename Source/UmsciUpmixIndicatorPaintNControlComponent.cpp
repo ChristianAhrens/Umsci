@@ -69,6 +69,38 @@ void UmsciUpmixIndicatorPaintNControlComponent::setSourcePositions(const std::ma
     PrerenderUpmixIndicatorInBounds();
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
+{
+    auto dx = e.position.x - m_upmixCenter.x;
+    auto dy = e.position.y - m_upmixCenter.y;
+
+    // atan2(dx, -dy): 0 = 12 o'clock, clockwise positive — matches JUCE arc angle convention
+    m_dragStartAngle = std::atan2(dx, -dy);
+    m_dragStartDist  = std::sqrt(dx * dx + dy * dy);
+    m_dragStartRot   = m_upmixRot;
+    m_dragStartTrans = m_upmixTrans;
+
+    DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot << " trans:" << m_upmixTrans);
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent& e)
+{
+    auto dx = e.position.x - m_upmixCenter.x;
+    auto dy = e.position.y - m_upmixCenter.y;
+
+    // tangential component: angle delta drives rotation
+    m_upmixRot = m_dragStartRot + std::atan2(dx, -dy) - m_dragStartAngle;
+
+    // radial component: distance ratio drives scale
+    if (m_dragStartDist > 0.0f)
+        m_upmixTrans = juce::jlimit(0.1f, 10.0f, m_dragStartTrans * (std::sqrt(dx * dx + dy * dy) / m_dragStartDist));
+
+    DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot << " trans:" << m_upmixTrans);
+
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
 void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds()
 {
     m_upmixIndicator.clear();
@@ -82,11 +114,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     if (upmixIndicatorBounds.isEmpty() || m_upmixPositionAnglesDeg.empty())
         return;
 
-    auto cx = upmixIndicatorBounds.getCentreX();
-    auto cy = upmixIndicatorBounds.getCentreY();
-    auto radius = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
-    m_subCircleRadius = radius * 0.06f;
-    auto arcStrokeWidth = radius * 0.025f;
+    m_upmixCenter = upmixIndicatorBounds.getCentre();
+    auto cx = m_upmixCenter.x;
+    auto cy = m_upmixCenter.y;
+    auto baseRadius = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
+    auto radius = baseRadius * m_upmixTrans;
+    m_subCircleRadius = baseRadius * 0.06f;
+    auto arcStrokeWidth = baseRadius * 0.025f;
 
     // determine the angular extent of the arc from the most extreme position angles
     auto minAngleDeg = *std::min_element(m_upmixPositionAnglesDeg.begin(), m_upmixPositionAnglesDeg.end());
