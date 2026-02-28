@@ -18,13 +18,12 @@
 
 #include "UmsciUpmixIndicatorPaintNControlComponent.h"
 
+#include <CustomLookAndFeel.h>
+
 
 UmsciUpmixIndicatorPaintNControlComponent::UmsciUpmixIndicatorPaintNControlComponent()
-    : juce::Component()
+    : UmsciPaintNControlComponentBase()
 {
-    m_hintLabel = std::make_unique<juce::Label>("UpmixIndicator hint label", "<Upmix indicator>");
-    m_hintLabel->setJustificationType(juce::Justification::centredBottom);
-    addAndMakeVisible(m_hintLabel.get());
 }
 
 UmsciUpmixIndicatorPaintNControlComponent::~UmsciUpmixIndicatorPaintNControlComponent()
@@ -33,20 +32,88 @@ UmsciUpmixIndicatorPaintNControlComponent::~UmsciUpmixIndicatorPaintNControlComp
 
 void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
 {
-    //g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
+    auto indicatorColour = getLookAndFeel().findColour(JUCEAppBasics::CustomLookAndFeel::ColourIds::MeteringRmsColourId);
+    g.setColour(indicatorColour);
+    g.setOpacity(1.0f);
+    g.fillPath(m_upmixIndicator);
+
+    // draw position name labels centred inside each sub-circle
+    auto labelColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    g.setColour(labelColour);
+    auto font = juce::Font(juce::FontOptions(m_subCircleRadius * 1.1f, juce::Font::plain));
+    g.setFont(font);
+    for (const auto& label : m_renderedPositionLabels)
+    {
+        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                               .withCentre(label.first);
+        g.drawFittedText(label.second, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+    }
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::resized()
 {
-    m_hintLabel->setBounds(getLocalBounds());
+    PrerenderUpmixIndicatorInBounds();
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
+void UmsciUpmixIndicatorPaintNControlComponent::setSpeakersRealBoundingCube(const std::array<float, 6>& speakersRealBoundingCube)
 {
-    m_boundsRealRef = boundsRealRef;
+    m_speakersRealBoundingCube = speakersRealBoundingCube;
+
+    PrerenderUpmixIndicatorInBounds();
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::setUpmixIndicatorParameters(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions)
+void UmsciUpmixIndicatorPaintNControlComponent::setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions)
 {
+    m_sourcePositions = sourcePositions;
+
+    PrerenderUpmixIndicatorInBounds();
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds()
+{
+    m_upmixIndicator.clear();
+    m_renderedPositionLabels.clear();
+
+    auto speakersRealBoundingTopLeft = std::array<float, 3>{ m_speakersRealBoundingCube.at(0), m_speakersRealBoundingCube.at(1), m_speakersRealBoundingCube.at(2) };
+    auto speakersRealBoundingBottomRight = std::array<float, 3>{ m_speakersRealBoundingCube.at(3), m_speakersRealBoundingCube.at(4), m_speakersRealBoundingCube.at(5) };
+    auto speakersScreenBoundingRect = juce::Rectangle<float>(GetPointForRealCoordinate(speakersRealBoundingTopLeft), GetPointForRealCoordinate(speakersRealBoundingBottomRight));
+    auto upmixIndicatorBounds = speakersScreenBoundingRect.getAspectRatio() <= 1 ? speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getWidth() * 0.15f) : speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getHeight() * 0.15f);
+
+    if (upmixIndicatorBounds.isEmpty() || m_upmixPositionAnglesDeg.empty())
+        return;
+
+    auto cx = upmixIndicatorBounds.getCentreX();
+    auto cy = upmixIndicatorBounds.getCentreY();
+    auto radius = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
+    m_subCircleRadius = radius * 0.06f;
+    auto arcStrokeWidth = radius * 0.025f;
+
+    // determine the angular extent of the arc from the most extreme position angles
+    auto minAngleDeg = *std::min_element(m_upmixPositionAnglesDeg.begin(), m_upmixPositionAnglesDeg.end());
+    auto maxAngleDeg = *std::max_element(m_upmixPositionAnglesDeg.begin(), m_upmixPositionAnglesDeg.end());
+
+    // build the arc segment and stroke it into a filled band in m_upmixIndicator
+    // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth
+    juce::Path arcPath;
+    arcPath.addCentredArc(cx, cy, radius, radius, m_upmixRot,
+                          juce::degreesToRadians(minAngleDeg),
+                          juce::degreesToRadians(maxAngleDeg),
+                          true);
+    juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator, arcPath);
+
+    // add a filled sub-circle at each position and record its label for paint()
+    // screen coords for arc angle θ with rotation R: x = cx + r·sin(θ+R), y = cy - r·cos(θ+R)
+    for (size_t i = 0; i < m_upmixPositionAnglesDeg.size(); ++i)
+    {
+        auto effectiveAngleRad = juce::degreesToRadians(m_upmixPositionAnglesDeg[i]) + m_upmixRot;
+        auto px = cx + radius * std::sin(effectiveAngleRad);
+        auto py = cy - radius * std::cos(effectiveAngleRad);
+
+        m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
+                                    m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+
+        if (i < m_upmixPositionNames.size())
+            m_renderedPositionLabels.push_back({ juce::Point<float>(px, py), juce::String(m_upmixPositionNames[i]) });
+    }
 }
 

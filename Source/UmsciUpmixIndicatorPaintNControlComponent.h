@@ -20,8 +20,9 @@
 
 #include <JuceHeader.h>
 
+#include "UmsciPaintNControlComponentBase.h"
 
-class UmsciUpmixIndicatorPaintNControlComponent :   public juce::Component
+class UmsciUpmixIndicatorPaintNControlComponent :   public UmsciPaintNControlComponentBase
 {
 public:
     UmsciUpmixIndicatorPaintNControlComponent();
@@ -32,13 +33,24 @@ public:
     void resized() override;
 
     //==============================================================================
-    void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
-    void setUpmixIndicatorParameters(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
+    void setSpeakersRealBoundingCube(const std::array<float, 6>& speakersRealBoundingCube);
+    void setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
 
 private:
     //==============================================================================
-    std::unique_ptr<juce::Label>    m_hintLabel;
-    juce::Rectangle<float> m_boundsRealRef;
+    void PrerenderUpmixIndicatorInBounds();
+
+    //==============================================================================
+    std::array<float, 6>                                m_speakersRealBoundingCube;
+    std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
+
+    juce::Path                  m_upmixIndicator;
+    float                       m_upmixRot = 0.0f;
+    std::vector<std::string>    m_upmixPositionNames = { "l", "r", "c", "lfe", "lss", "rss", "lsr", "rsr", "tfl", "tfr", "trl", "trr" };
+    std::vector<float>          m_upmixPositionAnglesDeg = { -30.0f,30.0f,0.0f,0.0f,-100.0f,100.0f,-145.0f,145.0f,-45.0f,45.0f,-135.0f,135.0f };
+
+    float                                                       m_subCircleRadius = 0.0f;
+    std::vector<std::pair<juce::Point<float>, juce::String>>    m_renderedPositionLabels;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

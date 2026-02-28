@@ -309,8 +309,9 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
         m_soundobjectsInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
         m_soundobjectsInAreaPaintComponent->setSourcePositions(m_sourcePosition);
 
+        m_upmixIndicatorPaintAndControlComponent->setSpeakersRealBoundingCube(getRealBoundingCube());
         m_upmixIndicatorPaintAndControlComponent->setBoundsRealRef(m_boundsRealRef);
-        m_upmixIndicatorPaintAndControlComponent->setUpmixIndicatorParameters(m_sourcePosition);
+        m_upmixIndicatorPaintAndControlComponent->setSourcePositions(m_sourcePosition);
 
         if (onDatabaseComplete)
             onDatabaseComplete();
@@ -351,6 +352,28 @@ const juce::Rectangle<float> UmsciControlComponent::getRealBoundingRect()
         }
 
         return juce::Rectangle<float>({ xRange.getStart(), yRange.getStart() }, { xRange.getEnd(), yRange.getEnd() });
+    }
+
+    return {};
+}
+
+
+const std::array<float, 6> UmsciControlComponent::getRealBoundingCube()
+{
+    if (m_speakerPosition.size() > 0)
+    {
+        juce::Range<float> xRange = { m_speakerPosition.begin()->second.at(3), m_speakerPosition.begin()->second.at(3) };
+        juce::Range<float> yRange = { m_speakerPosition.begin()->second.at(4), m_speakerPosition.begin()->second.at(4) };
+        juce::Range<float> zRange = { m_speakerPosition.begin()->second.at(5), m_speakerPosition.begin()->second.at(5) };
+
+        for (auto const& speakerPosition : m_speakerPosition)
+        {
+            xRange = xRange.getUnionWith(speakerPosition.second.at(3));
+            yRange = yRange.getUnionWith(speakerPosition.second.at(4));
+            zRange = zRange.getUnionWith(speakerPosition.second.at(5));
+        }
+
+        return std::array<float, 6>({ xRange.getStart(), yRange.getStart(), zRange.getStart(), xRange.getEnd(), yRange.getEnd(), zRange.getEnd() });
     }
 
     return {};

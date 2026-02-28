@@ -79,6 +79,7 @@ private:
     void setDatabaseComplete(bool complete);
 
     const juce::Rectangle<float> getRealBoundingRect();
+    const std::array<float, 6> getRealBoundingCube();
 
     //==============================================================================
     std::unique_ptr<UmsciLoudspeakersPaintComponent>            m_loudspeakersInAreaPaintComponent;
