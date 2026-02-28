@@ -22,7 +22,7 @@
 
 
 UmsciSoundobjectsPaintComponent::UmsciSoundobjectsPaintComponent()
-    : juce::Component()
+    : UmsciPaintNControlComponentBase()
 {
 }
 
@@ -61,11 +61,6 @@ void UmsciSoundobjectsPaintComponent::resized()
     PrerenderSourcesInBounds();
 }
 
-void UmsciSoundobjectsPaintComponent::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
-{
-    m_boundsRealRef = boundsRealRef;
-}
-
 void UmsciSoundobjectsPaintComponent::setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions)
 {
     if (sourcePositions.empty())
@@ -95,28 +90,5 @@ void UmsciSoundobjectsPaintComponent::PrerenderSourcesInBounds()
         auto& z = spourcePos.at(2);
         m_sourceScreenPositions[sourceId] = GetPointForRealCoordinate({ x, y, z }).toInt();
     }
-}
-
-/**
- * @Brief   This method requires special attention, as its input parameter is expected to hold xyz coordinates
- *          in d&b audiotechnik ArrayCalc coordinate system, which is x: towards audience and y: across stage.
- *          To get a proper representation in screen coordindates, stage up top and audience below,
- *          we must interpret incoming x as vertical and incoming y as horizontal coordinate. The output in relative
- *          screen coordinates then is x horizontally and y vertically.
- *          Also the horizontal output must be inverted, to compensate inverted d&b y coordinate.
- */
-juce::Point<float> UmsciSoundobjectsPaintComponent::GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate)
-{
-    auto& xReal = realCoordinate.at(0);
-    auto& yReal = realCoordinate.at(1);
-    //auto& zReal = realCoordinate.at(2);
-
-    if (m_boundsRealRef.getWidth() == 0.0f || m_boundsRealRef.getHeight() == 0.0f)
-        return { 0.0f, 0.0f };
-
-    auto relativeX = (yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
-    auto relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
-
-    return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();
 }
 

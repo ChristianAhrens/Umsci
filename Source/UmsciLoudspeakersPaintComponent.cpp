@@ -20,7 +20,7 @@
 
 
 UmsciLoudspeakersPaintComponent::UmsciLoudspeakersPaintComponent()
-    : juce::Component()
+    : UmsciPaintNControlComponentBase()
 {
 }
 
@@ -48,18 +48,13 @@ void UmsciLoudspeakersPaintComponent::resized()
 
 void UmsciLoudspeakersPaintComponent::lookAndFeelChanged()
 {
-    juce::Component::lookAndFeelChanged();
+    UmsciPaintNControlComponentBase::lookAndFeelChanged();
 
     for (auto const& speakerDrawableKV : m_speakerDrawables)
         if (speakerDrawableKV.second)
             speakerDrawableKV.second->replaceColour(m_speakerDrawablesCurrentColour, getLookAndFeel().findColour(juce::TextButton::textColourOnId));
 
     m_speakerDrawablesCurrentColour = getLookAndFeel().findColour(juce::TextButton::textColourOnId);
-}
-
-void UmsciLoudspeakersPaintComponent::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
-{
-    m_boundsRealRef = boundsRealRef;
 }
 
 void UmsciLoudspeakersPaintComponent::setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions)
@@ -125,28 +120,5 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
             m_speakerDrawableAreas[speakerId] = speakerArea;
         }
     }
-}
-
-/**
- * @Brief   This method requires special attention, as its input parameter is expected to hold xyz coordinates
- *          in d&b audiotechnik ArrayCalc coordinate system, which is x: towards audience and y: across stage.
- *          To get a proper representation in screen coordindates, stage up top and audience below,
- *          we must interpret incoming x as vertical and incoming y as horizontal coordinate. The output in relative
- *          screen coordinates then is x horizontally and y vertically.
- *          Also the horizontal output must be inverted, to compensate inverted d&b y coordinate.
- */
-juce::Point<float> UmsciLoudspeakersPaintComponent::GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate)
-{
-    auto& xReal = realCoordinate.at(0);
-    auto& yReal = realCoordinate.at(1);
-    //auto& zReal = realCoordinate.at(2);
-
-    if (m_boundsRealRef.getWidth() == 0.0f || m_boundsRealRef.getHeight() == 0.0f)
-        return { 0.0f, 0.0f };
-
-    auto relativeX = 1 - ((yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight()); // 
-    auto relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
-
-    return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();
 }
 

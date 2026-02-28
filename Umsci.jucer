@@ -100,6 +100,10 @@
             file="Resources/UmsciDefault.config"/>
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
+      <FILE id="B88R6l" name="UmsciPaintNControlComponentBase.cpp" compile="1"
+            resource="0" file="Source/UmsciPaintNControlComponentBase.cpp"/>
+      <FILE id="tNaZ1T" name="UmsciPaintNControlComponentBase.h" compile="0"
+            resource="0" file="Source/UmsciPaintNControlComponentBase.h"/>
       <FILE id="YWQrOX" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
             resource="0" file="Source/UmsciLoudspeakersPaintComponent.cpp"/>
       <FILE id="t12oED" name="UmsciLoudspeakersPaintComponent.h" compile="0"

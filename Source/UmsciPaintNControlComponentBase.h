@@ -20,30 +20,24 @@
 
 #include <JuceHeader.h>
 
-#include "UmsciPaintNControlComponentBase.h"
 
-
-class UmsciSoundobjectsPaintComponent :   public UmsciPaintNControlComponentBase
+class UmsciPaintNControlComponentBase :   public juce::Component
 {
 public:
-    UmsciSoundobjectsPaintComponent();
-    ~UmsciSoundobjectsPaintComponent() override;
+    UmsciPaintNControlComponentBase();
+    virtual ~UmsciPaintNControlComponentBase() override;
 
     //==============================================================================
-    void paint(Graphics&) override;
-    void resized() override;
+    void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
 
+protected:
     //==============================================================================
-    void setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
+    juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
 
 private:
     //==============================================================================
-    void PrerenderSourcesInBounds();
+    juce::Rectangle<float> m_boundsRealRef;
 
-    //==============================================================================
-    std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
-    std::map<std::int16_t, juce::Point<int>>            m_sourceScreenPositions;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciSoundobjectsPaintComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)
 };
 

@@ -20,8 +20,10 @@
 
 #include <JuceHeader.h>
 
+#include "UmsciPaintNControlComponentBase.h"
 
-class UmsciLoudspeakersPaintComponent :   public juce::Component
+
+class UmsciLoudspeakersPaintComponent :   public UmsciPaintNControlComponentBase
 {
 public:
     UmsciLoudspeakersPaintComponent();
@@ -33,17 +35,13 @@ public:
     void lookAndFeelChanged() override;
 
     //==============================================================================
-    void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
     void setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions);
 
 private:
     //==============================================================================
     void PrerenderSpeakersInBounds();
-    juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
 
     //==============================================================================
-    juce::Rectangle<float> m_boundsRealRef;
-
     juce::Colour										    m_speakerDrawablesCurrentColour;
     std::map<std::int16_t, std::array<std::float_t, 6>>     m_speakerPositions;
     std::map<std::int16_t, std::unique_ptr<juce::Drawable>> m_speakerDrawables;
