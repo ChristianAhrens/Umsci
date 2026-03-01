@@ -70,6 +70,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::setSourcePositions(const std::ma
     PrerenderUpmixIndicatorInBounds();
 }
 
+bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
+{
+    return m_upmixIndicator.contains(float(x), float(y));
+}
+
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
 {
     auto dx = e.position.x - m_upmixCenter.x;

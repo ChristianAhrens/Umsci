@@ -33,6 +33,7 @@ public:
     //==============================================================================
     void paint(Graphics&) override;
     void resized() override;
+    bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
 
