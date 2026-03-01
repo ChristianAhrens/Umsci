@@ -71,6 +71,9 @@
                 file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.cpp"/>
           <FILE id="nDHk4a" name="ToggleStateSlider.h" compile="0" resource="0"
                 file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.h"/>
+          <FILE id="qrYXY6" name="TwoDFieldBase.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/TwoDFieldBase.cpp"/>
+          <FILE id="Tht9uV" name="TwoDFieldBase.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/TwoDFieldBase.h"/>
           <FILE id="ete2s5" name="WebUpdateDetector.cpp" compile="1" resource="0"
                 file="submodules/JUCE-AppBasics/Source/WebUpdateDetector.cpp"/>
           <FILE id="pjsxmD" name="WebUpdateDetector.h" compile="0" resource="0"

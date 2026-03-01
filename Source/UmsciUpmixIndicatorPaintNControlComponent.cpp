@@ -22,8 +22,9 @@
 
 
 UmsciUpmixIndicatorPaintNControlComponent::UmsciUpmixIndicatorPaintNControlComponent()
-    : UmsciPaintNControlComponentBase()
+    : UmsciPaintNControlComponentBase(), JUCEAppBasics::TwoDFieldBase()
 {
+    setChannelConfiguration(juce::AudioChannelSet::create7point1point4());
 }
 
 UmsciUpmixIndicatorPaintNControlComponent::~UmsciUpmixIndicatorPaintNControlComponent()
@@ -111,7 +112,25 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto speakersScreenBoundingRect = juce::Rectangle<float>(GetPointForRealCoordinate(speakersRealBoundingTopLeft), GetPointForRealCoordinate(speakersRealBoundingBottomRight));
     auto upmixIndicatorBounds = speakersScreenBoundingRect.getAspectRatio() <= 1 ? speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getWidth() * 0.15f) : speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getHeight() * 0.15f);
 
-    if (upmixIndicatorBounds.isEmpty() || m_upmixPositionAnglesDeg.empty())
+    std::vector<float> upmixPositionAnglesDeg(m_clockwiseOrderedChannelTypes.size());
+    std::vector<std::string> upmixPositionNames(m_clockwiseOrderedChannelTypes.size());
+    std::vector<float> upmixHeightPositionAnglesDeg(m_clockwiseOrderedHeightChannelTypes.size());
+    std::vector<std::string> upmixHeightPositionNames(m_clockwiseOrderedHeightChannelTypes.size());
+    for (auto const& channelType : m_channelConfiguration.getChannelTypes())
+    {
+        if (m_clockwiseOrderedChannelTypes.contains(channelType))
+        {
+            upmixPositionAnglesDeg.push_back(getAngleForChannelTypeInCurrentConfiguration(channelType));
+            upmixPositionNames.push_back(juce::AudioChannelSet::getAbbreviatedChannelTypeName(channelType).toStdString());
+        }
+        else if (m_clockwiseOrderedHeightChannelTypes.contains(channelType))
+        {
+            upmixHeightPositionAnglesDeg.push_back(getAngleForChannelTypeInCurrentConfiguration(channelType));
+            upmixHeightPositionNames.push_back(juce::AudioChannelSet::getAbbreviatedChannelTypeName(channelType).toStdString());
+        }
+    }
+
+    if (upmixIndicatorBounds.isEmpty())
         return;
 
     m_upmixCenter = upmixIndicatorBounds.getCentre();
@@ -123,8 +142,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto arcStrokeWidth = baseRadius * 0.025f;
 
     // determine the angular extent of the arc from the most extreme position angles
-    auto minAngleDeg = *std::min_element(m_upmixPositionAnglesDeg.begin(), m_upmixPositionAnglesDeg.end());
-    auto maxAngleDeg = *std::max_element(m_upmixPositionAnglesDeg.begin(), m_upmixPositionAnglesDeg.end());
+    auto minAngleDeg = *std::min_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
+    auto maxAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
 
     // build the arc segment and stroke it into a filled band in m_upmixIndicator
     // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth
@@ -137,17 +156,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 
     // add a filled sub-circle at each position and record its label for paint()
     // screen coords for arc angle θ with rotation R: x = cx + r·sin(θ+R), y = cy - r·cos(θ+R)
-    for (size_t i = 0; i < m_upmixPositionAnglesDeg.size(); ++i)
+    for (size_t i = 0; i < upmixPositionAnglesDeg.size(); ++i)
     {
-        auto effectiveAngleRad = juce::degreesToRadians(m_upmixPositionAnglesDeg[i]) + m_upmixRot;
+        auto effectiveAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]) + m_upmixRot;
         auto px = cx + radius * std::sin(effectiveAngleRad);
         auto py = cy - radius * std::cos(effectiveAngleRad);
 
         m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
                                     m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
-        if (i < m_upmixPositionNames.size())
-            m_renderedPositionLabels.push_back({ juce::Point<float>(px, py), juce::String(m_upmixPositionNames[i]) });
+        if (i < upmixPositionNames.size())
+            m_renderedPositionLabels.push_back({ juce::Point<float>(px, py), juce::String(upmixPositionNames[i]) });
     }
 }
 

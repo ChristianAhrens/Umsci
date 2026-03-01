@@ -22,7 +22,9 @@
 
 #include "UmsciPaintNControlComponentBase.h"
 
-class UmsciUpmixIndicatorPaintNControlComponent :   public UmsciPaintNControlComponentBase
+#include <TwoDFieldBase.h>
+
+class UmsciUpmixIndicatorPaintNControlComponent :   public UmsciPaintNControlComponentBase, public JUCEAppBasics::TwoDFieldBase
 {
 public:
     UmsciUpmixIndicatorPaintNControlComponent();
@@ -49,8 +51,6 @@ private:
     juce::Path                  m_upmixIndicator;
     float                       m_upmixRot = 0.0f;
     float                       m_upmixTrans = 1.0f;
-    std::vector<std::string>    m_upmixPositionNames = { "l", "r", "c", "lfe", "lss", "rss", "lsr", "rsr", "tfl", "tfr", "trl", "trr" };
-    std::vector<float>          m_upmixPositionAnglesDeg = { -30.0f,30.0f,0.0f,0.0f,-100.0f,100.0f,-145.0f,145.0f,-45.0f,45.0f,-135.0f,135.0f };
 
     juce::Point<float>                                          m_upmixCenter;
     float                                                       m_subCircleRadius = 0.0f;
