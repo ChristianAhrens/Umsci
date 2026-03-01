@@ -86,6 +86,16 @@ void UmsciSoundobjectsPaintComponent::setSourcePositions(const std::map<std::int
     repaint();
 }
 
+bool UmsciSoundobjectsPaintComponent::hitTest(int x, int y)
+{
+    auto const hitRadius = 14.0f; // matches mouseDown
+    auto point = juce::Point<int>(x, y);
+    for (auto const& kv : m_sourceScreenPositions)
+        if (point.getDistanceFrom(kv.second) <= hitRadius)
+            return true;
+    return false;
+}
+
 void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
 {
     auto const hitRadius = 14.0f; // matches knobSize in paint()

@@ -34,6 +34,7 @@ public:
     void resized() override;
 
     //==============================================================================
+    bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent& e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
