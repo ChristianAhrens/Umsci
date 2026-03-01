@@ -53,6 +53,18 @@ public:
         ControlColour_Last = ControlColour_Laser,
         ConnectionSettings,
         FullscreenWindowMode,
+        ControlFormat_First,
+        ControlFormat_Stereo = ControlFormat_First,
+        ControlFormat_LRS,
+        ControlFormat_LCRS,
+        ControlFormat_5point0,
+        ControlFormat_5point1,
+        ControlFormat_5point1point2,
+        ControlFormat_7point0,
+        ControlFormat_7point1,
+        ControlFormat_7point1point4,
+        ControlFormat_9point1point6,
+        ControlFormat_Last = ControlFormat_9point1point6
     };
 
 public:
@@ -86,6 +98,7 @@ private:
     void handleSettingsMenuResult(int selectedId);
     void handleSettingsLookAndFeelMenuResult(int selectedId);
     void handleSettingsControlColourMenuResult(int selectedId);
+    void handleSettingsControlFormatMenuResult(int selectedId);
     void handleSettingsFullscreenModeToggleResult();
     void showConnectionSettings();
 

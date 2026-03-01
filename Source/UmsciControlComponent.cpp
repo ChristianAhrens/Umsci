@@ -458,3 +458,9 @@ void UmsciControlComponent::setSpeakerPosition(std::int16_t speakerId, const std
     m_speakerPosition[speakerId] = position;
 }
 
+void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChannelSet& upmixChannelConfig)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setChannelConfiguration(upmixChannelConfig);
+}
+

@@ -40,6 +40,7 @@ public:
     void resized() override;
     void paint(juce::Graphics& g) override;
 
+    //==============================================================================
     std::unique_ptr<XmlElement> createStateXml() override;
     bool setStateXml(XmlElement* stateXml) override;
 
@@ -61,6 +62,9 @@ public:
     void setSpeakerMute(std::int16_t speakerId, const std::uint8_t& mute);
     void setSpeakerGain(std::int16_t speakerId, const std::float_t& gain);
     void setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position);
+
+    //==============================================================================
+    void setUpmixChannelConfiguration(const juce::AudioChannelSet& upmixChannelConfig);
 
     //==============================================================================
     void resetData();

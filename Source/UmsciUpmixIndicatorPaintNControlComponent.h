@@ -37,6 +37,9 @@ public:
     void mouseDrag(const juce::MouseEvent&) override;
 
     //==============================================================================
+    bool setChannelConfiguration(const juce::AudioChannelSet& channelLayout) override;
+
+    //==============================================================================
     void setSpeakersRealBoundingCube(const std::array<float, 6>& speakersRealBoundingCube);
     void setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
 

@@ -85,6 +85,17 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::LookAndFeel_FollowHost] = std::make_pair("Follow host", 0);
     m_settingsItems[UmsciSettingsOption::LookAndFeel_Dark] = std::make_pair("Dark", 1);
     m_settingsItems[UmsciSettingsOption::LookAndFeel_Light] = std::make_pair("Light", 0);
+    // default output visu is 5.0
+    m_settingsItems[UmsciSettingsOption::ControlFormat_Stereo] = std::make_pair(juce::AudioChannelSet::stereo().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_LRS] = std::make_pair(juce::AudioChannelSet::createLRS().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_LCRS] = std::make_pair(juce::AudioChannelSet::createLCRS().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_5point0] = std::make_pair(juce::AudioChannelSet::create5point0().getDescription().toStdString(), 1);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_5point1] = std::make_pair(juce::AudioChannelSet::create5point1().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_5point1point2] = std::make_pair(juce::AudioChannelSet::create5point1point2().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_7point0] = std::make_pair(juce::AudioChannelSet::create7point0().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_7point1] = std::make_pair(juce::AudioChannelSet::create7point1().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_7point1point4] = std::make_pair(juce::AudioChannelSet::create7point1point4().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_9point1point6] = std::make_pair(juce::AudioChannelSet::create9point1point6().getDescription().toStdString(), 0);
     // default panning colour is green
     m_settingsItems[UmsciSettingsOption::ControlColour_Green] = std::make_pair("Green", 1);
     m_settingsItems[UmsciSettingsOption::ControlColour_Red] = std::make_pair("Red", 0);
@@ -99,7 +110,7 @@ MainComponent::MainComponent()
 #endif
     // Further components
     m_settingsButton = std::make_unique<juce::DrawableButton>("Settings", juce::DrawableButton::ButtonStyle::ImageFitted);
-    m_settingsButton->setTooltip(juce::String("Settings for") + juce::JUCEApplication::getInstance()->getApplicationName());
+    m_settingsButton->setTooltip(juce::String("Settings for ") + juce::JUCEApplication::getInstance()->getApplicationName());
     m_settingsButton->onClick = [this] {
         juce::PopupMenu lookAndFeelSubMenu;
         for (int i = UmsciSettingsOption::LookAndFeel_First; i <= UmsciSettingsOption::LookAndFeel_Last; i++)
@@ -109,9 +120,14 @@ MainComponent::MainComponent()
         for (int i = UmsciSettingsOption::ControlColour_First; i <= UmsciSettingsOption::ControlColour_Last; i++)
             controlColourSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
 
+        juce::PopupMenu controlFormatSubMenu;
+        for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
+            controlFormatSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
+
         juce::PopupMenu settingsMenu;
         settingsMenu.addSubMenu("LookAndFeel", lookAndFeelSubMenu);
         settingsMenu.addSubMenu("Control colour", controlColourSubMenu);
+        settingsMenu.addSubMenu("Control format", controlFormatSubMenu);
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
@@ -294,8 +310,86 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         showConnectionSettings();
     else if (UmsciSettingsOption::FullscreenWindowMode == selectedId)
         handleSettingsFullscreenModeToggleResult();
+    else if (UmsciSettingsOption::ControlFormat_First <= selectedId && UmsciSettingsOption::ControlFormat_Last >= selectedId)
+        handleSettingsControlFormatMenuResult(selectedId);
     else
         jassertfalse; // unhandled menu entry!?
+}
+
+void MainComponent::handleSettingsControlFormatMenuResult(int selectedId)
+{
+    // helper internal function to avoid code clones
+    std::function<void(int, int, int, int, int, int, int, int, int, int)> setSettingsItemsCheckState = [=](int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
+        m_settingsItems[UmsciSettingsOption::ControlFormat_Stereo].second = a;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_LRS].second = b;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_LCRS].second = c;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_5point0].second = d;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_5point1].second = e;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_5point1point2].second = f;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_7point0].second = g;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_7point1].second = h;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_7point1point4].second = i;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_9point1point6].second = j;
+        };
+
+    switch (selectedId)
+    {
+    case UmsciSettingsOption::ControlFormat_Stereo:
+        setSettingsItemsCheckState(1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::stereo());
+        break;
+    case UmsciSettingsOption::ControlFormat_LRS:
+        setSettingsItemsCheckState(0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::createLRS());
+        break;
+    case UmsciSettingsOption::ControlFormat_LCRS:
+        setSettingsItemsCheckState(0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::createLCRS());
+        break;
+    case UmsciSettingsOption::ControlFormat_5point0:
+        setSettingsItemsCheckState(0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point0());
+        break;
+    case UmsciSettingsOption::ControlFormat_5point1:
+        setSettingsItemsCheckState(0, 0, 0, 0, 1, 0, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point1());
+        break;
+    case UmsciSettingsOption::ControlFormat_5point1point2:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 1, 0, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point1point2());
+        break;
+    case UmsciSettingsOption::ControlFormat_7point0:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point0());
+        break;
+    case UmsciSettingsOption::ControlFormat_7point1:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 1, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point1());
+        break;
+    case UmsciSettingsOption::ControlFormat_7point1point4:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 1, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point1point4());
+        break;
+    case UmsciSettingsOption::ControlFormat_9point1point6:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create9point1point6());
+        break;
+    default:
+        jassertfalse; // unknown id fed in unintentionally ?!
+        break;
+    }
+
+    resized();
 }
 
 void MainComponent::handleSettingsLookAndFeelMenuResult(int selectedId)
@@ -491,6 +585,14 @@ void MainComponent::performConfigurationDump()
         }
         visuConfigXmlElement->addChildElement(controlColourXmlElmement.release());
 
+        auto controlFormatXmlElmement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLFORMAT));
+        for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
+        {
+            if (m_settingsItems[i].second == 1)
+                controlFormatXmlElmement->addTextElement(juce::String(i));
+        }
+        visuConfigXmlElement->addChildElement(controlFormatXmlElmement.release());
+
         m_config->setConfigState(std::move(visuConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 
         // control config
@@ -548,6 +650,13 @@ void MainComponent::onConfigUpdated()
         {
             auto controlColourSettingsOptionId = controlColourXmlElement->getAllSubText().getIntValue();
             handleSettingsControlColourMenuResult(controlColourSettingsOptionId);
+        }
+
+        auto controlFormatXmlElement = visuConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLFORMAT));
+        if (controlFormatXmlElement)
+        {
+            auto controlFormatSettingsOptionId = controlFormatXmlElement->getAllSubText().getIntValue();
+            handleSettingsControlFormatMenuResult(controlFormatSettingsOptionId);
         }
     }
 

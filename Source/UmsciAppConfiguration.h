@@ -36,7 +36,8 @@ public:
         VISUCONFIG,
         CONTROLCOLOUR,
         LOOKANDFEEL,
-        CONTROLCONFIG
+        CONTROLCONFIG,
+        CONTROLFORMAT
     };
     static juce::String getTagName(TagID ID)
     {
@@ -52,6 +53,8 @@ public:
             return "LOOKANDFEEL";
         case CONTROLCONFIG:
             return "CONTROLCONFIG";
+        case CONTROLFORMAT:
+            return "CONTROLFORMAT";
         default:
             return "INVALID";
         }

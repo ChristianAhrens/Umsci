@@ -170,3 +170,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     }
 }
 
+bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)
+{
+    auto rVal = TwoDFieldBase::setChannelConfiguration(channelLayout);
+
+    PrerenderUpmixIndicatorInBounds();
+
+    repaint();
+
+    return rVal;
+}
+
