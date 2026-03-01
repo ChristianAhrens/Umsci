@@ -33,6 +33,7 @@ public:
 protected:
     //==============================================================================
     juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
+    std::array<float, 3> GetRealCoordinateForPoint(const juce::Point<float>& screenPoint);
 
 private:
     //==============================================================================

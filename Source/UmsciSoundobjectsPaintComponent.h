@@ -34,7 +34,15 @@ public:
     void resized() override;
 
     //==============================================================================
+    void mouseDown(const juce::MouseEvent& e) override;
+    void mouseDrag(const juce::MouseEvent& e) override;
+    void mouseUp(const juce::MouseEvent& e) override;
+
+    //==============================================================================
     void setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
+
+    //==============================================================================
+    std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
 
 private:
     //==============================================================================
@@ -43,6 +51,8 @@ private:
     //==============================================================================
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
     std::map<std::int16_t, juce::Point<int>>            m_sourceScreenPositions;
+
+    std::int16_t m_draggedSourceId{ -1 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciSoundobjectsPaintComponent)
 };

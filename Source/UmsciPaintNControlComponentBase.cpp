@@ -41,6 +41,24 @@ void UmsciPaintNControlComponentBase::setBoundsRealRef(const juce::Rectangle<flo
  *          screen coordinates then is x horizontally and y vertically.
  *          Also the horizontal output must be inverted, to compensate inverted d&b y coordinate.
  */
+std::array<float, 3> UmsciPaintNControlComponentBase::GetRealCoordinateForPoint(const juce::Point<float>& screenPoint)
+{
+    auto bounds = getLocalBounds();
+    if (bounds.getWidth() == 0 || bounds.getHeight() == 0)
+        return { 0.0f, 0.0f, 0.0f };
+
+    // Inverse of GetPointForRealCoordinate:
+    // relativeX = 1 - ((yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight())
+    // relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth()
+    auto relativeX = (screenPoint.getX() - bounds.getX()) / float(bounds.getWidth());
+    auto relativeY = (screenPoint.getY() - bounds.getY()) / float(bounds.getHeight());
+
+    auto yReal = (1.0f - relativeX) * m_boundsRealRef.getHeight() + m_boundsRealRef.getY();
+    auto xReal = relativeY * m_boundsRealRef.getWidth() + m_boundsRealRef.getX();
+
+    return { xReal, yReal, 0.0f };
+}
+
 juce::Point<float> UmsciPaintNControlComponentBase::GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate)
 {
     auto& xReal = realCoordinate.at(0);

@@ -54,6 +54,14 @@ void UmsciSoundobjectsPaintComponent::paint(juce::Graphics &g)
         auto fontDependantWidth = float(juce::GlyphArrangement::getStringWidthInt(font, textLabel));
         g.drawText(textLabel, juce::Rectangle<float>(sourceScreenPos.getX() - (0.5f * fontDependantWidth), sourceScreenPos.getY() + 3, fontDependantWidth, knobSize * 2.0f), Justification::centred, true);
     }
+
+    // Paint crosshair for the currently dragged source
+    if (m_draggedSourceId != -1 && m_sourceScreenPositions.count(m_draggedSourceId))
+    {
+        auto dragPos = m_sourceScreenPositions.at(m_draggedSourceId).toFloat();
+        g.drawLine(0.0f, dragPos.getY(), float(getWidth()), dragPos.getY(), 1.0f);
+        g.drawLine(dragPos.getX(), 0.0f, dragPos.getX(), float(getHeight()), 1.0f);
+    }
 }
 
 void UmsciSoundobjectsPaintComponent::resized()
@@ -76,6 +84,51 @@ void UmsciSoundobjectsPaintComponent::setSourcePositions(const std::map<std::int
     }
 
     repaint();
+}
+
+void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
+{
+    auto const hitRadius = 14.0f; // matches knobSize in paint()
+    auto clickPos = e.getPosition();
+
+    m_draggedSourceId = -1;
+    for (auto const& kv : m_sourceScreenPositions)
+    {
+        if (clickPos.getDistanceFrom(kv.second) <= hitRadius)
+        {
+            m_draggedSourceId = kv.first;
+            break;
+        }
+    }
+}
+
+void UmsciSoundobjectsPaintComponent::mouseDrag(const juce::MouseEvent& e)
+{
+    if (m_draggedSourceId == -1)
+        return;
+
+    auto dragPos = e.getPosition().toFloat();
+    dragPos.setX(juce::jlimit(0.0f, float(getWidth()),  dragPos.getX()));
+    dragPos.setY(juce::jlimit(0.0f, float(getHeight()), dragPos.getY()));
+
+    m_sourceScreenPositions[m_draggedSourceId] = dragPos.toInt();
+
+    auto realCoord = GetRealCoordinateForPoint(dragPos);
+    m_sourcePositions[m_draggedSourceId] = realCoord;
+
+    if (onSourcePositionChanged)
+        onSourcePositionChanged(m_draggedSourceId, realCoord);
+
+    repaint();
+}
+
+void UmsciSoundobjectsPaintComponent::mouseUp(const juce::MouseEvent& /*e*/)
+{
+    if (m_draggedSourceId != -1)
+    {
+        m_draggedSourceId = -1;
+        repaint();
+    }
 }
 
 void UmsciSoundobjectsPaintComponent::PrerenderSourcesInBounds()
