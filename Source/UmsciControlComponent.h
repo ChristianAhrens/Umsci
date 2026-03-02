@@ -96,7 +96,6 @@ private:
     bool    m_databaseComplete = false;
 
     juce::Rectangle<float>  m_boundsRealRef;
-    juce::Rectangle<int>    m_umsciPaintComponentBounds;
 
     std::string                                         m_deviceName;
 

@@ -37,6 +37,8 @@ protected:
 
 private:
     //==============================================================================
+    juce::Rectangle<float> getContentBounds() const;
+
     juce::Rectangle<float> m_boundsRealRef;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)

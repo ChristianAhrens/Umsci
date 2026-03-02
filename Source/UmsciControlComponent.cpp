@@ -69,10 +69,7 @@ UmsciControlComponent::~UmsciControlComponent()
 
 void UmsciControlComponent::paint(Graphics &g)
 {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::ColourIds::backgroundColourId));
-
-    g.setColour(getLookAndFeel().findColour(juce::Slider::ColourIds::backgroundColourId));
-    g.fillRect(m_umsciPaintComponentBounds.toFloat());
+    g.fillAll(getLookAndFeel().findColour(juce::Slider::ColourIds::backgroundColourId));
 
     if (!isDatabaseComplete())
     {
@@ -84,18 +81,14 @@ void UmsciControlComponent::paint(Graphics &g)
 
 void UmsciControlComponent::resized()
 {
-    auto bounds = getLocalBounds().toFloat();
-    if (m_boundsRealRef.getAspectRatio() > bounds.getAspectRatio())
-        m_umsciPaintComponentBounds = juce::Rectangle<float>(bounds.withSizeKeepingCentre(bounds.getWidth(), bounds.getWidth() / m_boundsRealRef.getAspectRatio())).toNearestInt();
-    else
-        m_umsciPaintComponentBounds = juce::Rectangle<float>(bounds.withSizeKeepingCentre(bounds.getHeight() * m_boundsRealRef.getAspectRatio(), bounds.getHeight())).toNearestInt();
+    auto bounds = getLocalBounds();
 
     if (m_loudspeakersInAreaPaintComponent && m_loudspeakersInAreaPaintComponent->isVisible())
-        m_loudspeakersInAreaPaintComponent->setBounds(m_umsciPaintComponentBounds);
+        m_loudspeakersInAreaPaintComponent->setBounds(bounds);
     if (m_soundobjectsInAreaPaintComponent && m_soundobjectsInAreaPaintComponent->isVisible())
-        m_soundobjectsInAreaPaintComponent->setBounds(m_umsciPaintComponentBounds);
+        m_soundobjectsInAreaPaintComponent->setBounds(bounds);
     if (m_upmixIndicatorPaintAndControlComponent && m_upmixIndicatorPaintAndControlComponent->isVisible())
-        m_upmixIndicatorPaintAndControlComponent->setBounds(m_umsciPaintComponentBounds);
+        m_upmixIndicatorPaintAndControlComponent->setBounds(bounds);
 }
 
 std::unique_ptr<XmlElement> UmsciControlComponent::createStateXml()

@@ -33,14 +33,26 @@ void UmsciPaintNControlComponentBase::setBoundsRealRef(const juce::Rectangle<flo
     m_boundsRealRef = boundsRealRef;
 }
 
+juce::Rectangle<float> UmsciPaintNControlComponentBase::getContentBounds() const
+{
+    auto bounds = getLocalBounds().toFloat();
+    if (m_boundsRealRef.isEmpty())
+        return bounds;
+
+    if (m_boundsRealRef.getAspectRatio() > bounds.getAspectRatio())
+        return bounds.withSizeKeepingCentre(bounds.getWidth(), bounds.getWidth() / m_boundsRealRef.getAspectRatio());
+    else
+        return bounds.withSizeKeepingCentre(bounds.getHeight() * m_boundsRealRef.getAspectRatio(), bounds.getHeight());
+}
+
 std::array<float, 3> UmsciPaintNControlComponentBase::GetRealCoordinateForPoint(const juce::Point<float>& screenPoint)
 {
-    auto bounds = getLocalBounds();
-    if (bounds.getWidth() == 0 || bounds.getHeight() == 0)
+    auto contentBounds = getContentBounds();
+    if (contentBounds.getWidth() == 0.0f || contentBounds.getHeight() == 0.0f)
         return { 0.0f, 0.0f, 0.0f };
 
-    auto relativeX = (screenPoint.getX() - bounds.getX()) / float(bounds.getWidth());
-    auto relativeY = (screenPoint.getY() - bounds.getY()) / float(bounds.getHeight());
+    auto relativeX = (screenPoint.getX() - contentBounds.getX()) / contentBounds.getWidth();
+    auto relativeY = (screenPoint.getY() - contentBounds.getY()) / contentBounds.getHeight();
 
     // m_boundsRealRef is screen-space-aligned: getX()/getWidth() = d&b y, getY()/getHeight() = d&b x
     auto yReal = relativeX * m_boundsRealRef.getWidth()  + m_boundsRealRef.getX();
@@ -62,6 +74,6 @@ juce::Point<float> UmsciPaintNControlComponentBase::GetPointForRealCoordinate(co
     auto relativeX = (yReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
     auto relativeY = (xReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
 
-    return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();
+    return getContentBounds().getRelativePoint(relativeX, relativeY);
 }
 
