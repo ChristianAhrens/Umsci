@@ -1,12 +1,12 @@
 #define MyAppName "Umsci"
 #define MyAppExeName "Umsci.exe"
-#define MyAppExePath "..\..\..\Builds\VisualStudio2022\x64\Release\App\Umsci.exe"
-#define MyAppVersion GetVersionNumbersString("..\..\..\Builds\VisualStudio2022\x64\Release\App\Umsci.exe")
+#define MyAppExePath "..\..\..\Builds\VisualStudio2026\x64\Release\App\Umsci.exe"
+#define MyAppVersion GetVersionNumbersString("..\..\..\Builds\VisualStudio2026\x64\Release\App\Umsci.exe")
 #define MyAppPublisher "Christian Ahrens"
 #define MyAppURL "https://www.github.com/ChristianAhrens/Umsci"
 
 [Setup]
-AppId={{0923C12E-915B-4E77-92FB-187CB97E73A9}
+AppId={{0923C12E-915B-4E77-92FB-187AB37E73A9}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
@@ -21,7 +21,7 @@ LicenseFile=..\..\..\LICENSE
 InfoAfterFile=..\..\..\CHANGELOG.md
 PrivilegesRequired=lowest
 OutputBaseFilename="{#MyAppName}Setup_v{#MyAppVersion}"
-SetupIconFile=..\..\..\Builds\VisualStudio2022\icon.ico
+SetupIconFile=..\..\..\Builds\VisualStudio2026\icon.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
