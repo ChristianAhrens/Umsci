@@ -70,6 +70,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::setSourcePositions(const std::ma
     PrerenderUpmixIndicatorInBounds();
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position)
+{
+    m_sourcePositions[sourceId] = position;
+}
+
 bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 {
     return m_upmixIndicator.contains(float(x), float(y));

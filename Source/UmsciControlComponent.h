@@ -75,6 +75,7 @@ public:
 private:
     //==============================================================================
     void rebuildOcp1ObjectTree();
+    void updatePaintComponents();
 
     void setRemoteObject(const DeviceController::RemoteObject& obj);
 

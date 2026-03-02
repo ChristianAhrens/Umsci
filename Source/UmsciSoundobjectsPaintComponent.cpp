@@ -96,6 +96,13 @@ bool UmsciSoundobjectsPaintComponent::hitTest(int x, int y)
     return false;
 }
 
+void UmsciSoundobjectsPaintComponent::setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position)
+{
+    m_sourcePositions[sourceId] = position;
+    m_sourceScreenPositions[sourceId] = GetPointForRealCoordinate({ position.at(0), position.at(1), position.at(2) }).toInt();
+    repaint();
+}
+
 void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
 {
     auto const hitRadius = 14.0f; // matches knobSize in paint()

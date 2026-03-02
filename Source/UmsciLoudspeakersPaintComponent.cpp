@@ -57,6 +57,28 @@ void UmsciLoudspeakersPaintComponent::lookAndFeelChanged()
     m_speakerDrawablesCurrentColour = getLookAndFeel().findColour(juce::TextButton::textColourOnId);
 }
 
+void UmsciLoudspeakersPaintComponent::PrerenderSpeakerDrawable(std::int16_t speakerId, const std::array<std::float_t, 6>& rotNPos)
+{
+    auto& hor = rotNPos.at(0);
+    auto& ver = rotNPos.at(1);
+    auto& rot = rotNPos.at(2);
+    auto& x   = rotNPos.at(3);
+    auto& y   = rotNPos.at(4);
+    auto& z   = rotNPos.at(5);
+
+    if (hor != 0.0f || ver != 0.0f || rot != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
+    {
+        if (juce::isWithin<int>((int(std::abs(ver)) % 180), 90, 15))
+            m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_vert24px_svg));
+        else
+            m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_hor24px_svg));
+        auto& drawable = m_speakerDrawables.at(speakerId);
+        drawable->replaceColour(Colours::black, m_speakerDrawablesCurrentColour);
+        auto drawableBounds = drawable->getBounds().toFloat();
+        drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(hor + 90), drawableBounds.getCentreX(), drawableBounds.getCentreY())); // +90deg to adjust d&b to screen
+    }
+}
+
 void UmsciLoudspeakersPaintComponent::setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions)
 {
     if (speakerPositions.empty())
@@ -70,33 +92,20 @@ void UmsciLoudspeakersPaintComponent::setSpeakerPositions(const std::map<std::in
         m_speakerPositions = speakerPositions;
 
         for (auto const speakerPositionKV : speakerPositions)
-        {
-            auto& speakerId = speakerPositionKV.first;
-            auto& speakerRotNPos = speakerPositionKV.second;
-            auto& hor = speakerRotNPos.at(0);
-            auto& ver = speakerRotNPos.at(1);
-            auto& rot = speakerRotNPos.at(2);
-            auto& x = speakerRotNPos.at(3);
-            auto& y = speakerRotNPos.at(4);
-            auto& z = speakerRotNPos.at(5);
-            // check if speaker is set (position other than 0,0,0,0,0,0)
-            if (hor != 0.0f || ver != 0.0f || rot != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
-            {
-                // use icon without directivity if angle is too steep (90deg +- 15deg)
-                if (juce::isWithin<int>((int(std::abs(ver)) % 180), 90, 15))
-                    m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_vert24px_svg));
-                else
-                    m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_hor24px_svg));
-                auto& drawable = m_speakerDrawables.at(speakerId);
-                drawable->replaceColour(Colours::black, m_speakerDrawablesCurrentColour);
-                auto drawableBounds = drawable->getBounds().toFloat();
-                drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(hor + 90), drawableBounds.getCentreX(), drawableBounds.getCentreY())); // +90deg to adjust d&b to screen
-            }
-        }
+            PrerenderSpeakerDrawable(speakerPositionKV.first, speakerPositionKV.second);
 
         PrerenderSpeakersInBounds();
     }
 
+    repaint();
+}
+
+void UmsciLoudspeakersPaintComponent::setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position)
+{
+    m_speakerPositions[speakerId] = position;
+    PrerenderSpeakerDrawable(speakerId, position);
+    m_speakerDrawableAreas[speakerId] = juce::Rectangle<float>(0.0f, 0.0f, 16.0f, 16.0f)
+                                            .withCentre(GetPointForRealCoordinate({ position.at(3), position.at(4), position.at(5) }));
     repaint();
 }
 

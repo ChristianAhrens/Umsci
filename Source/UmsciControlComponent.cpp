@@ -292,6 +292,25 @@ bool UmsciControlComponent::isDatabaseComplete()
     return m_databaseComplete;
 }
 
+void UmsciControlComponent::updatePaintComponents()
+{
+    auto realBoundingRect = getRealBoundingRect();
+    auto expandAmount = ((realBoundingRect.getAspectRatio() > 1.0f) ? realBoundingRect.getWidth() * 0.2f : realBoundingRect.getHeight() * 0.2f);
+    m_boundsRealRef = realBoundingRect.expanded(expandAmount, expandAmount);
+
+    m_loudspeakersInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+    m_loudspeakersInAreaPaintComponent->setSpeakerPositions(m_speakerPosition);
+
+    m_soundobjectsInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+    m_soundobjectsInAreaPaintComponent->setSourcePositions(m_sourcePosition);
+
+    m_upmixIndicatorPaintAndControlComponent->setSpeakersRealBoundingCube(getRealBoundingCube());
+    m_upmixIndicatorPaintAndControlComponent->setBoundsRealRef(m_boundsRealRef);
+    m_upmixIndicatorPaintAndControlComponent->setSourcePositions(m_sourcePosition);
+
+    resized();
+}
+
 void UmsciControlComponent::setDatabaseComplete(bool complete)
 {
     DBG(juce::String(__FUNCTION__) << (complete ? " compl." : " incmplt."));
@@ -299,24 +318,10 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
 
     if (complete)
     {
-        auto realBoundingRect = getRealBoundingRect();
-        auto expandAmount = ((realBoundingRect.getAspectRatio() > 1.0f) ? realBoundingRect.getWidth() * 0.2f : realBoundingRect.getHeight() * 0.2f);
-        m_boundsRealRef = realBoundingRect.expanded(expandAmount, expandAmount);
-
-        m_loudspeakersInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
-        m_loudspeakersInAreaPaintComponent->setSpeakerPositions(m_speakerPosition);
-
-        m_soundobjectsInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
-        m_soundobjectsInAreaPaintComponent->setSourcePositions(m_sourcePosition);
-
-        m_upmixIndicatorPaintAndControlComponent->setSpeakersRealBoundingCube(getRealBoundingCube());
-        m_upmixIndicatorPaintAndControlComponent->setBoundsRealRef(m_boundsRealRef);
-        m_upmixIndicatorPaintAndControlComponent->setSourcePositions(m_sourcePosition);
+        updatePaintComponents();
 
         if (onDatabaseComplete)
             onDatabaseComplete();
-
-        resized();
     }
     else
     {
@@ -417,6 +422,12 @@ void UmsciControlComponent::setSourceGain(std::int16_t sourceId, const std::floa
 void UmsciControlComponent::setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position)
 {
     m_sourcePosition[sourceId] = position;
+
+    if (m_databaseComplete)
+    {
+        m_soundobjectsInAreaPaintComponent->setSourcePosition(sourceId, position);
+        m_upmixIndicatorPaintAndControlComponent->setSourcePosition(sourceId, position);
+    }
 }
 
 void UmsciControlComponent::setSourceDelayMode(std::int16_t sourceId, const std::uint16_t& delayMode)
@@ -456,6 +467,24 @@ void UmsciControlComponent::setSpeakerGain(std::int16_t speakerId, const std::fl
 void UmsciControlComponent::setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position)
 {
     m_speakerPosition[speakerId] = position;
+
+    if (m_databaseComplete)
+    {
+        // Speaker positions define the coordinate space — recalculate bounds and propagate to all components
+        auto realBoundingRect = getRealBoundingRect();
+        auto expandAmount = ((realBoundingRect.getAspectRatio() > 1.0f) ? realBoundingRect.getWidth() * 0.2f : realBoundingRect.getHeight() * 0.2f);
+        m_boundsRealRef = realBoundingRect.expanded(expandAmount, expandAmount);
+
+        m_loudspeakersInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+        m_loudspeakersInAreaPaintComponent->setSpeakerPosition(speakerId, position);
+
+        m_soundobjectsInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
+
+        m_upmixIndicatorPaintAndControlComponent->setSpeakersRealBoundingCube(getRealBoundingCube());
+        m_upmixIndicatorPaintAndControlComponent->setBoundsRealRef(m_boundsRealRef);
+
+        resized(); // re-maps all screen positions in all children via their resized() callbacks
+    }
 }
 
 void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChannelSet& upmixChannelConfig)

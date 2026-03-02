@@ -36,9 +36,11 @@ public:
 
     //==============================================================================
     void setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions);
+    void setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position);
 
 private:
     //==============================================================================
+    void PrerenderSpeakerDrawable(std::int16_t speakerId, const std::array<std::float_t, 6>& rotNPos);
     void PrerenderSpeakersInBounds();
 
     //==============================================================================

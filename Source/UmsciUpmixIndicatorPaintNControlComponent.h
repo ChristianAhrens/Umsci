@@ -43,6 +43,7 @@ public:
     //==============================================================================
     void setSpeakersRealBoundingCube(const std::array<float, 6>& speakersRealBoundingCube);
     void setSourcePositions(const std::map<std::int16_t, std::array<std::float_t, 3>>& sourcePositions);
+    void setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position);
 
 private:
     //==============================================================================
