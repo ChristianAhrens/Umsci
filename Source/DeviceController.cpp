@@ -661,6 +661,30 @@ bool DeviceController::QueryObjectValue(const RemoteObject::RemObjIdent roi, con
     return success;
 }
 
+bool DeviceController::SetObjectValue(const RemoteObject& remObj)
+{
+    if (!m_ocp1Connection || getState() != State::Connected)
+        return false;
+
+    auto handle = std::uint32_t(0);
+
+    auto objDefOpt = GetObjectDefinition(remObj.Id, remObj.Addr, true);
+    jassert(objDefOpt); // Missing implementation for this object type!
+    if (!objDefOpt)
+        return false;
+    auto& objDef = objDefOpt.value();
+    if (!objDef)
+        return false;
+
+    bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->SetValueCommand(remObj.Var), handle).GetMemoryBlock());
+    AddPendingSetValueHandle(handle, objDef->m_targetOno, remObj.Addr.pri);
+
+    DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(remObj.Id)
+        << "(" << remObj.Addr.toNiceString() << " handle:" << NanoOcp1::HandleToString(handle) << ")");
+
+    return success;
+}
+
 void DeviceController::AddPendingSubscriptionHandle(const std::uint32_t handle)
 {
     std::lock_guard<std::mutex> l(m_pendingHandlesMutex); // NanoOcp callback on JUCE IPC thread, safety required!

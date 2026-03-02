@@ -503,6 +503,9 @@ public:
 	bool SetActiveRemoteObjects(const std::vector<RemoteObject>& remObjs);
 	const std::vector<RemoteObject>& GetActiveRemoteObjects();
 
+	//==============================================================================
+	bool SetObjectValue(const RemoteObject& remObj);
+
     //==============================================================================
     std::function<bool(const RemoteObject&)>	onRemoteObjectReceived;
     std::function<void(const State state)>		onStateChanged;

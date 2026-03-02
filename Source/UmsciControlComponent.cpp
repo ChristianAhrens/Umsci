@@ -38,6 +38,16 @@ UmsciControlComponent::UmsciControlComponent()
     addAndMakeVisible(m_loudspeakersInAreaPaintComponent.get());
     m_soundobjectsInAreaPaintComponent = std::make_unique<UmsciSoundobjectsPaintComponent>();
     addAndMakeVisible(m_soundobjectsInAreaPaintComponent.get());
+    m_soundobjectsInAreaPaintComponent->onSourcePositionChanged = [this](std::int16_t sourceId, std::array<std::float_t, 3> position) {
+        m_sourcePosition[sourceId] = position;
+        DeviceController::getInstance()->SetObjectValue(
+            DeviceController::RemoteObject(
+                DeviceController::RemoteObject::Positioning_SourcePosition,
+                DeviceController::RemObjAddr(sourceId, DeviceController::RemObjAddr::sc_INV),
+                NanoOcp1::Variant(position.at(0), position.at(1), position.at(2))
+            )
+        );
+    };
     m_upmixIndicatorPaintAndControlComponent = std::make_unique<UmsciUpmixIndicatorPaintNControlComponent>();
     addAndMakeVisible(m_upmixIndicatorPaintAndControlComponent.get());
 }
