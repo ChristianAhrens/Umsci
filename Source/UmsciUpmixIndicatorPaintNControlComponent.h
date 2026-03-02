@@ -50,6 +50,10 @@ public:
     void setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position);
 
     //==============================================================================
+    void setSourceStartId(int startId);
+    int  getSourceStartId() const;
+
+    //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
 
 private:
@@ -65,6 +69,9 @@ private:
     //==============================================================================
     void PrerenderUpmixIndicatorInBounds();
     void updateFlashState();
+
+    //==============================================================================
+    int                                                 m_sourceStartId = 1;
 
     //==============================================================================
     std::array<float, 6>                                m_speakersRealBoundingCube;

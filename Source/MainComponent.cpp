@@ -104,6 +104,8 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::ControlColour_Laser] = std::make_pair("Laser", 0);
     // connection settings
     m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
+    // upmix settings
+    m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix settings...", 0);
 #if JUCE_WINDOWS || JUCE_MAC
     // fullscreen toggling
     m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
@@ -130,6 +132,7 @@ MainComponent::MainComponent()
         settingsMenu.addSubMenu("Control format", controlFormatSubMenu);
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
+        settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
@@ -312,6 +315,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         handleSettingsFullscreenModeToggleResult();
     else if (UmsciSettingsOption::ControlFormat_First <= selectedId && UmsciSettingsOption::ControlFormat_Last >= selectedId)
         handleSettingsControlFormatMenuResult(selectedId);
+    else if (UmsciSettingsOption::UpmixSettings == selectedId)
+        showUpmixSettings();
     else
         jassertfalse; // unhandled menu entry!?
 }
@@ -512,6 +517,34 @@ void MainComponent::showConnectionSettings()
     }));
 }
 
+void MainComponent::showUpmixSettings()
+{
+    auto popupMessage = juce::String();
+    if (m_controlComponent)
+        popupMessage = "Upmix overlay currently is set to control\n" + m_controlComponent->getUpmixChannelConfiguration().getDescription() + "\nUsing " + juce::String(m_controlComponent->getUpmixChannelConfiguration().size()) + " channels";
+    m_messageBox = std::make_unique<juce::AlertWindow>(
+        "Upmix control settings",
+        popupMessage,
+        juce::MessageBoxIconType::NoIcon);
+
+    m_messageBox->addTextEditor("Start soundobject ID",
+        juce::String(m_controlComponent->getUpmixSourceStartId()),
+        "First soundobject");
+
+    m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
+    m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
+        if (returnValue == 1)
+        {
+            auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
+            m_controlComponent->setUpmixSourceStartId(startId);
+            if (m_config)
+                m_config->triggerConfigurationDump();
+        }
+        m_messageBox.reset();
+    }));
+}
+
 void MainComponent::setControlColour(const juce::Colour& controlColour)
 {
     m_controlColour = controlColour;
@@ -603,6 +636,15 @@ void MainComponent::performConfigurationDump()
                 m_config->setConfigState(std::move(controlConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
         }
 
+        // upmix config
+        auto upmixConfigXmlElement = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID),
+            m_controlComponent->getUpmixSourceStartId());
+        m_config->setConfigState(std::move(upmixConfigXmlElement),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+
     }
 }
 
@@ -664,6 +706,16 @@ void MainComponent::onConfigUpdated()
     auto controlConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
     if (controlConfigState && m_controlComponent)
         m_controlComponent->setStateXml(controlConfigState.get());
+
+    // upmix config
+    auto upmixConfigState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+    if (upmixConfigState && m_controlComponent)
+    {
+        auto startId = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID), 1);
+        m_controlComponent->setUpmixSourceStartId(startId);
+    }
 }
 
 bool MainComponent::isFullscreenEnabled()

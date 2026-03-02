@@ -64,7 +64,8 @@ public:
         ControlFormat_7point1,
         ControlFormat_7point1point4,
         ControlFormat_9point1point6,
-        ControlFormat_Last = ControlFormat_9point1point6
+        ControlFormat_Last = ControlFormat_9point1point6,
+        UpmixSettings
     };
 
 public:
@@ -101,6 +102,7 @@ private:
     void handleSettingsControlFormatMenuResult(int selectedId);
     void handleSettingsFullscreenModeToggleResult();
     void showConnectionSettings();
+    void showUpmixSettings();
 
     //==============================================================================
     void setControlColour(const juce::Colour& meteringColour);

@@ -273,7 +273,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             if (i < upmixPositionNames.size())
             {
                 RenderedChannelPosition rcp;
-                rcp.sourceId  = static_cast<std::int16_t>(getChannelNumberForChannelTypeInCurrentConfiguration(upmixPositionChannelTypes[i]));
+                rcp.sourceId  = static_cast<std::int16_t>(
+                    m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(upmixPositionChannelTypes[i]) - 1);
                 rcp.screenPos = juce::Point<float>(px, py);
                 rcp.realPos   = GetRealCoordinateForPoint(rcp.screenPos);
                 rcp.label     = juce::String(upmixPositionNames[i]);
@@ -310,7 +311,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             if (i < upmixHeightPositionNames.size())
             {
                 RenderedChannelPosition rcp;
-                rcp.sourceId  = static_cast<std::int16_t>(getChannelNumberForChannelTypeInCurrentConfiguration(upmixHeightPositionChannelTypes[i]));
+                rcp.sourceId  = static_cast<std::int16_t>(
+                    m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(upmixHeightPositionChannelTypes[i]) - 1);
                 rcp.screenPos = juce::Point<float>(px, py);
                 rcp.realPos   = GetRealCoordinateForPoint(rcp.screenPos);
                 rcp.label     = juce::String(upmixHeightPositionNames[i]);
@@ -320,6 +322,18 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     }
 
     updateFlashState();
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setSourceStartId(int startId)
+{
+    m_sourceStartId = juce::jmax(1, startId);
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+int UmsciUpmixIndicatorPaintNControlComponent::getSourceStartId() const
+{
+    return m_sourceStartId;
 }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)

@@ -37,7 +37,8 @@ public:
         CONTROLCOLOUR,
         LOOKANDFEEL,
         CONTROLCONFIG,
-        CONTROLFORMAT
+        CONTROLFORMAT,
+        UPMIXCONFIG
     };
     static juce::String getTagName(TagID ID)
     {
@@ -55,6 +56,8 @@ public:
             return "CONTROLCONFIG";
         case CONTROLFORMAT:
             return "CONTROLFORMAT";
+        case UPMIXCONFIG:
+            return "UPMIXCONFIG";
         default:
             return "INVALID";
         }
@@ -65,7 +68,8 @@ public:
         ENABLED,
         IP,
         PORT,
-        IOSIZE
+        IOSIZE,
+        UPMIXSOURCESTARTID
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -79,6 +83,8 @@ public:
             return "PORT";
         case IOSIZE:
             return "IOSIZE";
+        case UPMIXSOURCESTARTID:
+            return "UPMIXSOURCESTARTID";
         default:
             return "-";
         }

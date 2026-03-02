@@ -65,6 +65,9 @@ public:
 
     //==============================================================================
     void setUpmixChannelConfiguration(const juce::AudioChannelSet& upmixChannelConfig);
+    const juce::AudioChannelSet getUpmixChannelConfiguration();
+    void setUpmixSourceStartId(int startId);
+    int  getUpmixSourceStartId() const;
 
     //==============================================================================
     void resetData();

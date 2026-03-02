@@ -510,3 +510,24 @@ void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChanne
         m_upmixIndicatorPaintAndControlComponent->setChannelConfiguration(upmixChannelConfig);
 }
 
+const juce::AudioChannelSet UmsciControlComponent::getUpmixChannelConfiguration()
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getChannelConfiguration();
+    else
+        return {};
+}
+
+void UmsciControlComponent::setUpmixSourceStartId(int startId)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setSourceStartId(startId);
+}
+
+int UmsciControlComponent::getUpmixSourceStartId() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getSourceStartId();
+    return 1;
+}
+
