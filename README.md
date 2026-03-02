@@ -2,8 +2,6 @@
 
 See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) for available binary packages or join iOS TestFlight Beta:
 
-<img src="Resources/AppStore/TestFlightQRCode.png" alt="TestFlight QR Code" width="15%">
-
 
 <a name="toc" />
 
