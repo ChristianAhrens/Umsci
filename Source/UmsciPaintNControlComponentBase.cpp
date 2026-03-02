@@ -53,7 +53,7 @@ std::array<float, 3> UmsciPaintNControlComponentBase::GetRealCoordinateForPoint(
     auto relativeX = (screenPoint.getX() - bounds.getX()) / float(bounds.getWidth());
     auto relativeY = (screenPoint.getY() - bounds.getY()) / float(bounds.getHeight());
 
-    auto yReal = (1.0f - relativeX) * m_boundsRealRef.getHeight() + m_boundsRealRef.getY();
+    auto yReal = relativeX * m_boundsRealRef.getHeight() + m_boundsRealRef.getY();
     auto xReal = relativeY * m_boundsRealRef.getWidth() + m_boundsRealRef.getX();
 
     return { xReal, yReal, 0.0f };
@@ -68,7 +68,7 @@ juce::Point<float> UmsciPaintNControlComponentBase::GetPointForRealCoordinate(co
     if (m_boundsRealRef.getWidth() == 0.0f || m_boundsRealRef.getHeight() == 0.0f)
         return { 0.0f, 0.0f };
 
-    auto relativeX = 1 - ((yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight()); // 
+    auto relativeX = (yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
     auto relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
 
     return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();

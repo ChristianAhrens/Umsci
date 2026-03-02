@@ -75,7 +75,13 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakerDrawable(std::int16_t spea
         auto& drawable = m_speakerDrawables.at(speakerId);
         drawable->replaceColour(Colours::black, m_speakerDrawablesCurrentColour);
         auto drawableBounds = drawable->getBounds().toFloat();
-        drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(hor + 90), drawableBounds.getCentreX(), drawableBounds.getCentreY())); // +90deg to adjust d&b to screen
+        // Combine all three angles for correct 2D screen rotation:
+        // hor (azimuth) contributes fully when ver=0 (horizontal speaker), fades with cos(ver)
+        // rot (roll) is invisible in top-down view for ver=0, but maps directly to 2D rotation when ver=90 (vertical speaker), weighted by sin(ver)
+        // +90deg adjusts d&b coordinate convention to screen orientation
+        auto verRad = juce::degreesToRadians(ver);
+        auto angle2D = -hor * std::cos(verRad) + rot * std::sin(verRad) + 90.0f;
+        drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(angle2D), drawableBounds.getCentreX(), drawableBounds.getCentreY()));
     }
 }
 
