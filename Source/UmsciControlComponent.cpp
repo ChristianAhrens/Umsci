@@ -377,7 +377,10 @@ const juce::Rectangle<float> UmsciControlComponent::getRealBoundingRect()
             zRange = zRange.getUnionWith(speakerPosition.second.at(5));
         }
 
-        return juce::Rectangle<float>({ xRange.getStart(), yRange.getStart() }, { xRange.getEnd(), yRange.getEnd() });
+        // Build rect with screen-space-aligned semantics:
+        // getX()/getWidth()  = d&b y span (across stage    = screen horizontal)
+        // getY()/getHeight() = d&b x span (towards audience = screen vertical)
+        return juce::Rectangle<float>({ yRange.getStart(), xRange.getStart() }, { yRange.getEnd(), xRange.getEnd() });
     }
 
     return {};

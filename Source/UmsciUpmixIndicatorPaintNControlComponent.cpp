@@ -71,13 +71,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     // draw hint text while flashing
     if (isTimerRunning())
     {
-        g.setFont(juce::Font(juce::FontOptions(12.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(16.0f, juce::Font::plain)));
         g.setColour(indicatorColour);
         g.setOpacity(1.0f);
         g.drawFittedText(
             "Double-click the upmix indicator to change sound object positions to match it. "
             "Double-click anywhere else to reset the upmix indicator to default position/rotation.",
-            getLocalBounds().reduced(10),
+            getLocalBounds().reduced(getLocalBounds().getWidth() / 5),
             juce::Justification::centred,
             4);
     }

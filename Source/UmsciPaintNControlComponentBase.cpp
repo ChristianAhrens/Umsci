@@ -33,28 +33,18 @@ void UmsciPaintNControlComponentBase::setBoundsRealRef(const juce::Rectangle<flo
     m_boundsRealRef = boundsRealRef;
 }
 
-/**
- * @Brief   This method requires special attention, as its input parameter is expected to hold xyz coordinates
- *          in d&b audiotechnik ArrayCalc coordinate system, which is x: towards audience and y: across stage.
- *          To get a proper representation in screen coordindates, stage up top and audience below,
- *          we must interpret incoming x as vertical and incoming y as horizontal coordinate. The output in relative
- *          screen coordinates then is x horizontally and y vertically.
- *          Also the horizontal output must be inverted, to compensate inverted d&b y coordinate.
- */
 std::array<float, 3> UmsciPaintNControlComponentBase::GetRealCoordinateForPoint(const juce::Point<float>& screenPoint)
 {
     auto bounds = getLocalBounds();
     if (bounds.getWidth() == 0 || bounds.getHeight() == 0)
         return { 0.0f, 0.0f, 0.0f };
 
-    // Inverse of GetPointForRealCoordinate:
-    // relativeX = 1 - ((yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight())
-    // relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth()
     auto relativeX = (screenPoint.getX() - bounds.getX()) / float(bounds.getWidth());
     auto relativeY = (screenPoint.getY() - bounds.getY()) / float(bounds.getHeight());
 
-    auto yReal = relativeX * m_boundsRealRef.getHeight() + m_boundsRealRef.getY();
-    auto xReal = relativeY * m_boundsRealRef.getWidth() + m_boundsRealRef.getX();
+    // m_boundsRealRef is screen-space-aligned: getX()/getWidth() = d&b y, getY()/getHeight() = d&b x
+    auto yReal = relativeX * m_boundsRealRef.getWidth()  + m_boundsRealRef.getX();
+    auto xReal = relativeY * m_boundsRealRef.getHeight() + m_boundsRealRef.getY();
 
     return { xReal, yReal, 0.0f };
 }
@@ -68,8 +58,9 @@ juce::Point<float> UmsciPaintNControlComponentBase::GetPointForRealCoordinate(co
     if (m_boundsRealRef.getWidth() == 0.0f || m_boundsRealRef.getHeight() == 0.0f)
         return { 0.0f, 0.0f };
 
-    auto relativeX = (yReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
-    auto relativeY = (xReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
+    // m_boundsRealRef is screen-space-aligned: getX()/getWidth() = d&b y, getY()/getHeight() = d&b x
+    auto relativeX = (yReal - m_boundsRealRef.getX()) / m_boundsRealRef.getWidth();
+    auto relativeY = (xReal - m_boundsRealRef.getY()) / m_boundsRealRef.getHeight();
 
     return getLocalBounds().getRelativePoint(relativeX, relativeY).toFloat();
 }
