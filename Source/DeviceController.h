@@ -562,6 +562,7 @@ private:
 
 	//==============================================================================
 	std::map<RemoteObject::RemObjIdent, std::map<RemObjAddr, NanoOcp1::Ocp1CommandDefinition>>	m_ROIsToDefsMap;
+	std::unordered_map<std::uint32_t, std::pair<RemoteObject::RemObjIdent, RemObjAddr>>			m_ONoToROIMap;
 
 	std::vector<RemoteObject>					m_activeRemoteObjects;
 

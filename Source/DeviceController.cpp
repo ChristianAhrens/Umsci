@@ -299,6 +299,11 @@ void DeviceController::CreateKnownONosMap()
         m_ROIsToDefsMap[RemoteObject::CoordinateMappingSettings_Flip][roa] = NanoOcp1::DS100::dbOcaObjectDef_CoordinateMappingSettings_Flip(first);
         m_ROIsToDefsMap[RemoteObject::CoordinateMappingSettings_Name][roa] = NanoOcp1::DS100::dbOcaObjectDef_CoordinateMappingSettings_Name(first);
     }
+
+    // Build reverse ONo -> (ROI, addr) lookup for O(1) dispatch in UpdateObjectValue.
+    for (auto& roisKV : m_ROIsToDefsMap)
+        for (auto& objDefKV : roisKV.second)
+            m_ONoToROIMap[objDefKV.second.m_targetOno] = { roisKV.first, objDefKV.first };
 }
 
 std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController::GetObjectDefinition(const RemoteObject::RemObjIdent& roi, const RemObjAddr& addr, bool useDefinitionRemapping)
@@ -815,15 +820,12 @@ void DeviceController::ClearPendingHandles()
 
 bool DeviceController::UpdateObjectValue(NanoOcp1::Ocp1Notification* notifObj)
 {
-    for (auto roisKV = m_ROIsToDefsMap.begin(); roisKV != m_ROIsToDefsMap.end(); roisKV++)
+    auto it = m_ONoToROIMap.find(notifObj->GetEmitterOno());
+    if (it != m_ONoToROIMap.end())
     {
-        for (auto objDefKV = roisKV->second.begin(); objDefKV != roisKV->second.end(); objDefKV++)
-        {
-            if (notifObj->MatchesObject(&objDefKV->second))
-            {
-                return UpdateObjectValue(roisKV->first, dynamic_cast<NanoOcp1::Ocp1Message*>(notifObj), *objDefKV);
-            }
-        }
+        auto& [roi, addr] = it->second;
+        return UpdateObjectValue(roi, dynamic_cast<NanoOcp1::Ocp1Message*>(notifObj),
+                                 { addr, m_ROIsToDefsMap.at(roi).at(addr) });
     }
 
     return false;
@@ -831,15 +833,12 @@ bool DeviceController::UpdateObjectValue(NanoOcp1::Ocp1Notification* notifObj)
 
 bool DeviceController::UpdateObjectValue(const std::uint32_t ONo, NanoOcp1::Ocp1Response* responseObj)
 {
-    for (auto roisKV = m_ROIsToDefsMap.begin(); roisKV != m_ROIsToDefsMap.end(); roisKV++)
+    auto it = m_ONoToROIMap.find(ONo);
+    if (it != m_ONoToROIMap.end())
     {
-        for (auto objDefKV = roisKV->second.begin(); objDefKV != roisKV->second.end(); objDefKV++)
-        {
-            if (objDefKV->second.m_targetOno == ONo)
-            {
-                return UpdateObjectValue(roisKV->first, dynamic_cast<NanoOcp1::Ocp1Message*>(responseObj), *objDefKV);
-            }
-        }
+        auto& [roi, addr] = it->second;
+        return UpdateObjectValue(roi, dynamic_cast<NanoOcp1::Ocp1Message*>(responseObj),
+                                 { addr, m_ROIsToDefsMap.at(roi).at(addr) });
     }
 
     return false;
