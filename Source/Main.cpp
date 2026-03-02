@@ -19,6 +19,7 @@
 #include <JuceHeader.h>
 
 #include "MainComponent.h"
+#include "DeviceController.h"
 
 #include <CustomLookAndFeel.h>
 
@@ -51,6 +52,7 @@ public:
 
     void shutdown() override
     {
+        DeviceController::deleteInstance();
         m_mainWindow.reset();
     }
 
