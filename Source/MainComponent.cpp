@@ -526,12 +526,27 @@ void MainComponent::showConnectionSettings()
 {
     m_messageBox = std::make_unique<juce::AlertWindow>(
         "Control connection settings",
-        "Enter remote control parameters to connect to a signal engine.\nInfo: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
+        "Info: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
         juce::MessageBoxIconType::NoIcon);
 
     auto currentOCP1connPar = DeviceController::getInstance()->getConnectionParameters();
 
     m_messageBox->addTextBlock("\nOCA/OCP.1 connection parameters:");
+    
+    m_zeroconfDiscoverComboComponent = std::make_unique<UmsciZeroconfDiscoverComboComponent>();
+    m_zeroconfDiscoverComboComponent->setSize(380, 26);
+    m_zeroconfDiscoverComboComponent->onServiceSelected = [this](const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo& service) {
+        if (auto* ed = m_messageBox->getTextEditor("Device IP"))
+            ed->setText(juce::String(service.ip), juce::sendNotification);
+        if (auto* ed = m_messageBox->getTextEditor("Device port"))
+            ed->setText(juce::String(service.port), juce::sendNotification);
+        auto matrixSizeIt = service.txtRecords.find("db_matrixSize");
+        if (matrixSizeIt != service.txtRecords.end())
+            if (auto* ed = m_messageBox->getTextEditor("Device IO size"))
+                ed->setText(juce::String(matrixSizeIt->second), juce::sendNotification);
+    };
+    m_messageBox->addCustomComponent(m_zeroconfDiscoverComboComponent.get());
+
     m_messageBox->addTextEditor("Device IP", std::get<0>(currentOCP1connPar).toString(), "OCP.1 IP");
     m_messageBox->addTextEditor("Device port", juce::String(std::get<1>(currentOCP1connPar)), "OCP.1 port");
     m_messageBox->addTextEditor("Device IO size", juce::String(m_controlComponent->getOcp1IOSize().first) + "x" + juce::String(m_controlComponent->getOcp1IOSize().second), "OCP.1 IOSize");
@@ -555,6 +570,7 @@ void MainComponent::showConnectionSettings()
                 m_config->triggerConfigurationDump();
         }
 
+        m_zeroconfDiscoverComboComponent.reset();
         m_messageBox.reset();
     }));
 }

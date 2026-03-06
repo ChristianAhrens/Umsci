@@ -21,6 +21,7 @@
 #include <JuceHeader.h>
 
 #include "UmsciAppConfiguration.h"
+#include "UmsciZeroconfDiscoverComboComponent.h"
 
 
  /**
@@ -131,6 +132,7 @@ private:
     std::unique_ptr<AboutComponent>                 m_aboutComponent;
 
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
+    std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 

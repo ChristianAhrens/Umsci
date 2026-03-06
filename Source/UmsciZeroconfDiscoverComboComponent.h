@@ -1,0 +1,53 @@
+/* Copyright (c) 2026, Christian Ahrens
+ *
+ * This file is part of Umsci <https://github.com/ChristianAhrens/Umsci>
+ *
+ * This tool is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This tool is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this tool; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+#pragma once
+
+#include <JuceHeader.h>
+
+#include <ZeroconfDiscoverComponent.h>
+
+
+class UmsciZeroconfDiscoverComboComponent
+    : public juce::Component,
+      public ZeroconfSearcher::ZeroconfSearcher::ZeroconfSearcherListener
+{
+public:
+    UmsciZeroconfDiscoverComboComponent();
+    ~UmsciZeroconfDiscoverComboComponent() override;
+
+    //==============================================================================
+    void resized() override;
+
+    //==============================================================================
+    void handleServicesChanged(std::string serviceName) override;
+
+    //==============================================================================
+    std::function<void(const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo&)> onServiceSelected;
+
+private:
+    //==============================================================================
+    void updateComboBox();
+
+    //==============================================================================
+    std::unique_ptr<ZeroconfSearcher::ZeroconfSearcher>          m_searcher;
+    std::unique_ptr<juce::ComboBox>                              m_comboBox;
+    std::vector<ZeroconfSearcher::ZeroconfSearcher::ServiceInfo> m_services;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciZeroconfDiscoverComboComponent)
+};
