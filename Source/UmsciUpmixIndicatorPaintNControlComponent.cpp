@@ -297,30 +297,114 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto radius = baseRadius * m_upmixTrans;
     m_subCircleRadius = baseRadius * 0.05f;
     auto arcStrokeWidth = baseRadius * 0.025f;
+    auto cosRot = std::cos(m_upmixRot);
+    auto sinRot = std::sin(m_upmixRot);
+
+    // builds an open rectangle path from minDeg to maxDeg (clockwise), rotated by m_upmixRot
+    auto buildOpenRectPath = [&](float r, float minDeg, float maxDeg) -> juce::Path
+    {
+        struct Corner { float angleDeg, lx, ly; };
+        const Corner corners[4] = {
+            {  45.0f,  r, -r },
+            { 135.0f,  r,  r },
+            { 225.0f, -r,  r },
+            { 315.0f, -r, -r },
+        };
+
+        // clockwise angular distance from a normalised origin to an arbitrary angle
+        auto cwDist = [](float fromNorm, float toAngle) {
+            float toNorm = std::fmod(toAngle, 360.0f);
+            if (toNorm < 0.0f) toNorm += 360.0f;
+            float d = toNorm - fromNorm;
+            return d <= 0.0f ? d + 360.0f : d;
+        };
+
+        // project an angle onto the axis-aligned square perimeter (Chebyshev)
+        auto toLocal = [&](float angleDeg) -> juce::Point<float> {
+            auto rad = juce::degreesToRadians(angleDeg);
+            auto dx = std::sin(rad);
+            auto dy = -std::cos(rad);
+            auto t  = r / std::max(std::abs(dx), std::abs(dy));
+            return { t * dx, t * dy };
+        };
+
+        // rotate a local offset by m_upmixRot and translate to screen space
+        auto toScreen = [&](juce::Point<float> local) -> juce::Point<float> {
+            return { cx + local.x * cosRot - local.y * sinRot,
+                     cy + local.x * sinRot + local.y * cosRot };
+        };
+
+        float minNorm = std::fmod(minDeg, 360.0f);
+        if (minNorm < 0.0f) minNorm += 360.0f;
+        float maxDist = cwDist(minNorm, maxDeg);
+
+        // find the first corner clockwise from minNorm
+        int firstIdx = 0;
+        float firstDist = 361.0f;
+        for (int k = 0; k < 4; ++k)
+        {
+            float d = cwDist(minNorm, corners[k].angleDeg);
+            if (d < firstDist) { firstDist = d; firstIdx = k; }
+        }
+
+        juce::Path path;
+        path.startNewSubPath(toScreen(toLocal(minDeg)));
+        for (int j = 0; j < 4; ++j)
+        {
+            int k = (firstIdx + j) % 4;
+            if (cwDist(minNorm, corners[k].angleDeg) < maxDist)
+                path.lineTo(toScreen({ corners[k].lx, corners[k].ly }));
+            else
+                break;
+        }
+        path.lineTo(toScreen(toLocal(maxDeg)));
+        return path;
+    };
 
     // build the floor channel ring
     if (!upmixPositionAnglesDeg.empty())
     {
-        // determine the angular extent of the arc from the most extreme position angles
         auto minAngleDeg = *std::min_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
         auto maxAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
 
-        // build the arc segment and stroke it into a filled band in m_upmixIndicator
-        // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth
-        juce::Path arcPath;
-        arcPath.addCentredArc(cx, cy, radius, radius, m_upmixRot,
-                              juce::degreesToRadians(minAngleDeg),
-                              juce::degreesToRadians(maxAngleDeg),
-                              true);
-        juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator, arcPath);
+        if (m_shape == IndicatorShape::Rectangle)
+        {
+            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator,
+                buildOpenRectPath(radius, minAngleDeg, maxAngleDeg));
+        }
+        else
+        {
+            // build the arc segment and stroke it into a filled band in m_upmixIndicator
+            // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth
+            juce::Path arcPath;
+            arcPath.addCentredArc(cx, cy, radius, radius, m_upmixRot,
+                                  juce::degreesToRadians(minAngleDeg),
+                                  juce::degreesToRadians(maxAngleDeg),
+                                  true);
+            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator, arcPath);
+        }
 
         // add a filled sub-circle at each position and record its data for paint() and hit-testing
-        // screen coords for arc angle θ with rotation R: x = cx + r·sin(θ+R), y = cy - r·cos(θ+R)
         for (size_t i = 0; i < upmixPositionAnglesDeg.size(); ++i)
         {
-            auto effectiveAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]) + m_upmixRot;
-            auto px = cx + radius * std::sin(effectiveAngleRad);
-            auto py = cy - radius * std::cos(effectiveAngleRad);
+            float px, py;
+            if (m_shape == IndicatorShape::Rectangle)
+            {
+                // project base angle (no rotation) onto axis-aligned square, then rotate the result
+                auto baseAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]);
+                auto dx = std::sin(baseAngleRad);
+                auto dy = -std::cos(baseAngleRad);
+                auto t = radius / std::max(std::abs(dx), std::abs(dy));
+                px = cx + (t * dx) * cosRot - (t * dy) * sinRot;
+                py = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+            }
+            else
+            {
+                // screen coords for arc angle θ with rotation R: x = cx + r·sin(θ+R), y = cy - r·cos(θ+R)
+                auto effectiveAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]) + m_upmixRot;
+                px = cx + radius * std::sin(effectiveAngleRad);
+                py = cy - radius * std::cos(effectiveAngleRad);
+            }
 
             m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
                                         m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
@@ -348,18 +432,39 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         auto minHeightAngleDeg = *std::min_element(upmixHeightPositionAnglesDeg.begin(), upmixHeightPositionAnglesDeg.end());
         auto maxHeightAngleDeg = *std::max_element(upmixHeightPositionAnglesDeg.begin(), upmixHeightPositionAnglesDeg.end());
 
-        juce::Path heightArcPath;
-        heightArcPath.addCentredArc(cx, cy, heightRadius, heightRadius, m_upmixRot,
-                                    juce::degreesToRadians(minHeightAngleDeg),
-                                    juce::degreesToRadians(maxHeightAngleDeg),
-                                    true);
-        juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator, heightArcPath);
+        if (m_shape == IndicatorShape::Rectangle)
+        {
+            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator,
+                buildOpenRectPath(heightRadius, minHeightAngleDeg, maxHeightAngleDeg));
+        }
+        else
+        {
+            juce::Path heightArcPath;
+            heightArcPath.addCentredArc(cx, cy, heightRadius, heightRadius, m_upmixRot,
+                                        juce::degreesToRadians(minHeightAngleDeg),
+                                        juce::degreesToRadians(maxHeightAngleDeg),
+                                        true);
+            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator, heightArcPath);
+        }
 
         for (size_t i = 0; i < upmixHeightPositionAnglesDeg.size(); ++i)
         {
-            auto effectiveAngleRad = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]) + m_upmixRot;
-            auto px = cx + heightRadius * std::sin(effectiveAngleRad);
-            auto py = cy - heightRadius * std::cos(effectiveAngleRad);
+            float px, py;
+            if (m_shape == IndicatorShape::Rectangle)
+            {
+                auto baseAngleRad = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]);
+                auto dx = std::sin(baseAngleRad);
+                auto dy = -std::cos(baseAngleRad);
+                auto t = heightRadius / std::max(std::abs(dx), std::abs(dy));
+                px = cx + (t * dx) * cosRot - (t * dy) * sinRot;
+                py = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+            }
+            else
+            {
+                auto effectiveAngleRad = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]) + m_upmixRot;
+                px = cx + heightRadius * std::sin(effectiveAngleRad);
+                py = cy - heightRadius * std::cos(effectiveAngleRad);
+            }
 
             m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
                                               m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
@@ -401,6 +506,18 @@ void UmsciUpmixIndicatorPaintNControlComponent::setLiveMode(bool liveMode)
 bool UmsciUpmixIndicatorPaintNControlComponent::getLiveMode() const
 {
     return m_liveMode;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setShape(IndicatorShape shape)
+{
+    m_shape = shape;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPaintNControlComponent::getShape() const
+{
+    return m_shape;
 }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)

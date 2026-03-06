@@ -27,6 +27,29 @@
 class UmsciUpmixIndicatorPaintNControlComponent :   public UmsciPaintNControlComponentBase, public JUCEAppBasics::TwoDFieldBase, public juce::Timer
 {
 public:
+    enum class IndicatorShape { Circle, Rectangle };
+    static juce::String getShapeName(IndicatorShape shape)
+    {
+        switch (shape)
+        {
+        case IndicatorShape::Rectangle:
+            return "Rectangle";
+        case IndicatorShape::Circle:
+        default:
+            return "Circle";
+        }
+    }
+    static IndicatorShape getShapeForName(const juce::String& name)
+    {
+        if (name == "Rectangle")
+            return IndicatorShape::Rectangle;
+        else if (name == "Circle")
+            return IndicatorShape::Circle;
+        
+        jassertfalse; // unknown string passed as name
+        return IndicatorShape::Circle;
+    }
+
     UmsciUpmixIndicatorPaintNControlComponent();
     ~UmsciUpmixIndicatorPaintNControlComponent() override;
 
@@ -56,6 +79,10 @@ public:
     //==============================================================================
     void setLiveMode(bool liveMode);
     bool getLiveMode() const;
+
+    //==============================================================================
+    void setShape(IndicatorShape shape);
+    IndicatorShape getShape() const;
 
     //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
@@ -101,6 +128,7 @@ private:
 
     bool                        m_flashState           = false;
     bool                        m_liveMode             = false;
+    IndicatorShape              m_shape                = IndicatorShape::Circle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

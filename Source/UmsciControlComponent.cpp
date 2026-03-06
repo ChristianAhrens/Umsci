@@ -544,3 +544,16 @@ bool UmsciControlComponent::getUpmixLiveMode() const
     return false;
 }
 
+void UmsciControlComponent::setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShape(shape);
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent::getUpmixShape() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShape();
+    return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
+}
+

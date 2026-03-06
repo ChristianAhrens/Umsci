@@ -539,6 +539,14 @@ void MainComponent::showUpmixSettings()
         combo->setSelectedItemIndex(m_controlComponent->getUpmixLiveMode() ? 1 : 0,
                                     juce::dontSendNotification);
 
+    juce::StringArray shapeItems;
+    shapeItems.add("Circle");
+    shapeItems.add("Rectangle");
+    m_messageBox->addComboBox("Shape", shapeItems, "Indicator shape");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
+        combo->setSelectedItemIndex(m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addTextEditor("Start soundobject ID",
         juce::String(m_controlComponent->getUpmixSourceStartId()),
         "First soundobject");
@@ -552,6 +560,10 @@ void MainComponent::showUpmixSettings()
                 handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
             if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
                 m_controlComponent->setUpmixLiveMode(combo->getSelectedItemIndex() == 1);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
+                m_controlComponent->setUpmixShape(combo->getSelectedItemIndex() == 1
+                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
+                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
             if (m_config)
@@ -661,6 +673,11 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE),
             (m_controlComponent ? (m_controlComponent->getUpmixLiveMode() ? 1 : 0) : 0));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE),
+            UmsciUpmixIndicatorPaintNControlComponent::getShapeName(
+                m_controlComponent ? m_controlComponent->getUpmixShape()
+                                   : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -738,6 +755,10 @@ void MainComponent::onConfigUpdated()
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);
+        auto upmixShape = UmsciUpmixIndicatorPaintNControlComponent::getShapeForName(
+            upmixConfigState->getStringAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
+        m_controlComponent->setUpmixShape(upmixShape);
     }
 }
 

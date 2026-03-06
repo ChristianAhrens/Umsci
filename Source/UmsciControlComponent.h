@@ -25,10 +25,11 @@
 #include "DeviceController.h"
 
 
+#include "UmsciUpmixIndicatorPaintNControlComponent.h"
+
 /*Fwd decls*/
 class UmsciLoudspeakersPaintComponent;
 class UmsciSoundobjectsPaintComponent;
-class UmsciUpmixIndicatorPaintNControlComponent;
 
 class UmsciControlComponent :   public juce::Component, public UmsciAppConfiguration::XmlConfigurableElement
 {
@@ -70,6 +71,8 @@ public:
     int  getUpmixSourceStartId() const;
     void setUpmixLiveMode(bool liveMode);
     bool getUpmixLiveMode() const;
+    void setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape);
+    UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
 
     //==============================================================================
     void resetData();

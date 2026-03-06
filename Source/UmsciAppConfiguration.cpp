@@ -92,6 +92,8 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 			return false;
 		if (-1 == upmixConfigSectionElement->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), -1))
 			return false;
+		if (juce::String("ERROR") == upmixConfigSectionElement->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE), "ERROR"))
+			return false;
 
 		// positive validation outcome - continue
 	}
