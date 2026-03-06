@@ -28,6 +28,31 @@ UmsciPaintNControlComponentBase::~UmsciPaintNControlComponentBase()
 {
 }
 
+void UmsciPaintNControlComponentBase::setControlsSize(ControlsSize size)
+{
+    m_controlsSize = size;
+    repaint();
+}
+
+UmsciPaintNControlComponentBase::ControlsSize UmsciPaintNControlComponentBase::getControlsSize() const
+{
+    return m_controlsSize;
+}
+
+float UmsciPaintNControlComponentBase::getControlsSizeMultiplier() const
+{
+    switch (m_controlsSize)
+    {
+    case ControlsSize::M:
+        return 1.5f;
+    case ControlsSize::L:
+        return 2.0f;
+    case ControlsSize::S:
+    default:
+        return 1.0f;
+    }
+}
+
 void UmsciPaintNControlComponentBase::setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef)
 {
     m_boundsRealRef = boundsRealRef;

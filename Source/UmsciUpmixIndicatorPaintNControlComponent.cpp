@@ -333,8 +333,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto cy = m_upmixCenter.y;
     auto baseRadius = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
     auto radius = baseRadius * m_upmixTrans;
-    m_subCircleRadius = baseRadius * 0.05f;
-    auto arcStrokeWidth = baseRadius * 0.025f;
+    m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
+    auto arcStrokeWidth = m_subCircleRadius * 0.5f;
     auto cosRot = std::cos(m_upmixRot);
     auto sinRot = std::sin(m_upmixRot);
 
@@ -545,6 +545,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::setLiveMode(bool liveMode)
 bool UmsciUpmixIndicatorPaintNControlComponent::getLiveMode() const
 {
     return m_liveMode;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setControlsSize(ControlsSize size)
+{
+    UmsciPaintNControlComponentBase::setControlsSize(size);
+    PrerenderUpmixIndicatorInBounds();
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::setShape(IndicatorShape shape)

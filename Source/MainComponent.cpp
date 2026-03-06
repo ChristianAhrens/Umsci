@@ -106,6 +106,10 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
     // upmix settings
     m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix settings...", 0);
+    // control size
+    m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
+    m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
+    m_settingsItems[UmsciSettingsOption::ControlSize_L] = std::make_pair("L", 0);
 #if JUCE_WINDOWS || JUCE_MAC
     // fullscreen toggling
     m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
@@ -122,9 +126,14 @@ MainComponent::MainComponent()
         for (int i = UmsciSettingsOption::ControlColour_First; i <= UmsciSettingsOption::ControlColour_Last; i++)
             controlColourSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
 
+        juce::PopupMenu controlSizeSubMenu;
+        for (int i = UmsciSettingsOption::ControlSize_First; i <= UmsciSettingsOption::ControlSize_Last; i++)
+            controlSizeSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
+
         juce::PopupMenu settingsMenu;
         settingsMenu.addSubMenu("LookAndFeel", lookAndFeelSubMenu);
         settingsMenu.addSubMenu("Control colour", controlColourSubMenu);
+        settingsMenu.addSubMenu("Control size", controlSizeSubMenu);
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
@@ -312,6 +321,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         handleSettingsControlFormatMenuResult(selectedId);
     else if (UmsciSettingsOption::UpmixSettings == selectedId)
         showUpmixSettings();
+    else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
+        handleSettingsControlSizeMenuResult(selectedId);
     else
         jassertfalse; // unhandled menu entry!?
 }
@@ -390,6 +401,37 @@ void MainComponent::handleSettingsControlFormatMenuResult(int selectedId)
     }
 
     resized();
+}
+
+void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
+{
+    std::function<void(int, int, int)> setSettingsItemsCheckState = [=](int s, int m, int l) {
+        m_settingsItems[UmsciSettingsOption::ControlSize_S].second = s;
+        m_settingsItems[UmsciSettingsOption::ControlSize_M].second = m;
+        m_settingsItems[UmsciSettingsOption::ControlSize_L].second = l;
+    };
+
+    switch (selectedId)
+    {
+    case UmsciSettingsOption::ControlSize_S:
+        setSettingsItemsCheckState(1, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
+        break;
+    case UmsciSettingsOption::ControlSize_M:
+        setSettingsItemsCheckState(0, 1, 0);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
+        break;
+    case UmsciSettingsOption::ControlSize_L:
+        setSettingsItemsCheckState(0, 0, 1);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
+        break;
+    default:
+        jassertfalse;
+        break;
+    }
 }
 
 void MainComponent::handleSettingsLookAndFeelMenuResult(int selectedId)
@@ -654,6 +696,14 @@ void MainComponent::performConfigurationDump()
         }
         visuConfigXmlElement->addChildElement(controlFormatXmlElmement.release());
 
+        auto controlSizeXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSIZE));
+        for (int i = UmsciSettingsOption::ControlSize_First; i <= UmsciSettingsOption::ControlSize_Last; i++)
+        {
+            if (m_settingsItems[i].second == 1)
+                controlSizeXmlElement->addTextElement(juce::String(i));
+        }
+        visuConfigXmlElement->addChildElement(controlSizeXmlElement.release());
+
         m_config->setConfigState(std::move(visuConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 
         // control config
@@ -736,6 +786,13 @@ void MainComponent::onConfigUpdated()
         {
             auto controlFormatSettingsOptionId = controlFormatXmlElement->getAllSubText().getIntValue();
             handleSettingsControlFormatMenuResult(controlFormatSettingsOptionId);
+        }
+
+        auto controlSizeXmlElement = visuConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSIZE));
+        if (controlSizeXmlElement)
+        {
+            auto controlSizeSettingsOptionId = controlSizeXmlElement->getAllSubText().getIntValue();
+            handleSettingsControlSizeMenuResult(controlSizeSettingsOptionId);
         }
     }
 

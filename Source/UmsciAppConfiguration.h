@@ -38,7 +38,8 @@ public:
         LOOKANDFEEL,
         CONTROLCONFIG,
         CONTROLFORMAT,
-        UPMIXCONFIG
+        UPMIXCONFIG,
+        CONTROLSIZE
     };
     static juce::String getTagName(TagID ID)
     {
@@ -58,6 +59,8 @@ public:
             return "CONTROLFORMAT";
         case UPMIXCONFIG:
             return "UPMIXCONFIG";
+        case CONTROLSIZE:
+            return "CONTROLSIZE";
         default:
             return "INVALID";
         }

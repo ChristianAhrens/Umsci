@@ -65,7 +65,12 @@ public:
         ControlFormat_7point1point4,
         ControlFormat_9point1point6,
         ControlFormat_Last = ControlFormat_9point1point6,
-        UpmixSettings
+        UpmixSettings,
+        ControlSize_First,
+        ControlSize_S = ControlSize_First,
+        ControlSize_M,
+        ControlSize_L,
+        ControlSize_Last = ControlSize_L
     };
 
 public:
@@ -100,6 +105,7 @@ private:
     void handleSettingsLookAndFeelMenuResult(int selectedId);
     void handleSettingsControlColourMenuResult(int selectedId);
     void handleSettingsControlFormatMenuResult(int selectedId);
+    void handleSettingsControlSizeMenuResult(int selectedId);
     void handleSettingsFullscreenModeToggleResult();
     void showConnectionSettings();
     void showUpmixSettings();

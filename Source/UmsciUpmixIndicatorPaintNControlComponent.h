@@ -56,6 +56,7 @@ public:
     //==============================================================================
     void paint(Graphics&) override;
     void resized() override;
+    void setControlsSize(ControlsSize size) override;
     bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
@@ -118,7 +119,7 @@ private:
     float                       m_upmixHeightTrans  = 0.6f;  // 40% smaller than floor ring by default
 
     juce::Point<float>                       m_upmixCenter;
-    float                                    m_subCircleRadius = 0.0f;
+    float                                    m_subCircleRadius = 15.0f;
     std::vector<RenderedChannelPosition>     m_renderedFloorPositions;
     std::vector<RenderedChannelPosition>     m_renderedHeightPositions;
 

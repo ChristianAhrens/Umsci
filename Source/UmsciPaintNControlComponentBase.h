@@ -24,11 +24,18 @@
 class UmsciPaintNControlComponentBase :   public juce::Component
 {
 public:
+    enum class ControlsSize { S, M, L };
+
     UmsciPaintNControlComponentBase();
     virtual ~UmsciPaintNControlComponentBase() override;
 
     //==============================================================================
     void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
+
+    //==============================================================================
+    virtual void setControlsSize(ControlsSize size);
+    ControlsSize getControlsSize() const;
+    float getControlsSizeMultiplier() const;
 
 protected:
     //==============================================================================
@@ -40,6 +47,7 @@ private:
     juce::Rectangle<float> getContentBounds() const;
 
     juce::Rectangle<float> m_boundsRealRef;
+    ControlsSize           m_controlsSize = ControlsSize::S;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)
 };

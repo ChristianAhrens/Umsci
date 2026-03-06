@@ -557,3 +557,20 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent:
     return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
 }
 
+void UmsciControlComponent::setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size)
+{
+    if (m_loudspeakersInAreaPaintComponent)
+        m_loudspeakersInAreaPaintComponent->setControlsSize(size);
+    if (m_soundobjectsInAreaPaintComponent)
+        m_soundobjectsInAreaPaintComponent->setControlsSize(size);
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setControlsSize(size);
+}
+
+UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControlsSize() const
+{
+    if (m_loudspeakersInAreaPaintComponent)
+        return m_loudspeakersInAreaPaintComponent->getControlsSize();
+    return UmsciPaintNControlComponentBase::ControlsSize::S;
+}
+

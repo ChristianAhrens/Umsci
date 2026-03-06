@@ -25,6 +25,7 @@
 #include "DeviceController.h"
 
 
+#include "UmsciPaintNControlComponentBase.h"
 #include "UmsciUpmixIndicatorPaintNControlComponent.h"
 
 /*Fwd decls*/
@@ -73,6 +74,10 @@ public:
     bool getUpmixLiveMode() const;
     void setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape);
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
+
+    //==============================================================================
+    void setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size);
+    UmsciPaintNControlComponentBase::ControlsSize getControlsSize() const;
 
     //==============================================================================
     void resetData();

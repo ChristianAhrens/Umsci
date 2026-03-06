@@ -33,6 +33,7 @@ public:
     void paint(Graphics&) override;
     void resized() override;
     void lookAndFeelChanged() override;
+    void setControlsSize(ControlsSize size) override;
 
     //==============================================================================
     void setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions);
