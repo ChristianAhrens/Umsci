@@ -692,6 +692,14 @@ void MainComponent::performConfigurationDump()
 {
     if (m_config)
     {
+        // control config
+        if (m_controlComponent)
+        {
+            auto controlConfigXmlElement = m_controlComponent->createStateXml();
+            if (controlConfigXmlElement)
+                m_config->setConfigState(std::move(controlConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+        }
+
         // connection config
         auto connectionConfigXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
         auto params = DeviceController::getInstance()->getConnectionParameters();
@@ -737,14 +745,6 @@ void MainComponent::performConfigurationDump()
 
         m_config->setConfigState(std::move(visuConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 
-        // control config
-        if (m_controlComponent)
-        {
-            auto controlConfigXmlElement = m_controlComponent->createStateXml();
-            if (controlConfigXmlElement)
-                m_config->setConfigState(std::move(controlConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
-        }
-
         // upmix config
         auto upmixConfigXmlElement = std::make_unique<juce::XmlElement>(
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
@@ -781,6 +781,11 @@ void MainComponent::performConfigurationDump()
 
 void MainComponent::onConfigUpdated()
 {
+    // control config
+    auto controlConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+    if (controlConfigState && m_controlComponent)
+        m_controlComponent->setStateXml(controlConfigState.get());
+
     // connection config
     auto connectionConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
     if (connectionConfigState)
@@ -840,11 +845,6 @@ void MainComponent::onConfigUpdated()
             handleSettingsControlSizeMenuResult(controlSizeSettingsOptionId);
         }
     }
-
-    // control config
-    auto controlConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
-    if (controlConfigState && m_controlComponent)
-        m_controlComponent->setStateXml(controlConfigState.get());
 
     // upmix config
     auto upmixConfigState = m_config->getConfigState(
