@@ -4,6 +4,13 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+
+### Changed
+
+### Fixed
+
 ## [0.2.0] 2026-03-06
 ### Added
 - Added support for z-Axis (default 1.2m normal layer, auto-fit to speaker system height for height layer)
