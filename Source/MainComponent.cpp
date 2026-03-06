@@ -677,12 +677,13 @@ void MainComponent::onConfigUpdated()
         auto ocp1IP = juce::IPAddress(connectionConfigState->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP)));
         auto ocp1Port = connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT));
 
+        if (m_connectingComponent)
+            m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
+
         auto ocp1ConParams = DeviceController::getInstance()->getConnectionParameters();
         if (std::get<0>(ocp1ConParams) != ocp1IP || std::get<1>(ocp1ConParams) != ocp1Port)
         {
             DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
-            if (m_connectingComponent)
-                m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
         }
 
         if (ocp1ConnectionEnabled != m_connectionToggleButton->getToggleState())
