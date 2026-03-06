@@ -50,6 +50,10 @@ UmsciControlComponent::UmsciControlComponent()
     };
     m_upmixIndicatorPaintAndControlComponent = std::make_unique<UmsciUpmixIndicatorPaintNControlComponent>();
     addAndMakeVisible(m_upmixIndicatorPaintAndControlComponent.get());
+    m_upmixIndicatorPaintAndControlComponent->onTransformChanged = [this]() {
+        if (onUpmixTransformChanged)
+            onUpmixTransformChanged();
+    };
     m_upmixIndicatorPaintAndControlComponent->onSourcePositionChanged = [this](std::int16_t sourceId, std::array<std::float_t, 3> position) {
         m_sourcePosition[sourceId] = position;
         m_soundobjectsInAreaPaintComponent->setSourcePosition(sourceId, position);
@@ -274,7 +278,7 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
         break;
     }
 
-    if (checkIsDatabaseComplete())
+    if (!m_databaseComplete && checkIsDatabaseComplete())
     {
         setDatabaseComplete(true);
     }
@@ -508,6 +512,7 @@ void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChanne
 {
     if (m_upmixIndicatorPaintAndControlComponent)
         m_upmixIndicatorPaintAndControlComponent->setChannelConfiguration(upmixChannelConfig);
+    updateSourceIdFilter();
 }
 
 const juce::AudioChannelSet UmsciControlComponent::getUpmixChannelConfiguration()
@@ -522,6 +527,7 @@ void UmsciControlComponent::setUpmixSourceStartId(int startId)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
         m_upmixIndicatorPaintAndControlComponent->setSourceStartId(startId);
+    updateSourceIdFilter();
 }
 
 int UmsciControlComponent::getUpmixSourceStartId() const
@@ -529,5 +535,106 @@ int UmsciControlComponent::getUpmixSourceStartId() const
     if (m_upmixIndicatorPaintAndControlComponent)
         return m_upmixIndicatorPaintAndControlComponent->getSourceStartId();
     return 1;
+}
+
+void UmsciControlComponent::setUpmixLiveMode(bool liveMode)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setLiveMode(liveMode);
+}
+
+bool UmsciControlComponent::getUpmixLiveMode() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getLiveMode();
+    return false;
+}
+
+void UmsciControlComponent::setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShape(shape);
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent::getUpmixShape() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShape();
+    return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
+}
+
+void UmsciControlComponent::setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size)
+{
+    if (m_loudspeakersInAreaPaintComponent)
+        m_loudspeakersInAreaPaintComponent->setControlsSize(size);
+    if (m_soundobjectsInAreaPaintComponent)
+        m_soundobjectsInAreaPaintComponent->setControlsSize(size);
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setControlsSize(size);
+}
+
+UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControlsSize() const
+{
+    if (m_loudspeakersInAreaPaintComponent)
+        return m_loudspeakersInAreaPaintComponent->getControlsSize();
+    return UmsciPaintNControlComponentBase::ControlsSize::S;
+}
+
+void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans);
+}
+
+float UmsciControlComponent::getUpmixRot() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixRot();
+    return 0.0f;
+}
+
+float UmsciControlComponent::getUpmixTrans() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTrans();
+    return 1.0f;
+}
+
+float UmsciControlComponent::getUpmixHeightTrans() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
+    return 0.6f;
+}
+
+void UmsciControlComponent::setShowAllSources(bool showAll)
+{
+    m_showAllSources = showAll;
+    updateSourceIdFilter();
+}
+
+bool UmsciControlComponent::getShowAllSources() const
+{
+    return m_showAllSources;
+}
+
+void UmsciControlComponent::updateSourceIdFilter()
+{
+    if (!m_soundobjectsInAreaPaintComponent)
+        return;
+
+    if (m_showAllSources)
+    {
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter({});
+    }
+    else
+    {
+        auto startId = getUpmixSourceStartId();
+        auto channelCount = getUpmixChannelConfiguration().size();
+        std::set<std::int16_t> allowedIds;
+        for (int i = 0; i < channelCount; ++i)
+            allowedIds.insert(static_cast<std::int16_t>(startId + i));
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(allowedIds);
+    }
 }
 

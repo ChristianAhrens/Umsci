@@ -38,7 +38,11 @@ public:
         LOOKANDFEEL,
         CONTROLCONFIG,
         CONTROLFORMAT,
-        UPMIXCONFIG
+        UPMIXCONFIG,
+        CONTROLSIZE,
+        UPMIXROT,
+        UPMIXSCALE,
+        UPMIXHEIGHTSCALE
     };
     static juce::String getTagName(TagID ID)
     {
@@ -58,6 +62,14 @@ public:
             return "CONTROLFORMAT";
         case UPMIXCONFIG:
             return "UPMIXCONFIG";
+        case CONTROLSIZE:
+            return "CONTROLSIZE";
+        case UPMIXROT:
+            return "UPMIXROT";
+        case UPMIXSCALE:
+            return "UPMIXSCALE";
+        case UPMIXHEIGHTSCALE:
+            return "UPMIXHEIGHTSCALE";
         default:
             return "INVALID";
         }
@@ -69,7 +81,10 @@ public:
         IP,
         PORT,
         IOSIZE,
-        UPMIXSOURCESTARTID
+        UPMIXSOURCESTARTID,
+        UPMIXLIVEMODE,
+        UPMIXSHAPE,
+        UPMIXSHOWALLSOURCES
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -85,6 +100,12 @@ public:
             return "IOSIZE";
         case UPMIXSOURCESTARTID:
             return "UPMIXSOURCESTARTID";
+        case UPMIXLIVEMODE:
+            return "UPMIXLIVEMODE";
+        case UPMIXSHAPE:
+            return "UPMIXSHAPE";
+        case UPMIXSHOWALLSOURCES:
+            return "UPMIXSHOWALLSOURCES";
         default:
             return "-";
         }

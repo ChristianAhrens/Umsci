@@ -27,15 +27,40 @@
 class UmsciUpmixIndicatorPaintNControlComponent :   public UmsciPaintNControlComponentBase, public JUCEAppBasics::TwoDFieldBase, public juce::Timer
 {
 public:
+    enum class IndicatorShape { Circle, Rectangle };
+    static juce::String getShapeName(IndicatorShape shape)
+    {
+        switch (shape)
+        {
+        case IndicatorShape::Rectangle:
+            return "Rectangle";
+        case IndicatorShape::Circle:
+        default:
+            return "Circle";
+        }
+    }
+    static IndicatorShape getShapeForName(const juce::String& name)
+    {
+        if (name == "Rectangle")
+            return IndicatorShape::Rectangle;
+        else if (name == "Circle")
+            return IndicatorShape::Circle;
+        
+        jassertfalse; // unknown string passed as name
+        return IndicatorShape::Circle;
+    }
+
     UmsciUpmixIndicatorPaintNControlComponent();
     ~UmsciUpmixIndicatorPaintNControlComponent() override;
 
     //==============================================================================
     void paint(Graphics&) override;
     void resized() override;
+    void setControlsSize(ControlsSize size) override;
     bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
     //==============================================================================
@@ -54,7 +79,22 @@ public:
     int  getSourceStartId() const;
 
     //==============================================================================
+    void setLiveMode(bool liveMode);
+    bool getLiveMode() const;
+
+    //==============================================================================
+    void setShape(IndicatorShape shape);
+    IndicatorShape getShape() const;
+
+    //==============================================================================
+    void setUpmixTransform(float rot, float trans, float heightTrans);
+    float getUpmixRot() const;
+    float getUpmixTrans() const;
+    float getUpmixHeightTrans() const;
+
+    //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
+    std::function<void()> onTransformChanged;
 
 private:
     //==============================================================================
@@ -69,6 +109,7 @@ private:
     //==============================================================================
     void PrerenderUpmixIndicatorInBounds();
     void updateFlashState();
+    juce::Rectangle<int> getRefitButtonBounds() const;
 
     //==============================================================================
     int                                                 m_sourceStartId = 1;
@@ -76,6 +117,8 @@ private:
     //==============================================================================
     std::array<float, 6>                                m_speakersRealBoundingCube;
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
+    
+    float                       m_boundingFitFactor = 0.15f;
 
     juce::Path                  m_upmixIndicator;
     juce::Path                  m_upmixHeightIndicator;
@@ -84,7 +127,7 @@ private:
     float                       m_upmixHeightTrans  = 0.6f;  // 40% smaller than floor ring by default
 
     juce::Point<float>                       m_upmixCenter;
-    float                                    m_subCircleRadius = 0.0f;
+    float                                    m_subCircleRadius = 15.0f;
     std::vector<RenderedChannelPosition>     m_renderedFloorPositions;
     std::vector<RenderedChannelPosition>     m_renderedHeightPositions;
 
@@ -96,6 +139,8 @@ private:
     float                       m_dragStartHeightTrans = 0.6f;
 
     bool                        m_flashState           = false;
+    bool                        m_liveMode             = false;
+    IndicatorShape              m_shape                = IndicatorShape::Circle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

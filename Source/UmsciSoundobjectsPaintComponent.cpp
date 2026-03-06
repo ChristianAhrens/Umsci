@@ -32,8 +32,8 @@ UmsciSoundobjectsPaintComponent::~UmsciSoundobjectsPaintComponent()
 
 void UmsciSoundobjectsPaintComponent::paint(juce::Graphics &g)
 {
-    auto knobSize = 14.0f;
-    auto knobThickness = 4.0f;
+    auto knobSize = 14.0f * getControlsSizeMultiplier();
+    auto knobThickness = 4.0f * getControlsSizeMultiplier();
 
     g.setColour(getLookAndFeel().findColour(JUCEAppBasics::CustomLookAndFeel::ColourIds::MeteringRmsColourId));
     g.setOpacity(1.0f);
@@ -44,6 +44,8 @@ void UmsciSoundobjectsPaintComponent::paint(juce::Graphics &g)
     for (auto const sourceScreenPositionKV : m_sourceScreenPositions)
     {
         auto& sourceId = sourceScreenPositionKV.first;
+        if (!m_sourceIdFilter.empty() && m_sourceIdFilter.count(sourceId) == 0)
+            continue;
         auto sourceScreenPos = sourceScreenPositionKV.second.toFloat();
 
         // Paint source thumb
@@ -88,12 +90,22 @@ void UmsciSoundobjectsPaintComponent::setSourcePositions(const std::map<std::int
 
 bool UmsciSoundobjectsPaintComponent::hitTest(int x, int y)
 {
-    auto const hitRadius = 14.0f; // matches mouseDown
+    auto const hitRadius = 14.0f * getControlsSizeMultiplier(); // matches mouseDown
     auto point = juce::Point<int>(x, y);
     for (auto const& kv : m_sourceScreenPositions)
+    {
+        if (!m_sourceIdFilter.empty() && m_sourceIdFilter.count(kv.first) == 0)
+            continue;
         if (point.getDistanceFrom(kv.second) <= hitRadius)
             return true;
+    }
     return false;
+}
+
+void UmsciSoundobjectsPaintComponent::setSourceIdFilter(const std::set<std::int16_t>& allowedIds)
+{
+    m_sourceIdFilter = allowedIds;
+    repaint();
 }
 
 void UmsciSoundobjectsPaintComponent::setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position)
@@ -105,12 +117,14 @@ void UmsciSoundobjectsPaintComponent::setSourcePosition(std::int16_t sourceId, c
 
 void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
 {
-    auto const hitRadius = 14.0f; // matches knobSize in paint()
+    auto const hitRadius = 14.0f * getControlsSizeMultiplier(); // matches knobSize in paint()
     auto clickPos = e.getPosition();
 
     m_draggedSourceId = -1;
     for (auto const& kv : m_sourceScreenPositions)
     {
+        if (!m_sourceIdFilter.empty() && m_sourceIdFilter.count(kv.first) == 0)
+            continue;
         if (clickPos.getDistanceFrom(kv.second) <= hitRadius)
         {
             m_draggedSourceId = kv.first;

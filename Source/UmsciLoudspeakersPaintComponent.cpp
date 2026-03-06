@@ -36,8 +36,8 @@ void UmsciLoudspeakersPaintComponent::paint(juce::Graphics &g)
     {
         // draw speaker icons in target area
         speakerDrawableKV.second->drawWithin(g, m_speakerDrawableAreas[speakerDrawableKV.first], juce::RectanglePlacement::centred, 1.0f);
-        // draw framing rect around icons, 3px larger than icon target area itself
-        g.drawRect(m_speakerDrawableAreas[speakerDrawableKV.first].expanded(2.0f));
+        // draw framing rect around icons, proportional to drawable size
+        g.drawRect(m_speakerDrawableAreas[speakerDrawableKV.first].expanded(2.0f * getControlsSizeMultiplier()));
     }
 }
 
@@ -110,9 +110,15 @@ void UmsciLoudspeakersPaintComponent::setSpeakerPosition(std::int16_t speakerId,
 {
     m_speakerPositions[speakerId] = position;
     PrerenderSpeakerDrawable(speakerId, position);
-    m_speakerDrawableAreas[speakerId] = juce::Rectangle<float>(0.0f, 0.0f, 16.0f, 16.0f)
+    m_speakerDrawableAreas[speakerId] = juce::Rectangle<float>(0.0f, 0.0f, 16.0f * getControlsSizeMultiplier(), 16.0f * getControlsSizeMultiplier())
                                             .withCentre(GetPointForRealCoordinate({ position.at(3), position.at(4), position.at(5) }));
     repaint();
+}
+
+void UmsciLoudspeakersPaintComponent::setControlsSize(ControlsSize size)
+{
+    UmsciPaintNControlComponentBase::setControlsSize(size);
+    PrerenderSpeakersInBounds();
 }
 
 void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
@@ -131,7 +137,7 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
         // check if speaker is set (position other than 0,0,0,0,0,0)
         if (hor != 0.0f || ver != 0.0f || rot != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
         {
-            auto speakerArea = juce::Rectangle<float>(0.0f, 0.0f, 16.0f, 16.0f).withCentre(GetPointForRealCoordinate({ x, y, z }));
+            auto speakerArea = juce::Rectangle<float>(0.0f, 0.0f, 16.0f * getControlsSizeMultiplier(), 16.0f * getControlsSizeMultiplier()).withCentre(GetPointForRealCoordinate({ x, y, z }));
             m_speakerDrawableAreas[speakerId] = speakerArea;
         }
     }

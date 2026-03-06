@@ -20,36 +20,34 @@
 
 #include <JuceHeader.h>
 
-#include "UmsciPaintNControlComponentBase.h"
+#include <ZeroconfDiscoverComponent.h>
 
 
-class UmsciLoudspeakersPaintComponent :   public UmsciPaintNControlComponentBase
+class UmsciZeroconfDiscoverComboComponent
+    : public juce::Component,
+      public ZeroconfSearcher::ZeroconfSearcher::ZeroconfSearcherListener
 {
 public:
-    UmsciLoudspeakersPaintComponent();
-    ~UmsciLoudspeakersPaintComponent() override;
+    UmsciZeroconfDiscoverComboComponent();
+    ~UmsciZeroconfDiscoverComboComponent() override;
 
     //==============================================================================
-    void paint(Graphics&) override;
     void resized() override;
-    void lookAndFeelChanged() override;
-    void setControlsSize(ControlsSize size) override;
 
     //==============================================================================
-    void setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions);
-    void setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position);
+    void handleServicesChanged(std::string serviceName) override;
+
+    //==============================================================================
+    std::function<void(const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo&)> onServiceSelected;
 
 private:
     //==============================================================================
-    void PrerenderSpeakerDrawable(std::int16_t speakerId, const std::array<std::float_t, 6>& rotNPos);
-    void PrerenderSpeakersInBounds();
+    void updateComboBox();
 
     //==============================================================================
-    juce::Colour										    m_speakerDrawablesCurrentColour;
-    std::map<std::int16_t, std::array<std::float_t, 6>>     m_speakerPositions;
-    std::map<std::int16_t, std::unique_ptr<juce::Drawable>> m_speakerDrawables;
-    std::map<std::int16_t, juce::Rectangle<float>>		    m_speakerDrawableAreas;
+    std::unique_ptr<ZeroconfSearcher::ZeroconfSearcher>          m_searcher;
+    std::unique_ptr<juce::ComboBox>                              m_comboBox;
+    std::vector<ZeroconfSearcher::ZeroconfSearcher::ServiceInfo> m_services;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciLoudspeakersPaintComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciZeroconfDiscoverComboComponent)
 };
-

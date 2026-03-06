@@ -103,12 +103,16 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::ControlColour_Pink] = std::make_pair("Anni Pink", 0);
     m_settingsItems[UmsciSettingsOption::ControlColour_Laser] = std::make_pair("Laser", 0);
     // connection settings
-    m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
+    m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
     // upmix settings
-    m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix settings...", 0);
+    m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
+    // control size
+    m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
+    m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
+    m_settingsItems[UmsciSettingsOption::ControlSize_L] = std::make_pair("L", 0);
 #if JUCE_WINDOWS || JUCE_MAC
     // fullscreen toggling
-    m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
+    m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
 #endif
     // Further components
     m_settingsButton = std::make_unique<juce::DrawableButton>("Settings", juce::DrawableButton::ButtonStyle::ImageFitted);
@@ -122,14 +126,14 @@ MainComponent::MainComponent()
         for (int i = UmsciSettingsOption::ControlColour_First; i <= UmsciSettingsOption::ControlColour_Last; i++)
             controlColourSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
 
-        juce::PopupMenu controlFormatSubMenu;
-        for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
-            controlFormatSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
+        juce::PopupMenu controlSizeSubMenu;
+        for (int i = UmsciSettingsOption::ControlSize_First; i <= UmsciSettingsOption::ControlSize_Last; i++)
+            controlSizeSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
 
         juce::PopupMenu settingsMenu;
         settingsMenu.addSubMenu("LookAndFeel", lookAndFeelSubMenu);
         settingsMenu.addSubMenu("Control colour", controlColourSubMenu);
-        settingsMenu.addSubMenu("Control format", controlFormatSubMenu);
+        settingsMenu.addSubMenu("Control size", controlSizeSubMenu);
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
@@ -169,6 +173,11 @@ MainComponent::MainComponent()
     m_connectionToggleButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
     m_connectionToggleButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(m_connectionToggleButton.get());
+
+    m_controlComponent->onUpmixTransformChanged = [this]() {
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
 
     DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
         switch (s)
@@ -317,6 +326,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         handleSettingsControlFormatMenuResult(selectedId);
     else if (UmsciSettingsOption::UpmixSettings == selectedId)
         showUpmixSettings();
+    else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
+        handleSettingsControlSizeMenuResult(selectedId);
     else
         jassertfalse; // unhandled menu entry!?
 }
@@ -395,6 +406,37 @@ void MainComponent::handleSettingsControlFormatMenuResult(int selectedId)
     }
 
     resized();
+}
+
+void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
+{
+    std::function<void(int, int, int)> setSettingsItemsCheckState = [=](int s, int m, int l) {
+        m_settingsItems[UmsciSettingsOption::ControlSize_S].second = s;
+        m_settingsItems[UmsciSettingsOption::ControlSize_M].second = m;
+        m_settingsItems[UmsciSettingsOption::ControlSize_L].second = l;
+    };
+
+    switch (selectedId)
+    {
+    case UmsciSettingsOption::ControlSize_S:
+        setSettingsItemsCheckState(1, 0, 0);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
+        break;
+    case UmsciSettingsOption::ControlSize_M:
+        setSettingsItemsCheckState(0, 1, 0);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
+        break;
+    case UmsciSettingsOption::ControlSize_L:
+        setSettingsItemsCheckState(0, 0, 1);
+        if (m_controlComponent)
+            m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
+        break;
+    default:
+        jassertfalse;
+        break;
+    }
 }
 
 void MainComponent::handleSettingsLookAndFeelMenuResult(int selectedId)
@@ -484,12 +526,27 @@ void MainComponent::showConnectionSettings()
 {
     m_messageBox = std::make_unique<juce::AlertWindow>(
         "Control connection settings",
-        "Enter remote control parameters to connect to a signal engine.\nInfo: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
+        "Info: This machine uses IP " + juce::IPAddress::getLocalAddress().toString(),
         juce::MessageBoxIconType::NoIcon);
 
     auto currentOCP1connPar = DeviceController::getInstance()->getConnectionParameters();
 
     m_messageBox->addTextBlock("\nOCA/OCP.1 connection parameters:");
+    
+    m_zeroconfDiscoverComboComponent = std::make_unique<UmsciZeroconfDiscoverComboComponent>();
+    m_zeroconfDiscoverComboComponent->setSize(380, 26);
+    m_zeroconfDiscoverComboComponent->onServiceSelected = [this](const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo& service) {
+        if (auto* ed = m_messageBox->getTextEditor("Device IP"))
+            ed->setText(juce::String(service.ip), juce::sendNotification);
+        if (auto* ed = m_messageBox->getTextEditor("Device port"))
+            ed->setText(juce::String(service.port), juce::sendNotification);
+        auto matrixSizeIt = service.txtRecords.find("db_matrixSize");
+        if (matrixSizeIt != service.txtRecords.end())
+            if (auto* ed = m_messageBox->getTextEditor("Device IO size"))
+                ed->setText(juce::String(matrixSizeIt->second), juce::sendNotification);
+    };
+    m_messageBox->addCustomComponent(m_zeroconfDiscoverComboComponent.get());
+
     m_messageBox->addTextEditor("Device IP", std::get<0>(currentOCP1connPar).toString(), "OCP.1 IP");
     m_messageBox->addTextEditor("Device port", juce::String(std::get<1>(currentOCP1connPar)), "OCP.1 port");
     m_messageBox->addTextEditor("Device IO size", juce::String(m_controlComponent->getOcp1IOSize().first) + "x" + juce::String(m_controlComponent->getOcp1IOSize().second), "OCP.1 IOSize");
@@ -513,31 +570,75 @@ void MainComponent::showConnectionSettings()
                 m_config->triggerConfigurationDump();
         }
 
+        m_zeroconfDiscoverComboComponent.reset();
         m_messageBox.reset();
     }));
 }
 
 void MainComponent::showUpmixSettings()
 {
-    auto popupMessage = juce::String();
-    if (m_controlComponent)
-        popupMessage = "Upmix overlay currently is set to control\n" + m_controlComponent->getUpmixChannelConfiguration().getDescription() + "\nUsing " + juce::String(m_controlComponent->getUpmixChannelConfiguration().size()) + " channels";
     m_messageBox = std::make_unique<juce::AlertWindow>(
         "Upmix control settings",
-        popupMessage,
+        "Configure the upmix overlay control settings.",
         juce::MessageBoxIconType::NoIcon);
+
+    juce::StringArray formatItems;
+    int currentFormatIndex = 0;
+    for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
+    {
+        formatItems.add(m_settingsItems[i].first);
+        if (m_settingsItems[i].second == 1)
+            currentFormatIndex = i - UmsciSettingsOption::ControlFormat_First;
+    }
+    m_messageBox->addComboBox("Control format", formatItems, "Channel format");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
+        combo->setSelectedItemIndex(currentFormatIndex, juce::dontSendNotification);
+
+    juce::StringArray liveModeItems;
+    liveModeItems.add("Manual (double-click to apply)");
+    liveModeItems.add("Live (apply changes immediately)");
+    m_messageBox->addComboBox("Live mode", liveModeItems, "Control mode");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
+        combo->setSelectedItemIndex(m_controlComponent->getUpmixLiveMode() ? 1 : 0,
+                                    juce::dontSendNotification);
+
+    juce::StringArray shapeItems;
+    shapeItems.add("Circle");
+    shapeItems.add("Rectangle");
+    m_messageBox->addComboBox("Shape", shapeItems, "Indicator shape");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
+        combo->setSelectedItemIndex(m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle ? 1 : 0,
+                                    juce::dontSendNotification);
 
     m_messageBox->addTextEditor("Start soundobject ID",
         juce::String(m_controlComponent->getUpmixSourceStartId()),
         "First soundobject");
+
+    juce::StringArray showSourcesItems;
+    showSourcesItems.add("All");
+    showSourcesItems.add("Upmix controlled only");
+    m_messageBox->addComboBox("Show sources", showSourcesItems, "Visible soundobjects");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
+                                    juce::dontSendNotification);
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
+            if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
+                handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
+            if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
+                m_controlComponent->setUpmixLiveMode(combo->getSelectedItemIndex() == 1);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
+                m_controlComponent->setUpmixShape(combo->getSelectedItemIndex() == 1
+                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
+                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
+                m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -591,6 +692,14 @@ void MainComponent::performConfigurationDump()
 {
     if (m_config)
     {
+        // control config
+        if (m_controlComponent)
+        {
+            auto controlConfigXmlElement = m_controlComponent->createStateXml();
+            if (controlConfigXmlElement)
+                m_config->setConfigState(std::move(controlConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+        }
+
         // connection config
         auto connectionConfigXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
         auto params = DeviceController::getInstance()->getConnectionParameters();
@@ -626,22 +735,44 @@ void MainComponent::performConfigurationDump()
         }
         visuConfigXmlElement->addChildElement(controlFormatXmlElmement.release());
 
-        m_config->setConfigState(std::move(visuConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
-
-        // control config
-        if (m_controlComponent)
+        auto controlSizeXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSIZE));
+        for (int i = UmsciSettingsOption::ControlSize_First; i <= UmsciSettingsOption::ControlSize_Last; i++)
         {
-            auto controlConfigXmlElement = m_controlComponent->createStateXml();
-            if (controlConfigXmlElement)
-                m_config->setConfigState(std::move(controlConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+            if (m_settingsItems[i].second == 1)
+                controlSizeXmlElement->addTextElement(juce::String(i));
         }
+        visuConfigXmlElement->addChildElement(controlSizeXmlElement.release());
+
+        m_config->setConfigState(std::move(visuConfigXmlElement), UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::VISUCONFIG));
 
         // upmix config
         auto upmixConfigXmlElement = std::make_unique<juce::XmlElement>(
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID),
-            m_controlComponent->getUpmixSourceStartId());
+            (m_controlComponent ? m_controlComponent->getUpmixSourceStartId() : 1));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE),
+            (m_controlComponent ? (m_controlComponent->getUpmixLiveMode() ? 1 : 0) : 0));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE),
+            UmsciUpmixIndicatorPaintNControlComponent::getShapeName(
+                m_controlComponent ? m_controlComponent->getUpmixShape()
+                                   : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
+            (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
+        auto upmixRotXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT));
+        upmixRotXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixRot() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixRotXmlElement.release());
+
+        auto upmixScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE));
+        upmixScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixTrans() : 1.0f));
+        upmixConfigXmlElement->addChildElement(upmixScaleXmlElement.release());
+
+        auto upmixHeightScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE));
+        upmixHeightScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixHeightTrans() : 0.6f));
+        upmixConfigXmlElement->addChildElement(upmixHeightScaleXmlElement.release());
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -650,6 +781,11 @@ void MainComponent::performConfigurationDump()
 
 void MainComponent::onConfigUpdated()
 {
+    // control config
+    auto controlConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
+    if (controlConfigState && m_controlComponent)
+        m_controlComponent->setStateXml(controlConfigState.get());
+
     // connection config
     auto connectionConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONNECTIONCONFIG));
     if (connectionConfigState)
@@ -658,12 +794,13 @@ void MainComponent::onConfigUpdated()
         auto ocp1IP = juce::IPAddress(connectionConfigState->getStringAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::IP)));
         auto ocp1Port = connectionConfigState->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::PORT));
 
+        if (m_connectingComponent)
+            m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
+
         auto ocp1ConParams = DeviceController::getInstance()->getConnectionParameters();
         if (std::get<0>(ocp1ConParams) != ocp1IP || std::get<1>(ocp1ConParams) != ocp1Port)
         {
             DeviceController::getInstance()->setConnectionParameters(ocp1IP, ocp1Port);
-            if (m_connectingComponent)
-                m_connectingComponent->setConnectionParameters(ocp1IP, ocp1Port);
         }
 
         if (ocp1ConnectionEnabled != m_connectionToggleButton->getToggleState())
@@ -700,12 +837,14 @@ void MainComponent::onConfigUpdated()
             auto controlFormatSettingsOptionId = controlFormatXmlElement->getAllSubText().getIntValue();
             handleSettingsControlFormatMenuResult(controlFormatSettingsOptionId);
         }
-    }
 
-    // control config
-    auto controlConfigState = m_config->getConfigState(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLCONFIG));
-    if (controlConfigState && m_controlComponent)
-        m_controlComponent->setStateXml(controlConfigState.get());
+        auto controlSizeXmlElement = visuConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CONTROLSIZE));
+        if (controlSizeXmlElement)
+        {
+            auto controlSizeSettingsOptionId = controlSizeXmlElement->getAllSubText().getIntValue();
+            handleSettingsControlSizeMenuResult(controlSizeSettingsOptionId);
+        }
+    }
 
     // upmix config
     auto upmixConfigState = m_config->getConfigState(
@@ -715,6 +854,26 @@ void MainComponent::onConfigUpdated()
         auto startId = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID), 1);
         m_controlComponent->setUpmixSourceStartId(startId);
+        auto showAllSources = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES), 1) == 1;
+        m_controlComponent->setShowAllSources(showAllSources);
+        auto liveMode = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
+        m_controlComponent->setUpmixLiveMode(liveMode);
+        auto upmixShape = UmsciUpmixIndicatorPaintNControlComponent::getShapeForName(
+            upmixConfigState->getStringAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
+        m_controlComponent->setUpmixShape(upmixShape);
+        auto upmixRot = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT)))
+            upmixRot = e->getAllSubText().getFloatValue();
+        auto upmixScale = 1.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE)))
+            upmixScale = e->getAllSubText().getFloatValue();
+        auto upmixHeightScale = 0.6f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE)))
+            upmixHeightScale = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale);
     }
 }
 

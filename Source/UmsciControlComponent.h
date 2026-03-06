@@ -25,10 +25,12 @@
 #include "DeviceController.h"
 
 
+#include "UmsciPaintNControlComponentBase.h"
+#include "UmsciUpmixIndicatorPaintNControlComponent.h"
+
 /*Fwd decls*/
 class UmsciLoudspeakersPaintComponent;
 class UmsciSoundobjectsPaintComponent;
-class UmsciUpmixIndicatorPaintNControlComponent;
 
 class UmsciControlComponent :   public juce::Component, public UmsciAppConfiguration::XmlConfigurableElement
 {
@@ -68,17 +70,37 @@ public:
     const juce::AudioChannelSet getUpmixChannelConfiguration();
     void setUpmixSourceStartId(int startId);
     int  getUpmixSourceStartId() const;
+    void setUpmixLiveMode(bool liveMode);
+    bool getUpmixLiveMode() const;
+    void setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape);
+    UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
+
+    //==============================================================================
+    void setUpmixTransform(float rot, float trans, float heightTrans);
+    float getUpmixRot() const;
+    float getUpmixTrans() const;
+    float getUpmixHeightTrans() const;
+
+    //==============================================================================
+    void setShowAllSources(bool showAll);
+    bool getShowAllSources() const;
+
+    //==============================================================================
+    void setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size);
+    UmsciPaintNControlComponentBase::ControlsSize getControlsSize() const;
 
     //==============================================================================
     void resetData();
 
     //==============================================================================
     std::function<void()> onDatabaseComplete;
+    std::function<void()> onUpmixTransformChanged;
 
 private:
     //==============================================================================
     void rebuildOcp1ObjectTree();
     void updatePaintComponents();
+    void updateSourceIdFilter();
 
     void setRemoteObject(const DeviceController::RemoteObject& obj);
 
@@ -95,6 +117,8 @@ private:
     std::unique_ptr<UmsciUpmixIndicatorPaintNControlComponent>  m_upmixIndicatorPaintAndControlComponent;
 
     std::pair<int, int> m_ocp1IOSize;
+
+    bool    m_showAllSources = true;
 
     bool    m_databaseComplete = false;
 

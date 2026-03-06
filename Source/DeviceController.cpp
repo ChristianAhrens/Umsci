@@ -29,6 +29,7 @@ DeviceController::DeviceController()
 
     m_ocp1IPAddress = juce::IPAddress("127.0.0.1");
     m_ocp1Port = 50014;
+    m_ocp1Timeout = 100;
 
     m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
     m_ocp1Connection->onConnectionEstablished = [=]() {
@@ -143,6 +144,7 @@ void DeviceController::setConnectionParameters(juce::IPAddress ip, int port, int
     DBG(juce::String(__FUNCTION__) << " new connection params: " << ip.toString() << ":" << port << " (t:" << timeoutMs << ")");
     m_ocp1IPAddress = ip;
     m_ocp1Port = port;
+    jassert(0 < timeoutMs);
     m_ocp1Timeout = timeoutMs;
 
     if (State::Disconnected != getState())
