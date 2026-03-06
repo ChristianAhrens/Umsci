@@ -105,7 +105,7 @@ MainComponent::MainComponent()
     // connection settings
     m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
     // upmix settings
-    m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix settings...", 0);
+    m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
     // control size
     m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
     m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
