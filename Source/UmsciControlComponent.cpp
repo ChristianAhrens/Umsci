@@ -274,7 +274,7 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
         break;
     }
 
-    if (checkIsDatabaseComplete())
+    if (!m_databaseComplete && checkIsDatabaseComplete())
     {
         setDatabaseComplete(true);
     }
