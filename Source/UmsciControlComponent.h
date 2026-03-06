@@ -76,6 +76,12 @@ public:
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
 
     //==============================================================================
+    void setUpmixTransform(float rot, float trans, float heightTrans);
+    float getUpmixRot() const;
+    float getUpmixTrans() const;
+    float getUpmixHeightTrans() const;
+
+    //==============================================================================
     void setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size);
     UmsciPaintNControlComponentBase::ControlsSize getControlsSize() const;
 
@@ -84,6 +90,7 @@ public:
 
     //==============================================================================
     std::function<void()> onDatabaseComplete;
+    std::function<void()> onUpmixTransformChanged;
 
 private:
     //==============================================================================

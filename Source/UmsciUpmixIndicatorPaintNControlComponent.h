@@ -60,6 +60,7 @@ public:
     bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent&) override;
     void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
     //==============================================================================
@@ -86,7 +87,14 @@ public:
     IndicatorShape getShape() const;
 
     //==============================================================================
+    void setUpmixTransform(float rot, float trans, float heightTrans);
+    float getUpmixRot() const;
+    float getUpmixTrans() const;
+    float getUpmixHeightTrans() const;
+
+    //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
+    std::function<void()> onTransformChanged;
 
 private:
     //==============================================================================

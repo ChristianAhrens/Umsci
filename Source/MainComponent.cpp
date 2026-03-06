@@ -174,6 +174,11 @@ MainComponent::MainComponent()
     m_connectionToggleButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
     addAndMakeVisible(m_connectionToggleButton.get());
 
+    m_controlComponent->onUpmixTransformChanged = [this]() {
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+
     DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
         switch (s)
         {
@@ -728,6 +733,17 @@ void MainComponent::performConfigurationDump()
             UmsciUpmixIndicatorPaintNControlComponent::getShapeName(
                 m_controlComponent ? m_controlComponent->getUpmixShape()
                                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
+        auto upmixRotXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT));
+        upmixRotXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixRot() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixRotXmlElement.release());
+
+        auto upmixScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE));
+        upmixScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixTrans() : 1.0f));
+        upmixConfigXmlElement->addChildElement(upmixScaleXmlElement.release());
+
+        auto upmixHeightScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE));
+        upmixHeightScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixHeightTrans() : 0.6f));
+        upmixConfigXmlElement->addChildElement(upmixHeightScaleXmlElement.release());
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -816,6 +832,16 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
+        auto upmixRot = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT)))
+            upmixRot = e->getAllSubText().getFloatValue();
+        auto upmixScale = 1.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE)))
+            upmixScale = e->getAllSubText().getFloatValue();
+        auto upmixHeightScale = 0.6f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE)))
+            upmixHeightScale = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale);
     }
 }
 

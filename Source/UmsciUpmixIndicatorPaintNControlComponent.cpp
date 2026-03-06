@@ -190,6 +190,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
             updateFlashState();
         }
         repaint();
+        if (onTransformChanged)
+            onTransformChanged();
         return;
     }
 
@@ -252,6 +254,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
     }
 
     repaint();
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::mouseUp(const juce::MouseEvent& /*e*/)
+{
+    if (onTransformChanged)
+        onTransformChanged();
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDoubleClick(const juce::MouseEvent& e)
@@ -564,6 +572,19 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPai
 {
     return m_shape;
 }
+
+void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float trans, float heightTrans)
+{
+    m_upmixRot        = rot;
+    m_upmixTrans      = trans;
+    m_upmixHeightTrans = heightTrans;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixRot() const        { return m_upmixRot; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTrans() const      { return m_upmixTrans; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTrans() const { return m_upmixHeightTrans; }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)
 {

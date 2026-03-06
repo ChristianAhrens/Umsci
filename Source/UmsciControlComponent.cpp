@@ -50,6 +50,10 @@ UmsciControlComponent::UmsciControlComponent()
     };
     m_upmixIndicatorPaintAndControlComponent = std::make_unique<UmsciUpmixIndicatorPaintNControlComponent>();
     addAndMakeVisible(m_upmixIndicatorPaintAndControlComponent.get());
+    m_upmixIndicatorPaintAndControlComponent->onTransformChanged = [this]() {
+        if (onUpmixTransformChanged)
+            onUpmixTransformChanged();
+    };
     m_upmixIndicatorPaintAndControlComponent->onSourcePositionChanged = [this](std::int16_t sourceId, std::array<std::float_t, 3> position) {
         m_sourcePosition[sourceId] = position;
         m_soundobjectsInAreaPaintComponent->setSourcePosition(sourceId, position);
@@ -572,5 +576,32 @@ UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControls
     if (m_loudspeakersInAreaPaintComponent)
         return m_loudspeakersInAreaPaintComponent->getControlsSize();
     return UmsciPaintNControlComponentBase::ControlsSize::S;
+}
+
+void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans);
+}
+
+float UmsciControlComponent::getUpmixRot() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixRot();
+    return 0.0f;
+}
+
+float UmsciControlComponent::getUpmixTrans() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTrans();
+    return 1.0f;
+}
+
+float UmsciControlComponent::getUpmixHeightTrans() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
+    return 0.6f;
 }
 

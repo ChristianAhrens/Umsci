@@ -39,7 +39,10 @@ public:
         CONTROLCONFIG,
         CONTROLFORMAT,
         UPMIXCONFIG,
-        CONTROLSIZE
+        CONTROLSIZE,
+        UPMIXROT,
+        UPMIXSCALE,
+        UPMIXHEIGHTSCALE
     };
     static juce::String getTagName(TagID ID)
     {
@@ -61,6 +64,12 @@ public:
             return "UPMIXCONFIG";
         case CONTROLSIZE:
             return "CONTROLSIZE";
+        case UPMIXROT:
+            return "UPMIXROT";
+        case UPMIXSCALE:
+            return "UPMIXSCALE";
+        case UPMIXHEIGHTSCALE:
+            return "UPMIXHEIGHTSCALE";
         default:
             return "INVALID";
         }
