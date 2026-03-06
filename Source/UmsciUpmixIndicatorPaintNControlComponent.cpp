@@ -68,6 +68,40 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
     }
 
+    // draw height annotation in lower-right corner
+    if (!m_renderedFloorPositions.empty())
+    {
+        g.setFont(juce::Font(juce::FontOptions(12.0f, juce::Font::plain)));
+        g.setColour(indicatorColour);
+        g.setOpacity(opacity);
+
+        auto bounds = getLocalBounds().toFloat();
+        auto lineHeight = 16.0f;
+        auto annotationWidth = bounds.getWidth() * 0.25f;
+        auto margin = 4.0f;
+
+        if (!m_renderedHeightPositions.empty())
+        {
+            auto heightLine = juce::Rectangle<float>(annotationWidth, lineHeight)
+                .withBottomY(bounds.getBottom() - margin)
+                .withRightX(bounds.getRight() - margin);
+            g.drawFittedText(juce::String("Height: ") + juce::String(m_speakersRealBoundingCube[5], 2) + juce::String(" m"),
+                             heightLine.toNearestInt(), juce::Justification::bottomRight, 1);
+
+            auto floorLine = heightLine.withBottomY(heightLine.getY());
+            g.drawFittedText(juce::String("Floor: 1.70 m"),
+                             floorLine.toNearestInt(), juce::Justification::bottomRight, 1);
+        }
+        else
+        {
+            auto floorLine = juce::Rectangle<float>(annotationWidth, lineHeight)
+                .withBottomY(bounds.getBottom() - margin)
+                .withRightX(bounds.getRight() - margin);
+            g.drawFittedText(juce::String("Floor: 1.70 m"),
+                             floorLine.toNearestInt(), juce::Justification::bottomRight, 1);
+        }
+    }
+
     // draw hint text while flashing
     if (isTimerRunning())
     {
@@ -298,6 +332,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                     m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(upmixPositionChannelTypes[i]) - 1);
                 rcp.screenPos = juce::Point<float>(px, py);
                 rcp.realPos   = GetRealCoordinateForPoint(rcp.screenPos);
+                rcp.realPos[2] = 1.7f;
                 rcp.label     = juce::String(upmixPositionNames[i]);
                 m_renderedFloorPositions.push_back(rcp);
             }
@@ -336,6 +371,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                     m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(upmixHeightPositionChannelTypes[i]) - 1);
                 rcp.screenPos = juce::Point<float>(px, py);
                 rcp.realPos   = GetRealCoordinateForPoint(rcp.screenPos);
+                rcp.realPos[2] = m_speakersRealBoundingCube[5];
                 rcp.label     = juce::String(upmixHeightPositionNames[i]);
                 m_renderedHeightPositions.push_back(rcp);
             }
