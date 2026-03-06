@@ -122,14 +122,9 @@ MainComponent::MainComponent()
         for (int i = UmsciSettingsOption::ControlColour_First; i <= UmsciSettingsOption::ControlColour_Last; i++)
             controlColourSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
 
-        juce::PopupMenu controlFormatSubMenu;
-        for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
-            controlFormatSubMenu.addItem(i, m_settingsItems[i].first, true, m_settingsItems[i].second == 1);
-
         juce::PopupMenu settingsMenu;
         settingsMenu.addSubMenu("LookAndFeel", lookAndFeelSubMenu);
         settingsMenu.addSubMenu("Control colour", controlColourSubMenu);
-        settingsMenu.addSubMenu("Control format", controlFormatSubMenu);
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
@@ -519,13 +514,22 @@ void MainComponent::showConnectionSettings()
 
 void MainComponent::showUpmixSettings()
 {
-    auto popupMessage = juce::String();
-    if (m_controlComponent)
-        popupMessage = "Upmix overlay currently is set to control\n" + m_controlComponent->getUpmixChannelConfiguration().getDescription() + "\nUsing " + juce::String(m_controlComponent->getUpmixChannelConfiguration().size()) + " channels";
     m_messageBox = std::make_unique<juce::AlertWindow>(
         "Upmix control settings",
-        popupMessage,
+        "Configure the upmix overlay control settings.",
         juce::MessageBoxIconType::NoIcon);
+
+    juce::StringArray formatItems;
+    int currentFormatIndex = 0;
+    for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
+    {
+        formatItems.add(m_settingsItems[i].first);
+        if (m_settingsItems[i].second == 1)
+            currentFormatIndex = i - UmsciSettingsOption::ControlFormat_First;
+    }
+    m_messageBox->addComboBox("Control format", formatItems, "Channel format");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
+        combo->setSelectedItemIndex(currentFormatIndex, juce::dontSendNotification);
 
     m_messageBox->addTextEditor("Start soundobject ID",
         juce::String(m_controlComponent->getUpmixSourceStartId()),
@@ -536,6 +540,8 @@ void MainComponent::showUpmixSettings()
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
+            if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
+                handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
             if (m_config)
