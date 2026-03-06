@@ -82,6 +82,10 @@ public:
     float getUpmixHeightTrans() const;
 
     //==============================================================================
+    void setShowAllSources(bool showAll);
+    bool getShowAllSources() const;
+
+    //==============================================================================
     void setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size);
     UmsciPaintNControlComponentBase::ControlsSize getControlsSize() const;
 
@@ -96,6 +100,7 @@ private:
     //==============================================================================
     void rebuildOcp1ObjectTree();
     void updatePaintComponents();
+    void updateSourceIdFilter();
 
     void setRemoteObject(const DeviceController::RemoteObject& obj);
 
@@ -112,6 +117,8 @@ private:
     std::unique_ptr<UmsciUpmixIndicatorPaintNControlComponent>  m_upmixIndicatorPaintAndControlComponent;
 
     std::pair<int, int> m_ocp1IOSize;
+
+    bool    m_showAllSources = true;
 
     bool    m_databaseComplete = false;
 

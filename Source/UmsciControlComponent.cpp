@@ -512,6 +512,7 @@ void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChanne
 {
     if (m_upmixIndicatorPaintAndControlComponent)
         m_upmixIndicatorPaintAndControlComponent->setChannelConfiguration(upmixChannelConfig);
+    updateSourceIdFilter();
 }
 
 const juce::AudioChannelSet UmsciControlComponent::getUpmixChannelConfiguration()
@@ -526,6 +527,7 @@ void UmsciControlComponent::setUpmixSourceStartId(int startId)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
         m_upmixIndicatorPaintAndControlComponent->setSourceStartId(startId);
+    updateSourceIdFilter();
 }
 
 int UmsciControlComponent::getUpmixSourceStartId() const
@@ -603,5 +605,36 @@ float UmsciControlComponent::getUpmixHeightTrans() const
     if (m_upmixIndicatorPaintAndControlComponent)
         return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
     return 0.6f;
+}
+
+void UmsciControlComponent::setShowAllSources(bool showAll)
+{
+    m_showAllSources = showAll;
+    updateSourceIdFilter();
+}
+
+bool UmsciControlComponent::getShowAllSources() const
+{
+    return m_showAllSources;
+}
+
+void UmsciControlComponent::updateSourceIdFilter()
+{
+    if (!m_soundobjectsInAreaPaintComponent)
+        return;
+
+    if (m_showAllSources)
+    {
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter({});
+    }
+    else
+    {
+        auto startId = getUpmixSourceStartId();
+        auto channelCount = getUpmixChannelConfiguration().size();
+        std::set<std::int16_t> allowedIds;
+        for (int i = 0; i < channelCount; ++i)
+            allowedIds.insert(static_cast<std::int16_t>(startId + i));
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(allowedIds);
+    }
 }
 

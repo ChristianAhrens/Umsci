@@ -598,6 +598,14 @@ void MainComponent::showUpmixSettings()
         juce::String(m_controlComponent->getUpmixSourceStartId()),
         "First soundobject");
 
+    juce::StringArray showSourcesItems;
+    showSourcesItems.add("All");
+    showSourcesItems.add("Upmix controlled only");
+    m_messageBox->addComboBox("Show sources", showSourcesItems, "Visible soundobjects");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
+                                    juce::dontSendNotification);
+
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
@@ -613,6 +621,8 @@ void MainComponent::showUpmixSettings()
                     : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
+                m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -733,6 +743,9 @@ void MainComponent::performConfigurationDump()
             UmsciUpmixIndicatorPaintNControlComponent::getShapeName(
                 m_controlComponent ? m_controlComponent->getUpmixShape()
                                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
+            (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
         auto upmixRotXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT));
         upmixRotXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixRot() : 0.0f));
         upmixConfigXmlElement->addChildElement(upmixRotXmlElement.release());
@@ -825,6 +838,9 @@ void MainComponent::onConfigUpdated()
         auto startId = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID), 1);
         m_controlComponent->setUpmixSourceStartId(startId);
+        auto showAllSources = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES), 1) == 1;
+        m_controlComponent->setShowAllSources(showAllSources);
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);

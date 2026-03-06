@@ -22,6 +22,8 @@
 
 #include "UmsciPaintNControlComponentBase.h"
 
+#include <set>
+
 
 class UmsciSoundobjectsPaintComponent :   public UmsciPaintNControlComponentBase
 {
@@ -44,6 +46,9 @@ public:
     void setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position);
 
     //==============================================================================
+    void setSourceIdFilter(const std::set<std::int16_t>& allowedIds);
+
+    //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
 
 private:
@@ -53,6 +58,7 @@ private:
     //==============================================================================
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
     std::map<std::int16_t, juce::Point<int>>            m_sourceScreenPositions;
+    std::set<std::int16_t>                              m_sourceIdFilter;
 
     std::int16_t m_draggedSourceId{ -1 };
 

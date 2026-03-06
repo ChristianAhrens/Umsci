@@ -83,7 +83,8 @@ public:
         IOSIZE,
         UPMIXSOURCESTARTID,
         UPMIXLIVEMODE,
-        UPMIXSHAPE
+        UPMIXSHAPE,
+        UPMIXSHOWALLSOURCES
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -103,6 +104,8 @@ public:
             return "UPMIXLIVEMODE";
         case UPMIXSHAPE:
             return "UPMIXSHAPE";
+        case UPMIXSHOWALLSOURCES:
+            return "UPMIXSHOWALLSOURCES";
         default:
             return "-";
         }
