@@ -85,6 +85,19 @@ bool UmsciAppConfiguration::isValid(const std::unique_ptr<juce::XmlElement>& xml
 	else
 		return false;
 
+	auto upmixConfigSectionElement = xmlConfig->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+	if (upmixConfigSectionElement)
+	{
+		if (-1 == upmixConfigSectionElement->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID), -1))
+			return false;
+		if (-1 == upmixConfigSectionElement->getIntAttribute(UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), -1))
+			return false;
+
+		// positive validation outcome - continue
+	}
+	else
+		return false;
+
 	return true;
 }
 

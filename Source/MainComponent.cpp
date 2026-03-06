@@ -531,6 +531,14 @@ void MainComponent::showUpmixSettings()
     if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
         combo->setSelectedItemIndex(currentFormatIndex, juce::dontSendNotification);
 
+    juce::StringArray liveModeItems;
+    liveModeItems.add("Manual (double-click to apply)");
+    liveModeItems.add("Live (apply changes immediately)");
+    m_messageBox->addComboBox("Live mode", liveModeItems, "Control mode");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
+        combo->setSelectedItemIndex(m_controlComponent->getUpmixLiveMode() ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addTextEditor("Start soundobject ID",
         juce::String(m_controlComponent->getUpmixSourceStartId()),
         "First soundobject");
@@ -542,6 +550,8 @@ void MainComponent::showUpmixSettings()
         {
             if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
                 handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
+            if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
+                m_controlComponent->setUpmixLiveMode(combo->getSelectedItemIndex() == 1);
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
             if (m_config)
@@ -647,7 +657,10 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID),
-            m_controlComponent->getUpmixSourceStartId());
+            (m_controlComponent ? m_controlComponent->getUpmixSourceStartId() : 1));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE),
+            (m_controlComponent ? (m_controlComponent->getUpmixLiveMode() ? 1 : 0) : 0));
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -721,6 +734,9 @@ void MainComponent::onConfigUpdated()
         auto startId = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSOURCESTARTID), 1);
         m_controlComponent->setUpmixSourceStartId(startId);
+        auto liveMode = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
+        m_controlComponent->setUpmixLiveMode(liveMode);
     }
 }
 

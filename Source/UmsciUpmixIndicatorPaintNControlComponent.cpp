@@ -74,9 +74,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.setFont(juce::Font(juce::FontOptions(16.0f, juce::Font::plain)));
         g.setColour(indicatorColour);
         g.setOpacity(1.0f);
+        auto hintText = m_liveMode
+            ? juce::String("External position changes detected. Double-click the upmix indicator to apply its current positions.")
+            : juce::String("Double-click the upmix indicator to change sound object positions to match it. "
+                           "Double-click anywhere else to reset the upmix indicator to default position/rotation.");
         g.drawFittedText(
-            "Double-click the upmix indicator to change sound object positions to match it. "
-            "Double-click anywhere else to reset the upmix indicator to default position/rotation.",
+            hintText,
             getLocalBounds().reduced(getLocalBounds().getWidth() / 5),
             juce::Justification::centred,
             4);
@@ -158,6 +161,24 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
         << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans);
 
     PrerenderUpmixIndicatorInBounds();
+
+    if (m_liveMode)
+    {
+        for (auto const& rcp : m_renderedFloorPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
+        for (auto const& rcp : m_renderedHeightPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
+        updateFlashState(); // re-sync: stops any flash that PrerenderUpmixIndicatorInBounds may have started
+    }
+
     repaint();
 }
 
@@ -334,6 +355,16 @@ void UmsciUpmixIndicatorPaintNControlComponent::setSourceStartId(int startId)
 int UmsciUpmixIndicatorPaintNControlComponent::getSourceStartId() const
 {
     return m_sourceStartId;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setLiveMode(bool liveMode)
+{
+    m_liveMode = liveMode;
+}
+
+bool UmsciUpmixIndicatorPaintNControlComponent::getLiveMode() const
+{
+    return m_liveMode;
 }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)

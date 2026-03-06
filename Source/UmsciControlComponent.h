@@ -68,6 +68,8 @@ public:
     const juce::AudioChannelSet getUpmixChannelConfiguration();
     void setUpmixSourceStartId(int startId);
     int  getUpmixSourceStartId() const;
+    void setUpmixLiveMode(bool liveMode);
+    bool getUpmixLiveMode() const;
 
     //==============================================================================
     void resetData();

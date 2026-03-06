@@ -54,6 +54,10 @@ public:
     int  getSourceStartId() const;
 
     //==============================================================================
+    void setLiveMode(bool liveMode);
+    bool getLiveMode() const;
+
+    //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
 
 private:
@@ -96,6 +100,7 @@ private:
     float                       m_dragStartHeightTrans = 0.6f;
 
     bool                        m_flashState           = false;
+    bool                        m_liveMode             = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

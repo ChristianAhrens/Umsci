@@ -69,7 +69,8 @@ public:
         IP,
         PORT,
         IOSIZE,
-        UPMIXSOURCESTARTID
+        UPMIXSOURCESTARTID,
+        UPMIXLIVEMODE
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -85,6 +86,8 @@ public:
             return "IOSIZE";
         case UPMIXSOURCESTARTID:
             return "UPMIXSOURCESTARTID";
+        case UPMIXLIVEMODE:
+            return "UPMIXLIVEMODE";
         default:
             return "-";
         }

@@ -531,3 +531,16 @@ int UmsciControlComponent::getUpmixSourceStartId() const
     return 1;
 }
 
+void UmsciControlComponent::setUpmixLiveMode(bool liveMode)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setLiveMode(liveMode);
+}
+
+bool UmsciControlComponent::getUpmixLiveMode() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getLiveMode();
+    return false;
+}
+
