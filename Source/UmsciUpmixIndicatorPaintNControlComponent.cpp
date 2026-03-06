@@ -89,7 +89,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
                              heightLine.toNearestInt(), juce::Justification::bottomRight, 1);
 
             auto floorLine = heightLine.withBottomY(heightLine.getY());
-            g.drawFittedText(juce::String("Floor: 1.70 m"),
+            g.drawFittedText(juce::String("Normal: 1.70 m"),
                              floorLine.toNearestInt(), juce::Justification::bottomRight, 1);
         }
         else
@@ -97,9 +97,20 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
             auto floorLine = juce::Rectangle<float>(annotationWidth, lineHeight)
                 .withBottomY(bounds.getBottom() - margin)
                 .withRightX(bounds.getRight() - margin);
-            g.drawFittedText(juce::String("Floor: 1.70 m"),
+            g.drawFittedText(juce::String("Normal: 1.70 m"),
                              floorLine.toNearestInt(), juce::Justification::bottomRight, 1);
         }
+    }
+
+    // draw re-fit button in upper-right corner
+    {
+        auto refitBounds = getRefitButtonBounds();
+        g.setColour(indicatorColour);
+        g.setOpacity(1.0f);
+        g.fillRect(refitBounds);
+        g.setFont(juce::Font(juce::FontOptions(11.0f, juce::Font::plain)));
+        g.setColour(labelColour);
+        g.drawFittedText("Re-fit to\nbounding cube", refitBounds.reduced(4), juce::Justification::centred, 2);
     }
 
     // draw hint text while flashing
@@ -149,12 +160,39 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 {
     if (isTimerRunning())
         return true; // capture all clicks in the component area while hint is visible
-    return m_upmixIndicator.contains(float(x), float(y))
+    return getRefitButtonBounds().contains(x, y)
+        || m_upmixIndicator.contains(float(x), float(y))
         || m_upmixHeightIndicator.contains(float(x), float(y));
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
 {
+    if (getRefitButtonBounds().contains(e.getPosition()))
+    {
+        m_upmixRot         = 0.0f;
+        m_upmixTrans       = 1.0f;
+        m_upmixHeightTrans = 0.6f;
+        PrerenderUpmixIndicatorInBounds();
+        if (m_liveMode)
+        {
+            for (auto const& rcp : m_renderedFloorPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            for (auto const& rcp : m_renderedHeightPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            updateFlashState();
+        }
+        repaint();
+        return;
+    }
+
     auto dx = e.position.x - m_upmixCenter.x;
     auto dy = e.position.y - m_upmixCenter.y;
 
@@ -263,7 +301,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto speakersRealBoundingTopLeft = std::array<float, 3>{ m_speakersRealBoundingCube.at(0), m_speakersRealBoundingCube.at(1), m_speakersRealBoundingCube.at(2) };
     auto speakersRealBoundingBottomRight = std::array<float, 3>{ m_speakersRealBoundingCube.at(3), m_speakersRealBoundingCube.at(4), m_speakersRealBoundingCube.at(5) };
     auto speakersScreenBoundingRect = juce::Rectangle<float>(GetPointForRealCoordinate(speakersRealBoundingTopLeft), GetPointForRealCoordinate(speakersRealBoundingBottomRight));
-    auto upmixIndicatorBounds = speakersScreenBoundingRect.getAspectRatio() <= 1 ? speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getWidth() * 0.15f) : speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getHeight() * 0.15f);
+    auto upmixIndicatorBounds = speakersScreenBoundingRect.getAspectRatio() <= 1 ? speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getWidth() * m_boundingFitFactor) : speakersScreenBoundingRect.expanded(speakersScreenBoundingRect.getHeight() * m_boundingFitFactor);
 
     std::vector<float> upmixPositionAnglesDeg;
     std::vector<std::string> upmixPositionNames;
@@ -476,7 +514,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                     m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(upmixHeightPositionChannelTypes[i]) - 1);
                 rcp.screenPos = juce::Point<float>(px, py);
                 rcp.realPos   = GetRealCoordinateForPoint(rcp.screenPos);
-                rcp.realPos[2] = m_speakersRealBoundingCube[5];
+                rcp.realPos[2] = m_speakersRealBoundingCube[5]
+                    + (m_speakersRealBoundingCube[5] - m_speakersRealBoundingCube[2]) * m_boundingFitFactor;
                 rcp.label     = juce::String(upmixHeightPositionNames[i]);
                 m_renderedHeightPositions.push_back(rcp);
             }
@@ -529,6 +568,14 @@ bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const ju
     repaint();
 
     return rVal;
+}
+
+juce::Rectangle<int> UmsciUpmixIndicatorPaintNControlComponent::getRefitButtonBounds() const
+{
+    auto margin = 4;
+    auto buttonHeight = 40;
+    auto buttonWidth = 60;
+    return juce::Rectangle<int>(getWidth() - buttonWidth - margin, margin, buttonWidth, buttonHeight);
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::updateFlashState()

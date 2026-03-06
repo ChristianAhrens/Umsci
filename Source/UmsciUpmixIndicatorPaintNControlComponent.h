@@ -100,6 +100,7 @@ private:
     //==============================================================================
     void PrerenderUpmixIndicatorInBounds();
     void updateFlashState();
+    juce::Rectangle<int> getRefitButtonBounds() const;
 
     //==============================================================================
     int                                                 m_sourceStartId = 1;
@@ -107,6 +108,8 @@ private:
     //==============================================================================
     std::array<float, 6>                                m_speakersRealBoundingCube;
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePositions;
+    
+    float                       m_boundingFitFactor = 0.15f;
 
     juce::Path                  m_upmixIndicator;
     juce::Path                  m_upmixHeightIndicator;
