@@ -162,6 +162,12 @@ void UmsciSoundobjectsPaintComponent::mouseUp(const juce::MouseEvent& /*e*/)
     }
 }
 
+void UmsciSoundobjectsPaintComponent::onZoomChanged()
+{
+    PrerenderSourcesInBounds();
+    repaint();
+}
+
 void UmsciSoundobjectsPaintComponent::PrerenderSourcesInBounds()
 {
     // Speaker positions

@@ -773,6 +773,19 @@ void MainComponent::performConfigurationDump()
         auto upmixHeightScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE));
         upmixHeightScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixHeightTrans() : 0.6f));
         upmixConfigXmlElement->addChildElement(upmixHeightScaleXmlElement.release());
+
+        auto upmixAngleStretchXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH));
+        upmixAngleStretchXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f));
+        upmixConfigXmlElement->addChildElement(upmixAngleStretchXmlElement.release());
+
+        auto upmixOffsetXXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX));
+        upmixOffsetXXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetX() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixOffsetXXmlElement.release());
+
+        auto upmixOffsetYXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY));
+        upmixOffsetYXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetY() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixOffsetYXmlElement.release());
+
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -873,7 +886,17 @@ void MainComponent::onConfigUpdated()
         auto upmixHeightScale = 0.6f;
         if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE)))
             upmixHeightScale = e->getAllSubText().getFloatValue();
-        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale);
+        auto upmixAngleStretch = 1.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH)))
+            upmixAngleStretch = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale, upmixAngleStretch);
+        auto upmixOffsetX = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX)))
+            upmixOffsetX = e->getAllSubText().getFloatValue();
+        auto upmixOffsetY = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY)))
+            upmixOffsetY = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixOffset(upmixOffsetX, upmixOffsetY);
     }
 }
 

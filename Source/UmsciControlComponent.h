@@ -25,8 +25,8 @@
 #include "DeviceController.h"
 
 
-#include "UmsciPaintNControlComponentBase.h"
-#include "UmsciUpmixIndicatorPaintNControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciPaintNControlComponentBase.h"
+#include "UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"
 
 /*Fwd decls*/
 class UmsciLoudspeakersPaintComponent;
@@ -76,10 +76,16 @@ public:
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
 
     //==============================================================================
-    void setUpmixTransform(float rot, float trans, float heightTrans);
+    void setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch = 1.0f);
     float getUpmixRot() const;
     float getUpmixTrans() const;
     float getUpmixHeightTrans() const;
+    float getUpmixAngleStretch() const;
+
+    //==============================================================================
+    void  setUpmixOffset(float x, float y);
+    float getUpmixOffsetX() const;
+    float getUpmixOffsetY() const;
 
     //==============================================================================
     void setShowAllSources(bool showAll);

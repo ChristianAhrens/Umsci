@@ -102,6 +102,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         }
     }
 
+    // draw center position handle and angle stretch handle (paths prerendered in PrerenderUpmixIndicatorInBounds)
+    g.setColour(indicatorColour);
+    g.setOpacity(opacity);
+    g.fillPath(m_centerHandlePath);
+    g.fillPath(m_stretchHandlePath);
+
     // draw re-fit button in upper-right corner
     {
         auto refitBounds = getRefitButtonBounds();
@@ -121,8 +127,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.setOpacity(1.0f);
         auto hintText = m_liveMode
             ? juce::String("External position changes detected. Double-click the upmix indicator to apply its current positions.")
-            : juce::String("Double-click the upmix indicator to change sound object positions to match it. "
-                           "Double-click anywhere else to reset the upmix indicator to default position/rotation.");
+            : juce::String("Double-click the upmix indicator to change sound object positions to match it.");
         g.drawFittedText(
             hintText,
             getLocalBounds().reduced(getLocalBounds().getWidth() / 5),
@@ -160,6 +165,30 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 {
     if (isTimerRunning())
         return true; // capture all clicks in the component area while hint is visible
+
+    // stretch handle hit area — oriented bounding rectangle of the arrow shape
+    if (!m_renderedFloorPositions.empty() && m_stretchHandleTangent != juce::Point<float>{})
+    {
+        float dx = float(x) - m_stretchHandlePos.x;
+        float dy = float(y) - m_stretchHandlePos.y;
+        float tx = m_stretchHandleTangent.x;
+        float ty = m_stretchHandleTangent.y;
+        float localTangent = dx * tx + dy * ty;
+        float localRadial  = dx * (-ty) + dy * tx;   // (-ty, tx) is the radial unit direction
+        if (std::abs(localTangent) <= m_subCircleRadius * 1.2f
+         && std::abs(localRadial)  <= m_subCircleRadius * 0.4f)
+            return true;
+    }
+
+    // center handle hit area — bounding square of the cross shape
+    {
+        float dx = float(x) - m_upmixCenter.x;
+        float dy = float(y) - m_upmixCenter.y;
+        float halfLen = m_subCircleRadius * 1.0f;
+        if (std::abs(dx) <= halfLen && std::abs(dy) <= halfLen)
+            return true;
+    }
+
     return getRefitButtonBounds().contains(x, y)
         || m_upmixIndicator.contains(float(x), float(y))
         || m_upmixHeightIndicator.contains(float(x), float(y));
@@ -167,11 +196,51 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
 {
+    // Stretch handle takes priority over ring drags
+    if (!m_renderedFloorPositions.empty() && m_stretchHandleTangent != juce::Point<float>{})
+    {
+        float dx = e.position.x - m_stretchHandlePos.x;
+        float dy = e.position.y - m_stretchHandlePos.y;
+        float tx = m_stretchHandleTangent.x;
+        float ty = m_stretchHandleTangent.y;
+        float localTangent = dx * tx + dy * ty;
+        float localRadial  = dx * (-ty) + dy * tx;
+        if (std::abs(localTangent) <= m_subCircleRadius * 1.2f
+         && std::abs(localRadial)  <= m_subCircleRadius * 0.4f)
+        {
+            m_draggingStretchHandle = true;
+            m_draggingHeightRing    = false;
+            m_dragStartStretch      = m_upmixAngleStretch;
+            return;
+        }
+    }
+    m_draggingStretchHandle = false;
+
+    // Center handle: square hit area matching the cross bounding box
+    {
+        float dx = e.position.x - m_upmixCenter.x;
+        float dy = e.position.y - m_upmixCenter.y;
+        float halfLen = m_subCircleRadius * 1.0f;
+        if (std::abs(dx) <= halfLen && std::abs(dy) <= halfLen)
+        {
+            m_draggingCenterHandle = true;
+            m_draggingHeightRing   = false;
+            m_dragStartOffsetX     = m_upmixOffsetX;
+            m_dragStartOffsetY     = m_upmixOffsetY;
+            m_dragStartMousePos    = e.position;
+            return;
+        }
+    }
+    m_draggingCenterHandle = false;
+
     if (getRefitButtonBounds().contains(e.getPosition()))
     {
-        m_upmixRot         = 0.0f;
-        m_upmixTrans       = 1.0f;
-        m_upmixHeightTrans = 0.6f;
+        m_upmixRot          = 0.0f;
+        m_upmixTrans        = 1.0f;
+        m_upmixHeightTrans  = 0.6f;
+        m_upmixAngleStretch = 1.0f;
+        m_upmixOffsetX      = 0.0f;
+        m_upmixOffsetY      = 0.0f;
         PrerenderUpmixIndicatorInBounds();
         if (m_liveMode)
         {
@@ -215,6 +284,72 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent& e)
 {
+    if (m_draggingStretchHandle)
+    {
+        auto dx = e.position.x - m_upmixCenter.x;
+        auto dy = e.position.y - m_upmixCenter.y;
+        // ring-frame angle: subtract rotation so we get the channel-space angle
+        auto ringAngle = std::atan2(dx, -dy) - m_upmixRot;
+        if (m_naturalFloorMaxAngleDeg > 0.0f)
+            m_upmixAngleStretch = juce::jlimit(0.05f, 2.0f,
+                ringAngle / juce::degreesToRadians(m_naturalFloorMaxAngleDeg));
+
+        PrerenderUpmixIndicatorInBounds();
+
+        if (m_liveMode)
+        {
+            for (auto const& rcp : m_renderedFloorPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            for (auto const& rcp : m_renderedHeightPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            updateFlashState();
+        }
+
+        repaint();
+        return;
+    }
+
+    if (m_draggingCenterHandle)
+    {
+        if (m_baseRadius > 0.0f)
+        {
+            m_upmixOffsetX = juce::jlimit(-2.0f, 2.0f,
+                m_dragStartOffsetX + (e.position.x - m_dragStartMousePos.x) / m_baseRadius);
+            m_upmixOffsetY = juce::jlimit(-2.0f, 2.0f,
+                m_dragStartOffsetY + (e.position.y - m_dragStartMousePos.y) / m_baseRadius);
+        }
+
+        PrerenderUpmixIndicatorInBounds();
+
+        if (m_liveMode)
+        {
+            for (auto const& rcp : m_renderedFloorPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            for (auto const& rcp : m_renderedHeightPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            updateFlashState();
+        }
+
+        repaint();
+        return;
+    }
+
     auto dx = e.position.x - m_upmixCenter.x;
     auto dy = e.position.y - m_upmixCenter.y;
 
@@ -284,18 +419,21 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDoubleClick(const juce::Mou
     }
     else
     {
-        // reset indicator to default rotation and scale
-        m_upmixRot         = 0.0f;
-        m_upmixTrans       = 1.0f;
-        m_upmixHeightTrans = 0.6f;
-        PrerenderUpmixIndicatorInBounds(); // calls updateFlashState() internally
-        repaint();
+        // Delegate to base class so empty-area double-click still resets zoom,
+        // even when the component captures all events while flashing.
+        UmsciPaintNControlComponentBase::mouseDoubleClick(e);
     }
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::timerCallback()
 {
     m_flashState = !m_flashState;
+    repaint();
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::onZoomChanged()
+{
+    PrerenderUpmixIndicatorInBounds();
     repaint();
 }
 
@@ -333,13 +471,26 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         }
     }
 
+    // Capture the natural (pre-stretch) max floor angle for drag computation, then apply stretch.
+    if (!upmixPositionAnglesDeg.empty())
+        m_naturalFloorMaxAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
+    for (auto& angleDeg : upmixPositionAnglesDeg)
+        angleDeg *= m_upmixAngleStretch;
+    for (auto& angleDeg : upmixHeightPositionAnglesDeg)
+        angleDeg *= m_upmixAngleStretch;
+
     if (upmixIndicatorBounds.isEmpty())
         return;
 
     m_upmixCenter = upmixIndicatorBounds.getCentre();
+    // Use the larger screen dimension so the indicator fills the room's dominant axis rather
+    // than being constrained to the smaller one (which makes it look undersized in landscape layouts).
+    m_baseRadius  = std::max(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
+    m_upmixCenter.x += m_upmixOffsetX * m_baseRadius;
+    m_upmixCenter.y += m_upmixOffsetY * m_baseRadius;
     auto cx = m_upmixCenter.x;
     auto cy = m_upmixCenter.y;
-    auto baseRadius = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
+    auto baseRadius = m_baseRadius;
     auto radius = baseRadius * m_upmixTrans;
     m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
     auto arcStrokeWidth = m_subCircleRadius * 0.5f;
@@ -469,6 +620,40 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         }
     }
 
+    // compute stretch handle position — radially beyond the max-angle floor sub-circle
+    if (!upmixPositionAnglesDeg.empty())
+    {
+        auto maxStretchedAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
+        float anchorX, anchorY;
+        if (m_shape == IndicatorShape::Rectangle)
+        {
+            auto baseAngleRad = juce::degreesToRadians(maxStretchedAngleDeg);
+            auto dx = std::sin(baseAngleRad);
+            auto dy = -std::cos(baseAngleRad);
+            auto t = radius / std::max(std::abs(dx), std::abs(dy));
+            anchorX = cx + (t * dx) * cosRot - (t * dy) * sinRot;
+            anchorY = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+        }
+        else
+        {
+            auto effectiveAngleRad = juce::degreesToRadians(maxStretchedAngleDeg) + m_upmixRot;
+            anchorX = cx + radius * std::sin(effectiveAngleRad);
+            anchorY = cy - radius * std::cos(effectiveAngleRad);
+        }
+        float dirX = anchorX - cx;
+        float dirY = anchorY - cy;
+        float dirLen = std::sqrt(dirX * dirX + dirY * dirY);
+        if (dirLen > 0.0f)
+        {
+            float ux = dirX / dirLen;
+            float uy = dirY / dirLen;
+            m_stretchHandlePos     = { anchorX + ux * m_subCircleRadius * 1.5f,
+                                       anchorY + uy * m_subCircleRadius * 1.5f };
+            // tangent: 90° CW from radial (ux, uy) in screen space = (uy, -ux)
+            m_stretchHandleTangent = { uy, -ux };
+        }
+    }
+
     // build the height channel ring — same rotation, independent scale
     if (!upmixHeightPositionAnglesDeg.empty())
     {
@@ -530,6 +715,64 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         }
     }
 
+    // prerender handle paths — shared builder for a single bidirectional arrow
+    auto buildBiArrowPath = [](float hcx, float hcy, float axX, float axY,
+                               float halfLen, float headLen, float headWidth, float lineWidth) -> juce::Path
+    {
+        float px = -axY, py = axX; // perpendicular to axis
+
+        juce::Path shaft;
+        shaft.startNewSubPath(hcx - axX * (halfLen - headLen), hcy - axY * (halfLen - headLen));
+        shaft.lineTo        (hcx + axX * (halfLen - headLen), hcy + axY * (halfLen - headLen));
+
+        juce::Path result;
+        juce::PathStrokeType(lineWidth, juce::PathStrokeType::beveled,
+                             juce::PathStrokeType::square).createStrokedPath(result, shaft);
+
+        // arrowhead at positive end
+        float tipX = hcx + axX * halfLen,  tipY = hcy + axY * halfLen;
+        float bpX  = hcx + axX * (halfLen - headLen), bpY = hcy + axY * (halfLen - headLen);
+        result.startNewSubPath(tipX, tipY);
+        result.lineTo(bpX + px * headWidth, bpY + py * headWidth);
+        result.lineTo(bpX - px * headWidth, bpY - py * headWidth);
+        result.closeSubPath();
+
+        // arrowhead at negative end
+        float tnX = hcx - axX * halfLen,  tnY = hcy - axY * halfLen;
+        float bnX = hcx - axX * (halfLen - headLen), bnY = hcy - axY * (halfLen - headLen);
+        result.startNewSubPath(tnX, tnY);
+        result.lineTo(bnX - px * headWidth, bnY - py * headWidth);
+        result.lineTo(bnX + px * headWidth, bnY + py * headWidth);
+        result.closeSubPath();
+
+        return result;
+    };
+
+    // center handle: two crossed bidirectional arrows aligned to screen axes
+    m_centerHandlePath.clear();
+    {
+        float halfLen   = m_subCircleRadius * 1.0f;
+        float headLen   = m_subCircleRadius * 0.45f;
+        float headWidth = m_subCircleRadius * 0.35f;
+        float lineWidth = m_subCircleRadius * 0.18f;
+        m_centerHandlePath.addPath(buildBiArrowPath(cx, cy, 1.0f, 0.0f, halfLen, headLen, headWidth, lineWidth));
+        m_centerHandlePath.addPath(buildBiArrowPath(cx, cy, 0.0f, 1.0f, halfLen, headLen, headWidth, lineWidth));
+    }
+
+    // stretch handle: single bidirectional arrow along the tangent at the arc endpoint
+    m_stretchHandlePath.clear();
+    if (!upmixPositionAnglesDeg.empty() && m_stretchHandleTangent != juce::Point<float>{})
+    {
+        float halfLen   = m_subCircleRadius * 1.2f;
+        float headLen   = m_subCircleRadius * 0.55f;
+        float headWidth = m_subCircleRadius * 0.4f;
+        float lineWidth = m_subCircleRadius * 0.18f;
+        m_stretchHandlePath = buildBiArrowPath(
+            m_stretchHandlePos.x, m_stretchHandlePos.y,
+            m_stretchHandleTangent.x, m_stretchHandleTangent.y,
+            halfLen, headLen, headWidth, lineWidth);
+    }
+
     updateFlashState();
 }
 
@@ -573,18 +816,31 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPai
     return m_shape;
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float trans, float heightTrans)
+void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch)
 {
-    m_upmixRot        = rot;
-    m_upmixTrans      = trans;
-    m_upmixHeightTrans = heightTrans;
+    m_upmixRot          = rot;
+    m_upmixTrans        = trans;
+    m_upmixHeightTrans  = heightTrans;
+    m_upmixAngleStretch = angleStretch;
     PrerenderUpmixIndicatorInBounds();
     repaint();
 }
 
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixRot() const        { return m_upmixRot; }
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTrans() const      { return m_upmixTrans; }
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTrans() const { return m_upmixHeightTrans; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixRot() const         { return m_upmixRot; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTrans() const       { return m_upmixTrans; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTrans() const  { return m_upmixHeightTrans; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixAngleStretch() const { return m_upmixAngleStretch; }
+
+void UmsciUpmixIndicatorPaintNControlComponent::setUpmixOffset(float x, float y)
+{
+    m_upmixOffsetX = x;
+    m_upmixOffsetY = y;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetX() const { return m_upmixOffsetX; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetY() const { return m_upmixOffsetY; }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)
 {

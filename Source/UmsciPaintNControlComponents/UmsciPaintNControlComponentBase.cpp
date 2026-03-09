@@ -58,7 +58,7 @@ void UmsciPaintNControlComponentBase::setBoundsRealRef(const juce::Rectangle<flo
     m_boundsRealRef = boundsRealRef;
 }
 
-juce::Rectangle<float> UmsciPaintNControlComponentBase::getContentBounds() const
+juce::Rectangle<float> UmsciPaintNControlComponentBase::computeBaseContentBounds() const
 {
     auto bounds = getLocalBounds().toFloat();
     if (m_boundsRealRef.isEmpty())
@@ -68,6 +68,99 @@ juce::Rectangle<float> UmsciPaintNControlComponentBase::getContentBounds() const
         return bounds.withSizeKeepingCentre(bounds.getWidth(), bounds.getWidth() / m_boundsRealRef.getAspectRatio());
     else
         return bounds.withSizeKeepingCentre(bounds.getHeight() * m_boundsRealRef.getAspectRatio(), bounds.getHeight());
+}
+
+juce::Rectangle<float> UmsciPaintNControlComponentBase::getContentBounds() const
+{
+    auto base = computeBaseContentBounds();
+    if (m_zoomFactor == 1.0f && m_zoomPanOffset.isOrigin())
+        return base;
+
+    // Centre of the zoomed view in component-pixel space (normalised offset * base size).
+    auto cx = base.getCentreX() + m_zoomPanOffset.x * base.getWidth();
+    auto cy = base.getCentreY() + m_zoomPanOffset.y * base.getHeight();
+    auto hw = base.getWidth()  * m_zoomFactor * 0.5f;
+    auto hh = base.getHeight() * m_zoomFactor * 0.5f;
+    return { cx - hw, cy - hh, hw * 2.0f, hh * 2.0f };
+}
+
+void UmsciPaintNControlComponentBase::applyZoomAtScreenPoint(float newFactor, juce::Point<float> screenFocus)
+{
+    newFactor = juce::jlimit(0.1f, 10.0f, newFactor);
+    auto rz  = newFactor / m_zoomFactor;
+
+    auto base = computeBaseContentBounds();
+    if (!base.isEmpty())
+    {
+        // Express screenFocus as a normalised offset from the base content centre.
+        auto Pnorm = juce::Point<float>((screenFocus.x - base.getCentreX()) / base.getWidth(),
+                                        (screenFocus.y - base.getCentreY()) / base.getHeight());
+        // Scale the existing pan offset toward/away from the focus point.
+        m_zoomPanOffset = Pnorm + (m_zoomPanOffset - Pnorm) * rz;
+    }
+
+    m_zoomFactor = newFactor;
+}
+
+void UmsciPaintNControlComponentBase::mouseDoubleClick(const juce::MouseEvent&)
+{
+    resetZoom();
+}
+
+void UmsciPaintNControlComponentBase::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
+{
+    const float zoomSpeed = 0.5f;
+    auto newFactor = m_zoomFactor * std::exp(wheel.deltaY * zoomSpeed);
+    applyZoomAtScreenPoint(newFactor, e.position);
+
+    onZoomChanged();
+
+    if (onViewportZoomChanged)
+        onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
+}
+
+void UmsciPaintNControlComponentBase::mouseMagnify(const juce::MouseEvent& e, float scaleFactor)
+{
+    applyZoomAtScreenPoint(m_zoomFactor * scaleFactor, e.position);
+
+    onZoomChanged();
+
+    if (onViewportZoomChanged)
+        onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
+}
+
+void UmsciPaintNControlComponentBase::onZoomChanged()
+{
+    repaint();
+}
+
+void UmsciPaintNControlComponentBase::setZoom(float factor, juce::Point<float> normalizedPanOffset)
+{
+    auto clamped = juce::jlimit(0.1f, 10.0f, factor);
+    if (m_zoomFactor == clamped && m_zoomPanOffset == normalizedPanOffset)
+        return;
+
+    m_zoomFactor    = clamped;
+    m_zoomPanOffset = normalizedPanOffset;
+    onZoomChanged();
+}
+
+float UmsciPaintNControlComponentBase::getZoomFactor() const
+{
+    return m_zoomFactor;
+}
+
+void UmsciPaintNControlComponentBase::resetZoom()
+{
+    if (m_zoomFactor == 1.0f && m_zoomPanOffset.isOrigin())
+        return;
+
+    m_zoomFactor    = 1.0f;
+    m_zoomPanOffset = {};
+    onZoomChanged();
+
+    if (onViewportZoomChanged)
+        onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
 }
 
 std::array<float, 3> UmsciPaintNControlComponentBase::GetRealCoordinateForPoint(const juce::Point<float>& screenPoint)
