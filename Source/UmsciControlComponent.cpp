@@ -18,9 +18,9 @@
 
 #include "UmsciControlComponent.h"
 
-#include "UmsciLoudspeakersPaintComponent.h"
-#include "UmsciSoundobjectsPaintComponent.h"
-#include "UmsciUpmixIndicatorPaintNControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.h"
+#include "UmsciPaintNControlComponents/UmsciSoundobjectsPaintComponent.h"
+#include "UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"
 
 
 UmsciControlComponent::UmsciControlComponent()

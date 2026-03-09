@@ -103,26 +103,28 @@
             file="Resources/UmsciDefault.config"/>
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
+      <GROUP id="{D10A2BCF-D236-B6F5-7F5D-FC252EA155F6}" name="UmsciPaintNControlComponents">
+        <FILE id="eyijqn" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.cpp"/>
+        <FILE id="gc2JqM" name="UmsciLoudspeakersPaintComponent.h" compile="0"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.h"/>
+        <FILE id="S3M8uT" name="UmsciPaintNControlComponentBase.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciPaintNControlComponentBase.cpp"/>
+        <FILE id="NAvYRV" name="UmsciPaintNControlComponentBase.h" compile="0"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciPaintNControlComponentBase.h"/>
+        <FILE id="VrzcGM" name="UmsciSoundobjectsPaintComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciSoundobjectsPaintComponent.cpp"/>
+        <FILE id="eGp99I" name="UmsciSoundobjectsPaintComponent.h" compile="0"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciSoundobjectsPaintComponent.h"/>
+        <FILE id="HAf9zX" name="UmsciUpmixIndicatorPaintNControlComponent.cpp"
+              compile="1" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.cpp"/>
+        <FILE id="XbpJ1n" name="UmsciUpmixIndicatorPaintNControlComponent.h"
+              compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"/>
+      </GROUP>
       <FILE id="IKTqod" name="UmsciZeroconfDiscoverComboComponent.cpp" compile="1"
             resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.cpp"/>
       <FILE id="vR95jV" name="UmsciZeroconfDiscoverComboComponent.h" compile="0"
             resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.h"/>
-      <FILE id="B88R6l" name="UmsciPaintNControlComponentBase.cpp" compile="1"
-            resource="0" file="Source/UmsciPaintNControlComponentBase.cpp"/>
-      <FILE id="tNaZ1T" name="UmsciPaintNControlComponentBase.h" compile="0"
-            resource="0" file="Source/UmsciPaintNControlComponentBase.h"/>
-      <FILE id="YWQrOX" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
-            resource="0" file="Source/UmsciLoudspeakersPaintComponent.cpp"/>
-      <FILE id="t12oED" name="UmsciLoudspeakersPaintComponent.h" compile="0"
-            resource="0" file="Source/UmsciLoudspeakersPaintComponent.h"/>
-      <FILE id="gamcce" name="UmsciSoundobjectsPaintComponent.cpp" compile="1"
-            resource="0" file="Source/UmsciSoundobjectsPaintComponent.cpp"/>
-      <FILE id="EUm8XF" name="UmsciSoundobjectsPaintComponent.h" compile="0"
-            resource="0" file="Source/UmsciSoundobjectsPaintComponent.h"/>
-      <FILE id="K9Mdep" name="UmsciUpmixIndicatorPaintNControlComponent.cpp"
-            compile="1" resource="0" file="Source/UmsciUpmixIndicatorPaintNControlComponent.cpp"/>
-      <FILE id="aNmiAE" name="UmsciUpmixIndicatorPaintNControlComponent.h"
-            compile="0" resource="0" file="Source/UmsciUpmixIndicatorPaintNControlComponent.h"/>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>

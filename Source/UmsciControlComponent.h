@@ -25,8 +25,8 @@
 #include "DeviceController.h"
 
 
-#include "UmsciPaintNControlComponentBase.h"
-#include "UmsciUpmixIndicatorPaintNControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciPaintNControlComponentBase.h"
+#include "UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"
 
 /*Fwd decls*/
 class UmsciLoudspeakersPaintComponent;
