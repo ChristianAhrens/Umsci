@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.2.1] 2026-03-09
+### Added
+- Added upmix control angle stretch parameter
+- Added upmix control offset xy parameter
+- Added mousewheel / pinch zoom, incl. doubleclick to zoom-and-recenter
+
+### Changed
+
+### Fixed
+- Fixed automatic fitting of upmix control indicator to speaker system dimensions
+
 ## [0.2.0] 2026-03-06
 ### Added
 - Added support for z-Axis (default 1.2m normal layer, auto-fit to speaker system height for height layer)
