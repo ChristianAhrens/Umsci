@@ -614,6 +614,26 @@ float UmsciControlComponent::getUpmixAngleStretch() const
     return 1.0f;
 }
 
+void UmsciControlComponent::setUpmixOffset(float x, float y)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setUpmixOffset(x, y);
+}
+
+float UmsciControlComponent::getUpmixOffsetX() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixOffsetX();
+    return 0.0f;
+}
+
+float UmsciControlComponent::getUpmixOffsetY() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixOffsetY();
+    return 0.0f;
+}
+
 void UmsciControlComponent::setShowAllSources(bool showAll)
 {
     m_showAllSources = showAll;

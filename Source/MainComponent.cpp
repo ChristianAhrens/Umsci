@@ -778,6 +778,14 @@ void MainComponent::performConfigurationDump()
         upmixAngleStretchXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f));
         upmixConfigXmlElement->addChildElement(upmixAngleStretchXmlElement.release());
 
+        auto upmixOffsetXXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX));
+        upmixOffsetXXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetX() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixOffsetXXmlElement.release());
+
+        auto upmixOffsetYXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY));
+        upmixOffsetYXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetY() : 0.0f));
+        upmixConfigXmlElement->addChildElement(upmixOffsetYXmlElement.release());
+
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -882,6 +890,13 @@ void MainComponent::onConfigUpdated()
         if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH)))
             upmixAngleStretch = e->getAllSubText().getFloatValue();
         m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale, upmixAngleStretch);
+        auto upmixOffsetX = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX)))
+            upmixOffsetX = e->getAllSubText().getFloatValue();
+        auto upmixOffsetY = 0.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY)))
+            upmixOffsetY = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixOffset(upmixOffsetX, upmixOffsetY);
     }
 }
 

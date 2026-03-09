@@ -83,6 +83,11 @@ public:
     float getUpmixAngleStretch() const;
 
     //==============================================================================
+    void  setUpmixOffset(float x, float y);
+    float getUpmixOffsetX() const;
+    float getUpmixOffsetY() const;
+
+    //==============================================================================
     void setShowAllSources(bool showAll);
     bool getShowAllSources() const;
 
