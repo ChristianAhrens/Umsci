@@ -121,6 +121,12 @@ void UmsciLoudspeakersPaintComponent::setControlsSize(ControlsSize size)
     PrerenderSpeakersInBounds();
 }
 
+void UmsciLoudspeakersPaintComponent::onZoomChanged()
+{
+    PrerenderSpeakersInBounds();
+    repaint();
+}
+
 void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
 {
     // Speaker positions

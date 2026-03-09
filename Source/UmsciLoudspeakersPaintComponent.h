@@ -41,6 +41,7 @@ public:
 
 private:
     //==============================================================================
+    void onZoomChanged() override;
     void PrerenderSpeakerDrawable(std::int16_t speakerId, const std::array<std::float_t, 6>& rotNPos);
     void PrerenderSpeakersInBounds();
 

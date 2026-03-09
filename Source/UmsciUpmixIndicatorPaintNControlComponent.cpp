@@ -127,8 +127,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.setOpacity(1.0f);
         auto hintText = m_liveMode
             ? juce::String("External position changes detected. Double-click the upmix indicator to apply its current positions.")
-            : juce::String("Double-click the upmix indicator to change sound object positions to match it. "
-                           "Double-click anywhere else to reset the upmix indicator to default position/rotation.");
+            : juce::String("Double-click the upmix indicator to change sound object positions to match it.");
         g.drawFittedText(
             hintText,
             getLocalBounds().reduced(getLocalBounds().getWidth() / 5),
@@ -420,21 +419,21 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDoubleClick(const juce::Mou
     }
     else
     {
-        // reset indicator to default rotation, scale, angle stretch, and center offset
-        m_upmixRot          = 0.0f;
-        m_upmixTrans        = 1.0f;
-        m_upmixHeightTrans  = 0.6f;
-        m_upmixAngleStretch = 1.0f;
-        m_upmixOffsetX      = 0.0f;
-        m_upmixOffsetY      = 0.0f;
-        PrerenderUpmixIndicatorInBounds(); // calls updateFlashState() internally
-        repaint();
+        // Delegate to base class so empty-area double-click still resets zoom,
+        // even when the component captures all events while flashing.
+        UmsciPaintNControlComponentBase::mouseDoubleClick(e);
     }
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::timerCallback()
 {
     m_flashState = !m_flashState;
+    repaint();
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::onZoomChanged()
+{
+    PrerenderUpmixIndicatorInBounds();
     repaint();
 }
 

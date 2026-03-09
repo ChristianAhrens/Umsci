@@ -65,6 +65,17 @@ UmsciControlComponent::UmsciControlComponent()
             )
         );
     };
+
+    // Synchronise viewport zoom across all three overlaid paint components:
+    // when any one component receives a wheel/pinch zoom, all siblings get the same zoom applied.
+    auto syncViewportZoom = [this](float factor, juce::Point<float> panOffset) {
+        m_loudspeakersInAreaPaintComponent->setZoom(factor, panOffset);
+        m_soundobjectsInAreaPaintComponent->setZoom(factor, panOffset);
+        m_upmixIndicatorPaintAndControlComponent->setZoom(factor, panOffset);
+    };
+    m_loudspeakersInAreaPaintComponent->onViewportZoomChanged            = syncViewportZoom;
+    m_soundobjectsInAreaPaintComponent->onViewportZoomChanged            = syncViewportZoom;
+    m_upmixIndicatorPaintAndControlComponent->onViewportZoomChanged      = syncViewportZoom;
 }
 
 UmsciControlComponent::~UmsciControlComponent()
