@@ -580,10 +580,10 @@ UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControls
     return UmsciPaintNControlComponentBase::ControlsSize::S;
 }
 
-void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans)
+void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans);
+        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans, angleStretch);
 }
 
 float UmsciControlComponent::getUpmixRot() const
@@ -605,6 +605,13 @@ float UmsciControlComponent::getUpmixHeightTrans() const
     if (m_upmixIndicatorPaintAndControlComponent)
         return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
     return 0.6f;
+}
+
+float UmsciControlComponent::getUpmixAngleStretch() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixAngleStretch();
+    return 1.0f;
 }
 
 void UmsciControlComponent::setShowAllSources(bool showAll)

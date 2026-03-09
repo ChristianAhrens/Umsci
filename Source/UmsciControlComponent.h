@@ -76,10 +76,11 @@ public:
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
 
     //==============================================================================
-    void setUpmixTransform(float rot, float trans, float heightTrans);
+    void setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch = 1.0f);
     float getUpmixRot() const;
     float getUpmixTrans() const;
     float getUpmixHeightTrans() const;
+    float getUpmixAngleStretch() const;
 
     //==============================================================================
     void setShowAllSources(bool showAll);

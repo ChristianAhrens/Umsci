@@ -773,6 +773,11 @@ void MainComponent::performConfigurationDump()
         auto upmixHeightScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE));
         upmixHeightScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixHeightTrans() : 0.6f));
         upmixConfigXmlElement->addChildElement(upmixHeightScaleXmlElement.release());
+
+        auto upmixAngleStretchXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH));
+        upmixAngleStretchXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f));
+        upmixConfigXmlElement->addChildElement(upmixAngleStretchXmlElement.release());
+
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
@@ -873,7 +878,10 @@ void MainComponent::onConfigUpdated()
         auto upmixHeightScale = 0.6f;
         if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE)))
             upmixHeightScale = e->getAllSubText().getFloatValue();
-        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale);
+        auto upmixAngleStretch = 1.0f;
+        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH)))
+            upmixAngleStretch = e->getAllSubText().getFloatValue();
+        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale, upmixAngleStretch);
     }
 }
 

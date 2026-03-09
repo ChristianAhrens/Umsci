@@ -87,10 +87,11 @@ public:
     IndicatorShape getShape() const;
 
     //==============================================================================
-    void setUpmixTransform(float rot, float trans, float heightTrans);
+    void setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch = 1.0f);
     float getUpmixRot() const;
     float getUpmixTrans() const;
     float getUpmixHeightTrans() const;
+    float getUpmixAngleStretch() const;
 
     //==============================================================================
     std::function<void(std::int16_t, std::array<std::float_t, 3>)> onSourcePositionChanged;
@@ -131,12 +132,19 @@ private:
     std::vector<RenderedChannelPosition>     m_renderedFloorPositions;
     std::vector<RenderedChannelPosition>     m_renderedHeightPositions;
 
+    float                       m_upmixAngleStretch       = 1.0f;
+    float                       m_naturalFloorMaxAngleDeg = 110.0f;
+    juce::Point<float>          m_stretchHandlePos;
+    juce::Point<float>          m_stretchHandleTangent;   // unit tangent vector along arrow direction
+
     bool                        m_draggingHeightRing   = false;
+    bool                        m_draggingStretchHandle = false;
     float                       m_dragStartAngle       = 0.0f;
     float                       m_dragStartDist        = 0.0f;
     float                       m_dragStartRot         = 0.0f;
     float                       m_dragStartTrans       = 0.0f;
     float                       m_dragStartHeightTrans = 0.6f;
+    float                       m_dragStartStretch     = 1.0f;
 
     bool                        m_flashState           = false;
     bool                        m_liveMode             = false;
