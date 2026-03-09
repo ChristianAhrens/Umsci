@@ -78,7 +78,7 @@ void UmsciControlComponent::paint(Graphics &g)
     if (!isDatabaseComplete())
     {
         g.setColour(getLookAndFeel().findColour(juce::TextEditor::ColourIds::textColourId));
-        g.drawFittedText("Data not ready...", getLocalBounds().reduced(35), juce::Justification::centred, 2);
+        g.drawFittedText("Data not ready... misconfigured IO size?", getLocalBounds().reduced(35), juce::Justification::centred, 2);
         return;
     }
 }
@@ -313,8 +313,10 @@ bool UmsciControlComponent::isDatabaseComplete()
 void UmsciControlComponent::updatePaintComponents()
 {
     auto realBoundingRect = getRealBoundingRect();
-    auto expandAmount = ((realBoundingRect.getAspectRatio() > 1.0f) ? realBoundingRect.getWidth() * 0.2f : realBoundingRect.getHeight() * 0.2f);
-    m_boundsRealRef = realBoundingRect.expanded(expandAmount, expandAmount);
+    // Expand proportionally per axis so the aspect ratio of the reference rect is preserved,
+    // keeping the real-to-screen coordinate mapping undistorted.
+    m_boundsRealRef = realBoundingRect.expanded(realBoundingRect.getWidth()  * 0.2f,
+                                                realBoundingRect.getHeight() * 0.2f);
 
     m_loudspeakersInAreaPaintComponent->setBoundsRealRef(m_boundsRealRef);
     m_loudspeakersInAreaPaintComponent->setSpeakerPositions(m_speakerPosition);
@@ -361,48 +363,64 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
 
 const juce::Rectangle<float> UmsciControlComponent::getRealBoundingRect()
 {
-    if (m_speakerPosition.size() > 0)
+    // A fully-zeroed 6DOF entry (both orientation and position all zero) is uninitialized and excluded.
+    auto isValid = [](const std::array<std::float_t, 6>& pos) {
+        return pos.at(0) != 0.0f || pos.at(1) != 0.0f || pos.at(2) != 0.0f
+            || pos.at(3) != 0.0f || pos.at(4) != 0.0f || pos.at(5) != 0.0f;
+    };
+
+    auto it = std::find_if(m_speakerPosition.begin(), m_speakerPosition.end(),
+                           [&](const auto& kv) { return isValid(kv.second); });
+    if (it == m_speakerPosition.end())
+        return {};
+
+    juce::Range<float> xRange = { it->second.at(3), it->second.at(3) };
+    juce::Range<float> yRange = { it->second.at(4), it->second.at(4) };
+    juce::Range<float> zRange = { it->second.at(5), it->second.at(5) };
+
+    for (auto const& speakerPosition : m_speakerPosition)
     {
-        juce::Range<float> xRange = { m_speakerPosition.begin()->second.at(3), m_speakerPosition.begin()->second.at(3) };
-        juce::Range<float> yRange = { m_speakerPosition.begin()->second.at(4), m_speakerPosition.begin()->second.at(4) };
-        juce::Range<float> zRange = { m_speakerPosition.begin()->second.at(5), m_speakerPosition.begin()->second.at(5) };
-
-        for (auto const& speakerPosition : m_speakerPosition)
-        {
-            xRange = xRange.getUnionWith(speakerPosition.second.at(3));
-            yRange = yRange.getUnionWith(speakerPosition.second.at(4));
-            zRange = zRange.getUnionWith(speakerPosition.second.at(5));
-        }
-
-        // Build rect with screen-space-aligned semantics:
-        // getX()/getWidth()  = d&b y span (across stage    = screen horizontal)
-        // getY()/getHeight() = d&b x span (towards audience = screen vertical)
-        return juce::Rectangle<float>({ yRange.getStart(), xRange.getStart() }, { yRange.getEnd(), xRange.getEnd() });
+        if (!isValid(speakerPosition.second))
+            continue;
+        xRange = xRange.getUnionWith(speakerPosition.second.at(3));
+        yRange = yRange.getUnionWith(speakerPosition.second.at(4));
+        zRange = zRange.getUnionWith(speakerPosition.second.at(5));
     }
 
-    return {};
+    // Build rect with screen-space-aligned semantics:
+    // getX()/getWidth()  = d&b y span (across stage    = screen horizontal)
+    // getY()/getHeight() = d&b x span (towards audience = screen vertical)
+    return juce::Rectangle<float>({ yRange.getStart(), xRange.getStart() }, { yRange.getEnd(), xRange.getEnd() });
 }
 
 
 const std::array<float, 6> UmsciControlComponent::getRealBoundingCube()
 {
-    if (m_speakerPosition.size() > 0)
+    // A fully-zeroed 6DOF entry (both orientation and position all zero) is uninitialized and excluded.
+    auto isValid = [](const std::array<std::float_t, 6>& pos) {
+        return pos.at(0) != 0.0f || pos.at(1) != 0.0f || pos.at(2) != 0.0f
+            || pos.at(3) != 0.0f || pos.at(4) != 0.0f || pos.at(5) != 0.0f;
+    };
+
+    auto it = std::find_if(m_speakerPosition.begin(), m_speakerPosition.end(),
+                           [&](const auto& kv) { return isValid(kv.second); });
+    if (it == m_speakerPosition.end())
+        return {};
+
+    juce::Range<float> xRange = { it->second.at(3), it->second.at(3) };
+    juce::Range<float> yRange = { it->second.at(4), it->second.at(4) };
+    juce::Range<float> zRange = { it->second.at(5), it->second.at(5) };
+
+    for (auto const& speakerPosition : m_speakerPosition)
     {
-        juce::Range<float> xRange = { m_speakerPosition.begin()->second.at(3), m_speakerPosition.begin()->second.at(3) };
-        juce::Range<float> yRange = { m_speakerPosition.begin()->second.at(4), m_speakerPosition.begin()->second.at(4) };
-        juce::Range<float> zRange = { m_speakerPosition.begin()->second.at(5), m_speakerPosition.begin()->second.at(5) };
-
-        for (auto const& speakerPosition : m_speakerPosition)
-        {
-            xRange = xRange.getUnionWith(speakerPosition.second.at(3));
-            yRange = yRange.getUnionWith(speakerPosition.second.at(4));
-            zRange = zRange.getUnionWith(speakerPosition.second.at(5));
-        }
-
-        return std::array<float, 6>({ xRange.getStart(), yRange.getStart(), zRange.getStart(), xRange.getEnd(), yRange.getEnd(), zRange.getEnd() });
+        if (!isValid(speakerPosition.second))
+            continue;
+        xRange = xRange.getUnionWith(speakerPosition.second.at(3));
+        yRange = yRange.getUnionWith(speakerPosition.second.at(4));
+        zRange = zRange.getUnionWith(speakerPosition.second.at(5));
     }
 
-    return {};
+    return std::array<float, 6>({ xRange.getStart(), yRange.getStart(), zRange.getStart(), xRange.getEnd(), yRange.getEnd(), zRange.getEnd() });
 }
 
 void UmsciControlComponent::resetData()

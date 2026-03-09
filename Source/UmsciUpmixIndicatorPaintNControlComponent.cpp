@@ -484,7 +484,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         return;
 
     m_upmixCenter = upmixIndicatorBounds.getCentre();
-    m_baseRadius  = std::min(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
+    // Use the larger screen dimension so the indicator fills the room's dominant axis rather
+    // than being constrained to the smaller one (which makes it look undersized in landscape layouts).
+    m_baseRadius  = std::max(upmixIndicatorBounds.getWidth(), upmixIndicatorBounds.getHeight()) * 0.5f;
     m_upmixCenter.x += m_upmixOffsetX * m_baseRadius;
     m_upmixCenter.y += m_upmixOffsetY * m_baseRadius;
     auto cx = m_upmixCenter.x;
