@@ -21,21 +21,40 @@
 #include <JuceHeader.h>
 
 
+/**
+ * @class UmsciConnectingComponent
+ * @brief Fullscreen progress overlay shown while the OCP.1 connection is being
+ *        established, subscriptions are being set up, or initial values are being read.
+ *
+ * `MainComponent` switches to this component (hiding `UmsciControlComponent`) when
+ * `DeviceController::onStateChanged` reports any state between Connecting and
+ * GetValues inclusive.  When the device reaches the Connected state this overlay
+ * is hidden and the control component is shown.
+ *
+ * Displays a JUCE indeterminate `ProgressBar` and a text description of the current
+ * phase plus the target IP:port.
+ */
 class UmsciConnectingComponent :   public juce::Component
 {
 public:
+    /**
+     * @brief Mirrors the subset of `DeviceController::State` values that this
+     *        component visualises.  The caller maps device states to these.
+     */
     enum Status
     {
-        Connecting,
-        Subscribing,
-        Reading
+        Connecting,  ///< TCP connect in progress.
+        Subscribing, ///< AddSubscription commands sent, waiting for ACKs.
+        Reading      ///< GetValue responses being collected (DeviceController::GetValues state).
     };
 
 public:
     UmsciConnectingComponent();
     ~UmsciConnectingComponent() override;
 
+    /** @brief Updates the status text label to reflect the current connection phase. */
     void setConnectionStatus(Status status);
+    /** @brief Updates the "connecting to ip:port" description line. */
     void setConnectionParameters(const juce::IPAddress& ip, int port);
 
     //==============================================================================

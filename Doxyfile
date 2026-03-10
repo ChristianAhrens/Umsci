@@ -1,0 +1,109 @@
+# Doxyfile for Umsci
+# Generated for GitHub Pages deployment via GitHub Actions + doxygen-awesome-css
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "Umsci"
+PROJECT_BRIEF          = "Upmix Spatial Control Interface — OCA/OCP.1 spatial audio utility"
+PROJECT_LOGO           = Resources/Images/UmsciRect.png
+OUTPUT_DIRECTORY       = docs
+CREATE_SUBDIRS         = NO
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = Source README.md CHANGELOG.md
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.cpp *.md
+EXCLUDE_PATTERNS       = */submodules/* */JuceLibraryCode/* */Builds/*
+USE_MDFILE_AS_MAINPAGE = README.md
+EXTENSION_MAPPING      =
+
+#---------------------------------------------------------------------------
+# Build options
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+SHOW_INCLUDE_FILES     = YES
+SHOW_USED_FILES        = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = NO
+GENERATE_BUGLIST       = NO
+GENERATE_DEPRECATEDLIST= YES
+
+#---------------------------------------------------------------------------
+# Output formats
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+
+#---------------------------------------------------------------------------
+# doxygen-awesome-css theme
+# Submodule expected at: submodules/doxygen-awesome-css
+#---------------------------------------------------------------------------
+HTML_EXTRA_STYLESHEET  = submodules/doxygen-awesome-css/doxygen-awesome.css \
+                         submodules/doxygen-awesome-css/doxygen-awesome-sidebar-only.css
+HTML_EXTRA_FILES       = submodules/doxygen-awesome-css/doxygen-awesome-darkmode-toggle.js \
+                         submodules/doxygen-awesome-css/doxygen-awesome-fragment-copy-button.js \
+                         submodules/doxygen-awesome-css/doxygen-awesome-paragraph-link.js \
+                         submodules/doxygen-awesome-css/doxygen-awesome-interactive-toc.js
+HTML_COLORSTYLE        = LIGHT
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_INDEX_NUM_ENTRIES = 100
+
+# Enable dark-mode toggle via extra JS (injected into each page)
+HTML_HEADER            =
+HTML_FOOTER            =
+
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+TREEVIEW_WIDTH         = 280
+ENUM_VALUES_PER_LINE   = 1
+
+#---------------------------------------------------------------------------
+# Graphs (requires graphviz / dot installed in CI)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 0
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+DOT_TRANSPARENT        = YES
+
+#---------------------------------------------------------------------------
+# Preprocessor
+# Tell Doxygen to treat JUCE macros as empty so they don't confuse the parser
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(x)= \
+                         JUCE_DECLARE_WEAK_REFERENCEABLE(x)= \
+                         JUCE_DECLARE_SINGLETON(x,y)= \
+                         JUCE_DECLARE_SINGLETON_SINGLETHREADED(x,y)=
+
+#---------------------------------------------------------------------------
+# Warnings
+#---------------------------------------------------------------------------
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_LOGFILE           =

@@ -21,6 +21,18 @@
 #include <JuceHeader.h>
 
 
+/**
+ * @class CustomAboutItem
+ * @brief A `juce::PopupMenu::CustomComponent` wrapper that embeds an arbitrary
+ *        `juce::Component` as a full-size item inside a JUCE PopupMenu.
+ *
+ * Used to show `AboutComponent` inside the settings popup menu without requiring
+ * a separate window.  `getIdealSize()` sizes the item to 75 % of the main display
+ * dimension (square), clamped to a caller-supplied minimum.
+ *
+ * Ownership of `componentToHold` is *not* transferred — the caller must keep the
+ * component alive for at least as long as this item exists.
+ */
 class CustomAboutItem : public juce::PopupMenu::CustomComponent
 {
 public:

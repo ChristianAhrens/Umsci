@@ -21,59 +21,142 @@
 #include <JuceHeader.h>
 
 
+/**
+ * @class UmsciPaintNControlComponentBase
+ * @brief Abstract base class for all three overlaid visualisation layers in
+ *        `UmsciControlComponent`.
+ *
+ * ## Coordinate system
+ * The DS100 reports positions in a normalised *real-world* space where both X and Y
+ * are in the range [0.0, 1.0] (origin at top-left when viewed from above, X = left→right,
+ * Y = top→bottom relative to the room).  `m_boundsRealRef` defines which rectangle
+ * of that space is currently visible in the component's pixel bounds.
+ *
+ * `GetPointForRealCoordinate()` and `GetRealCoordinateForPoint()` perform the two-way
+ * mapping between real-world coordinates and component pixel coordinates, taking the
+ * current zoom state into account.
+ *
+ * ## Zoom
+ * A viewport zoom is maintained as a scale factor and a normalised pan offset:
+ * - `m_zoomFactor` (1.0 = no zoom, clamped [0.1, 10.0]).
+ * - `m_zoomPanOffset` — centre offset expressed as a fraction of the *base* content
+ *   width/height so that the pan survives component resizes without drifting.
+ *
+ * Mouse-wheel and pinch-magnify gestures call `applyZoomAtScreenPoint()` which
+ * keeps the point under the cursor fixed in world space.  Double-click resets zoom.
+ *
+ * `setZoom()` silently applies new zoom values (used when synchronising siblings).
+ * `resetZoom()` fires `onViewportZoomChanged` so all siblings reset together.
+ *
+ * ## Sibling synchronisation
+ * All three layers in `UmsciControlComponent` share the same `m_boundsRealRef` and
+ * must always show the same viewport.  When the user zooms on any layer, that layer
+ * fires `onViewportZoomChanged`; `UmsciControlComponent` catches it and calls
+ * `setZoom()` on the other two layers (which does NOT re-fire the callback).
+ *
+ * ## Derived class contract
+ * Derived classes must override `onZoomChanged()` to re-run any pre-render pass
+ * (e.g. converting world positions to pixel positions) before `repaint()` is called.
+ * The base implementation just calls `repaint()`.
+ */
 class UmsciPaintNControlComponentBase :   public juce::Component
 {
 public:
+    /** @brief Visual size of source/speaker icons. Multiplier accessible via `getControlsSizeMultiplier()`. */
     enum class ControlsSize { S, M, L };
 
     UmsciPaintNControlComponentBase();
     virtual ~UmsciPaintNControlComponentBase() override;
 
     //==============================================================================
+    /**
+     * @brief Sets the real-world rectangle that the component's pixel bounds map to.
+     *
+     * Must be called on all three sibling layers whenever the bounding rectangle of
+     * the speaker/source data changes (e.g. after the DS100 reports speaker positions
+     * that extend beyond the previous bounds).  All layers share the same reference.
+     */
     void setBoundsRealRef(const juce::Rectangle<float>& boundsRealRef);
 
     //==============================================================================
+    /** @brief Updates the icon size; derived classes may override to re-prerender. */
     virtual void setControlsSize(ControlsSize size);
     ControlsSize getControlsSize() const;
+    /** @brief Returns a multiplier (e.g. 0.5 / 1.0 / 1.5) for S/M/L icon sizes. */
     float getControlsSizeMultiplier() const;
 
     //==============================================================================
-    // Viewport zoom — factor 1.0 = no zoom; panOffset is normalised to base content dimensions.
-    // setZoom() applies zoom without firing onViewportZoomChanged (used for sibling sync).
+    /**
+     * @brief Silently applies zoom without firing `onViewportZoomChanged`.
+     * Used by `UmsciControlComponent` to synchronise sibling layers after one of
+     * them fires the callback.
+     * @param factor             Zoom scale factor (clamped to [0.1, 10.0]).
+     * @param normalizedPanOffset Pan offset as a fraction of base content dimensions.
+     */
     void  setZoom(float factor, juce::Point<float> normalizedPanOffset = {});
     float getZoomFactor() const;
+    /** @brief Resets zoom to 1.0 / no pan and fires `onViewportZoomChanged`. */
     void  resetZoom();
 
-    // Fired after every user-initiated zoom change so the parent can synchronise siblings.
+    /**
+     * @brief Fired after every user-initiated zoom/pan change (wheel, pinch, double-click).
+     * Parameters: (newFactor, newNormalisedPanOffset).
+     * `UmsciControlComponent` uses this to synchronise the other two layers via `setZoom()`.
+     */
     std::function<void(float, juce::Point<float>)> onViewportZoomChanged;
 
 protected:
     //==============================================================================
+    /**
+     * @brief Converts a 3D real-world coordinate to a 2D screen pixel point.
+     *
+     * Uses `m_boundsRealRef` and the current zoom state.  The Z component of the
+     * real coordinate is ignored for 2D rendering (XY plane only).
+     */
     juce::Point<float> GetPointForRealCoordinate(const std::array<float, 3>& realCoordinate);
+
+    /**
+     * @brief Inverse of `GetPointForRealCoordinate` — converts a screen pixel point
+     *        back to a 3D real-world coordinate (Z is set to 0).
+     */
     std::array<float, 3> GetRealCoordinateForPoint(const juce::Point<float>& screenPoint);
 
     //==============================================================================
+    /** @brief Double-click resets zoom to 1.0 via `resetZoom()`. */
     void mouseDoubleClick(const juce::MouseEvent&) override;
+    /** @brief Mouse-wheel zooms about the cursor position. */
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+    /** @brief Trackpad pinch-to-zoom (macOS). */
     void mouseMagnify(const juce::MouseEvent&, float scaleFactor) override;
 
-    // Called after any zoom state change; base implementation calls repaint().
-    // Derived classes override to re-trigger their prerender pass before repainting.
+    /**
+     * @brief Called after any zoom state change.
+     *
+     * Base implementation calls `repaint()`.  Derived classes should override to
+     * re-run their prerender pass (world→pixel coordinate conversion) before painting,
+     * then call the base or call `repaint()` directly.
+     */
     virtual void onZoomChanged();
 
 private:
     //==============================================================================
+    /** @brief Returns the unzoomed content rectangle in pixel space. */
     juce::Rectangle<float> computeBaseContentBounds() const;
-    juce::Rectangle<float> getContentBounds() const; // returns zoom-adjusted bounds
+    /** @brief Returns the zoom-adjusted content rectangle in pixel space (used by coordinate transforms). */
+    juce::Rectangle<float> getContentBounds() const;
 
+    /**
+     * @brief Core zoom logic: adjusts factor and pan offset so the world point
+     *        under `screenFocus` stays fixed, then calls `onZoomChanged()` and
+     *        fires `onViewportZoomChanged`.
+     */
     void applyZoomAtScreenPoint(float newFactor, juce::Point<float> screenFocus);
 
-    juce::Rectangle<float>  m_boundsRealRef;
+    juce::Rectangle<float>  m_boundsRealRef;              ///< Real-world rect currently displayed.
     ControlsSize             m_controlsSize = ControlsSize::S;
 
-    // Zoom state — normalised pan offset survives component resizes.
-    float                   m_zoomFactor     = 1.0f;
-    juce::Point<float>      m_zoomPanOffset;            // fraction of base content width/height
+    float                   m_zoomFactor     = 1.0f;      ///< Current zoom scale (1.0 = no zoom).
+    juce::Point<float>      m_zoomPanOffset;               ///< Pan as fraction of base content size.
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)
 };
