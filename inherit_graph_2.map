@@ -1,0 +1,39 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="67,193,199,218"/>
+<area shape="rect" id="Node000001" href="$classAboutComponent.html" title="Small overlay panel showing the application icon, version info, and a link to the project repository." alt="" coords="370,193,505,218"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="212,203,370,203,370,208,212,208"/>
+<area shape="rect" id="Node000002" href="$classMainComponent.html" title="Root JUCE component — the top&#45;level UI that wires together the device connection, the visualisation,..." alt="" coords="373,45,502,70"/>
+<area shape="poly" id="edge2_Node000000_Node000002" title=" " alt="" coords="164,183,258,119,281,97,307,79,339,67,372,60,373,65,340,72,309,84,285,102,262,123,167,188"/>
+<area shape="rect" id="Node000005" href="$classUmsciConnectingComponent.html" title="Fullscreen progress overlay shown while the OCP.1 connection is being established,..." alt="" coords="332,242,543,267"/>
+<area shape="poly" id="edge3_Node000000_Node000005" title=" " alt="" coords="213,215,358,239,357,245,212,221"/>
+<area shape="rect" id="Node000006" href="$classUmsciControlComponent.html" title="The main visualisation and interaction surface for Umsci." alt="" coords="345,291,530,317"/>
+<area shape="poly" id="edge4_Node000000_Node000006" title=" " alt="" coords="173,222,236,250,309,276,359,289,358,294,307,281,234,255,171,227"/>
+<area shape="rect" id="Node000008" href="$classUmsciDiscoveringHintComponent.html" title="Fullscreen overlay shown when no DS100 connection has been configured yet." alt="" coords="316,94,559,119"/>
+<area shape="poly" id="edge5_Node000000_Node000008" title=" " alt="" coords="170,184,234,155,307,128,353,117,354,122,309,133,236,160,173,189"/>
+<area shape="rect" id="Node000009" href="$classUmsciPaintNControlComponentBase.html" title="Abstract base class for all three overlaid visualisation layers in UmsciControlComponent." alt="" coords="308,143,567,169"/>
+<area shape="poly" id="edge6_Node000000_Node000009" title=" " alt="" coords="212,190,357,166,358,171,213,195"/>
+<area shape="rect" id="Node000017" href="$classUmsciZeroconfDiscoverComboComponent.html" title="A ComboBox that continuously scans the local network for DS100 devices announced via Zeroconf/mDNS an..." alt="" coords="325,489,549,529"/>
+<area shape="poly" id="edge10_Node000000_Node000017" title=" " alt="" coords="192,221,230,241,262,270,278,298,285,326,283,378,282,403,283,427,292,451,310,475,327,489,324,493,306,479,287,454,278,428,276,403,278,377,280,326,273,300,258,274,227,245,190,226"/>
+<area shape="rect" id="Node000010" href="$classUmsciLoudspeakersPaintComponent.html" title="The bottom layer of the UmsciControlComponent stack — paints a speaker SVG icon at each loudspeaker&#39;s..." alt="" coords="615,119,873,145"/>
+<area shape="poly" id="edge7_Node000009_Node000010" title=" " alt="" coords="580,142,614,139,614,145,580,147"/>
+<area shape="rect" id="Node000011" href="$classUmsciSoundobjectsPaintComponent.html" title="The middle layer of the UmsciControlComponent stack — paints a filled circle for each sound object an..." alt="" coords="615,169,873,194"/>
+<area shape="poly" id="edge8_Node000009_Node000011" title=" " alt="" coords="581,165,615,168,615,173,580,170"/>
+<area shape="rect" id="Node000012" href="$classUmsciUpmixIndicatorPaintNControlComponent.html" title="The top layer of the UmsciControlComponent stack — renders an interactive upmix speaker ring and lets..." alt="" coords="647,333,841,373"/>
+<area shape="poly" id="edge9_Node000009_Node000012" title=" " alt="" coords="553,171,568,178,620,213,667,255,704,297,731,331,726,334,700,300,663,259,617,217,565,182,551,176"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="45,69,220,109"/>
+<area shape="poly" id="edge11_Node000003_Node000002" title=" " alt="" coords="233,76,372,61,373,67,234,81"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="354,439,521,465"/>
+<area shape="rect" id="Node000014" href="$classDeviceController.html" title="Singleton that owns the OCP.1 (AES70) TCP connection to a d&amp;b audiotechnik DS100 device and exposes a..." alt="" coords="679,418,809,443"/>
+<area shape="poly" id="edge12_Node000015_Node000014" title=" " alt="" coords="534,443,678,432,679,438,535,448"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="390,390,485,415"/>
+<area shape="poly" id="edge14_Node000013_Node000012" title=" " alt="" coords="498,390,646,366,647,372,499,396"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="498,405,679,422,678,427,498,411"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="324,341,551,366"/>
+<area shape="poly" id="edge15_Node000016_Node000012" title=" " alt="" coords="565,351,646,351,646,356,565,356"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="45,5,220,45"/>
+<area shape="poly" id="edge16_Node000004_Node000002" title=" " alt="" coords="234,33,373,48,372,53,233,39"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="37,284,229,324"/>
+<area shape="poly" id="edge17_Node000007_Node000006" title=" " alt="" coords="242,301,344,301,344,307,242,307"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="5,489,260,529"/>
+<area shape="poly" id="edge18_Node000018_Node000017" title=" " alt="" coords="274,507,325,507,325,512,274,512"/>
+</map>
