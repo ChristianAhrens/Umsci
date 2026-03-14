@@ -1,7 +1,8 @@
 ![Showreel.001.png](Resources/Documentation/Showreel/Showreel.001.png "Umsci Headline Icons")
 
-See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) for available binary packages or join iOS TestFlight Beta:
+See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) for available installer packages.
 
+Full code documentation available at [![Documentation](https://img.shields.io/badge/docs-doxygen-blue)](https://ChristianAhrens.github.io/Umsci/)
 
 <a name="toc" />
 

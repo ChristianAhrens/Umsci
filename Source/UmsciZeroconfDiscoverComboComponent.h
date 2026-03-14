@@ -23,6 +23,19 @@
 #include <ZeroconfDiscoverComponent.h>
 
 
+/**
+ * @class UmsciZeroconfDiscoverComboComponent
+ * @brief A ComboBox that continuously scans the local network for DS100 devices
+ *        announced via Zeroconf/mDNS and lets the user select one to connect to.
+ *
+ * Used inside the connection settings dialog (`MainComponent::showConnectionSettings()`).
+ * When the user picks an entry, `onServiceSelected` fires with the resolved IP and
+ * port so the caller can call `DeviceController::setConnectionParameters()`.
+ *
+ * Backed by `ZeroconfSearcher::ZeroconfSearcher` from the JUCEAppBasics submodule,
+ * which handles the mDNS browsing on a background thread.  `handleServicesChanged()`
+ * is called on the message thread whenever the service list changes.
+ */
 class UmsciZeroconfDiscoverComboComponent
     : public juce::Component,
       public ZeroconfSearcher::ZeroconfSearcher::ZeroconfSearcherListener
@@ -35,19 +48,25 @@ public:
     void resized() override;
 
     //==============================================================================
+    /** @brief `ZeroconfSearcherListener` callback — called when devices appear or disappear. */
     void handleServicesChanged(std::string serviceName) override;
 
     //==============================================================================
+    /**
+     * @brief Fired when the user selects a device from the combo box.
+     * The `ServiceInfo` contains the resolved hostname, IP address, and port.
+     */
     std::function<void(const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo&)> onServiceSelected;
 
 private:
     //==============================================================================
+    /** @brief Rebuilds the combo box items from the current `m_services` list. */
     void updateComboBox();
 
     //==============================================================================
-    std::unique_ptr<ZeroconfSearcher::ZeroconfSearcher>          m_searcher;
-    std::unique_ptr<juce::ComboBox>                              m_comboBox;
-    std::vector<ZeroconfSearcher::ZeroconfSearcher::ServiceInfo> m_services;
+    std::unique_ptr<ZeroconfSearcher::ZeroconfSearcher>          m_searcher; ///< mDNS browser.
+    std::unique_ptr<juce::ComboBox>                              m_comboBox; ///< Device selector.
+    std::vector<ZeroconfSearcher::ZeroconfSearcher::ServiceInfo> m_services; ///< Current service list.
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciZeroconfDiscoverComboComponent)
 };

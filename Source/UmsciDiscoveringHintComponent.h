@@ -21,6 +21,15 @@
 #include <JuceHeader.h>
 
 
+/**
+ * @class UmsciDiscoveringHintComponent
+ * @brief Fullscreen overlay shown when no DS100 connection has been configured yet.
+ *
+ * Displayed by `MainComponent` in place of `UmsciControlComponent` while the
+ * application is in `DeviceController::State::Disconnected` and no target IP has
+ * been set.  Contains a simple label prompting the user to open the connection
+ * settings dialog.
+ */
 class UmsciDiscoveringHintComponent :   public juce::Component
 {
 public:

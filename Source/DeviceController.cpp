@@ -23,24 +23,52 @@
 
 JUCE_IMPLEMENT_SINGLETON(DeviceController)
 
+/**
+ * Constructs the singleton.
+ *
+ * Initialization order:
+ * 1. `CreateKnownONosMap()` — pre-builds the ROI→ONo lookup tables for the full
+ *    DS100 parameter set so that subsequent `GetObjectDefinition()` calls are fast.
+ * 2. A `NanoOcp1Client` is created with `callbacksOnMessageThread = false` so that
+ *    `onDataReceived` fires on the JUCE IPC/socket thread.  This avoids blocking
+ *    the message thread with network I/O.
+ * 3. Three lambdas are wired to the client:
+ *    - `onConnectionEstablished` — resets device-specific state, then issues the
+ *      first and only synchronous OCA query: `Fixed_GUID`.  Subscriptions are
+ *      deferred until the GUID response arrives (see `ProcessGuidAndSubscribe()`),
+ *      because the speaker-position object definitions depend on the firmware revision
+ *      encoded in the GUID.
+ *    - `onConnectionLost` — clears all pending handles, resets device state, and
+ *      (if the connection was live) posts a Connecting state + restarts the retry timer.
+ *    - `onDataReceived` — forwards raw bytes to `ocp1MessageReceived()`.
+ *
+ * Default target: 127.0.0.1:50014 (DS100 OCP.1 default port).
+ */
 DeviceController::DeviceController()
 {
+    // Pre-build definition maps before the connection is opened.
     CreateKnownONosMap();
 
     m_ocp1IPAddress = juce::IPAddress("127.0.0.1");
     m_ocp1Port = 50014;
     m_ocp1Timeout = 100;
 
+    // false = callbacks on socket thread, not message thread.
     m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
-    m_ocp1Connection->onConnectionEstablished = [=]() {
-        stopTimer();
 
+    m_ocp1Connection->onConnectionEstablished = [=]() {
+        stopTimer(); // Connection succeeded — no more retries needed.
+
+        // Reset device-model state: the GUID may differ if the device was replaced.
         m_ocp1DeviceGUID = "";
         m_ocp1DeviceStackIdent = -1;
         m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
 
+        // Query the GUID first.  Subscriptions follow in ProcessGuidAndSubscribe()
+        // once we know which OCA revision the firmware supports.
         QueryObjectValue(RemoteObject::Fixed_GUID, {});
     };
+
     m_ocp1Connection->onConnectionLost = [=]() {
         DeleteObjectSubscriptions();
         ClearPendingHandles();
@@ -49,14 +77,13 @@ DeviceController::DeviceController()
         m_ocp1DeviceStackIdent = -1;
         m_connectedDbDeviceModel = DbDeviceModel::InvalidDev;
 
-        if (getState() > State::Connecting) // we have lost the connection while having just been connected or even fully running, so try to reestablish
+        if (getState() > State::Connecting) // lost a live connection — try to reconnect
         {
             postMessage(new StateChangeMessage(State::Connecting));
-
-            // prepare to restart connection attempt after some large timeout, in case something got stuck...
-            startTimer(m_ocp1Timeout * 20);
+            startTimer(m_ocp1Timeout * 20); // timer fires timerCallback() → connectToSocket()
         }
     };
+
     m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
         return ocp1MessageReceived(data);
     };
@@ -185,9 +212,25 @@ void DeviceController::handleMessage(const juce::Message& message)
     }
 }
 
+/**
+ * Pre-builds `m_ROIsToDefsMap` and `m_ONoToROIMap` for the entire DS100 parameter space.
+ *
+ * Structure of `m_ROIsToDefsMap`:
+ * - Objects without any channel addressing (e.g. GUID, device name, scene index)
+ *   are stored under RemObjAddr() — both pri and sec == sc_INV.
+ * - Objects with a single channel dimension use RemObjAddr(channel, sc_INV).
+ * - Objects with two dimensions use RemObjAddr(pri, sec).
+ *
+ * Note that speaker positions are initially populated with legacy definitions here.
+ * They are patched to the new-revision definitions in `ProcessGuidAndSubscribe()` if
+ * the connected device firmware reports OCA stack >= 1.
+ *
+ * `m_ONoToROIMap` is rebuilt at the end to provide O(1) reverse lookup when
+ * incoming OCA messages carry an ONo that needs to be mapped back to a RemObjIdent.
+ */
 void DeviceController::CreateKnownONosMap()
 {
-    // definitions without channel and record
+    // Objects with no channel/record indexing.
     m_ROIsToDefsMap[RemoteObject::Fixed_GUID][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Fixed_GUID();
     m_ROIsToDefsMap[RemoteObject::Settings_DeviceName][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Settings_DeviceName();
     m_ROIsToDefsMap[RemoteObject::Status_StatusText][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Status_StatusText();
@@ -302,12 +345,35 @@ void DeviceController::CreateKnownONosMap()
         m_ROIsToDefsMap[RemoteObject::CoordinateMappingSettings_Name][roa] = NanoOcp1::DS100::dbOcaObjectDef_CoordinateMappingSettings_Name(first);
     }
 
-    // Build reverse ONo -> (ROI, addr) lookup for O(1) dispatch in UpdateObjectValue.
+    // Build reverse ONo → {ROI, addr} lookup from the completed m_ROIsToDefsMap.
+    // This must be the last step so all entries are present.
     for (auto& roisKV : m_ROIsToDefsMap)
         for (auto& objDefKV : roisKV.second)
             m_ONoToROIMap[objDefKV.second.m_targetOno] = { roisKV.first, objDefKV.first };
 }
 
+/**
+ * Returns the `Ocp1CommandDefinition` for `roi` at `addr`.
+ *
+ * The definitions are allocated freshly each call (heap) rather than looked up
+ * in `m_ROIsToDefsMap`.  This lets callers call `AddSubscriptionCommand()`,
+ * `GetValueCommand()`, and `SetValueCommand()` without worrying about shared
+ * state — each command mutates internal handle fields.
+ *
+ * `useDefinitionRemapping = true` is needed when building set/get-value commands
+ * for identifiers that are Umsci-level split views of a single OCA object:
+ * - `Positioning_SourcePosition_X/Y/XY` → all use `dbOcaObjectDef_Positioning_Source_Position`.
+ * - `CoordinateMapping_SourcePosition_X/Y/XY` → all use `dbOcaObjectDef_CoordinateMapping_Source_Position`.
+ * - `Scene_Previous/Next/Recall` → all use `dbOcaObjectDef_SceneAgent`.
+ *
+ * For `Positioning_SpeakerPosition`, the definition chosen depends on
+ * `m_ocp1DeviceStackIdent` (set during `ProcessGuidAndSubscribe()`):
+ * - stack 0 : `dbOcaObjectDef_Positioning_Source_Speaker_Position` (legacy path)
+ * - stack >= 1 : `dbOcaObjectDef_Positioning_Speaker_Position`     (new OCA path)
+ *
+ * @note [MANUAL CONTEXT NEEDED] Document why speaker position lived under the
+ *       "Source" OCA subtree in older firmware and what OCA object it moved to.
+ */
 std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController::GetObjectDefinition(const RemoteObject::RemObjIdent& roi, const RemObjAddr& addr, bool useDefinitionRemapping)
 {
     std::int32_t first = addr.pri;
@@ -846,11 +912,24 @@ bool DeviceController::UpdateObjectValue(const std::uint32_t ONo, NanoOcp1::Ocp1
     return false;
 }
 
+/**
+ * Core value-decoder — determines the expected OCA data type for `roi`, constructs
+ * a typed `NanoOcp1::Variant` from the raw message parameter bytes, and (for most
+ * objects) wraps it in a `RemoteObject` that is posted to the JUCE message thread.
+ *
+ * The `Fixed_GUID` case is special: instead of posting a value, the GUID string is
+ * extracted and forwarded to `ProcessGuidAndSubscribe()` while still on the socket
+ * thread.  This is intentional — `ProcessGuidAndSubscribe()` must run synchronously
+ * so that the subscription commands it sends are queued before `ocp1MessageReceived`
+ * returns, preventing premature state advancement to Connected.
+ *
+ * For all other objects the mapping from `RemObjIdent` to `Ocp1DataType` must stay
+ * in sync with the actual OCA class definitions in `Ocp1DS100ObjectDefinitions.h`.
+ * If a new parameter type is added to `RemObjIdent` but not handled here, the
+ * default branch fires a DBG warning and returns false.
+ */
 bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, NanoOcp1::Ocp1Message* msgObj, const std::pair<RemObjAddr, NanoOcp1::Ocp1CommandDefinition>& objectDetails)
 {
-    //DBG(juce::String(__FUNCTION__)
-    //    << " (targetONo:0x" << juce::String::toHexString(objectDetails.second.m_targetOno) << ")");
-
     NanoOcp1::Ocp1DataType datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_NONE;
     switch (roi)
     {
@@ -960,9 +1039,26 @@ bool DeviceController::SetActiveRemoteObjects(const std::vector<DeviceController
     return true;
 }
 
+/**
+ * Handles a newly received device GUID.
+ *
+ * Called from `UpdateObjectValue()` when the `Fixed_GUID` OCA response arrives
+ * (on the JUCE socket thread via `ocp1MessageReceived`).
+ *
+ * Sequence:
+ * 1. Guard: if the same GUID was already processed for this connection, return early.
+ *    (The GUID is reset to "" in `onConnectionEstablished`, so this guard only fires
+ *    if the device spontaneously re-sends its GUID notification while connected.)
+ * 2. `SetOcaRevisionAndDeviceModel()` — validates the GUID, detects model and OCA
+ *    revision, stores results in member variables.
+ * 3. Speaker-position definitions in `m_ROIsToDefsMap` are patched to match the
+ *    detected OCA revision.
+ * 4. `CreateObjectSubscriptions()` + `QueryObjectValues()` — now that we know which
+ *    object definitions to use, subscriptions and initial value queries can be sent.
+ */
 void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
 {
-    if (newGuid == m_ocp1DeviceGUID) // on new connection guid is reset so when receiving a guid again the connection/subscriptions should already be established
+    if (newGuid == m_ocp1DeviceGUID) // GUID reset to "" on connection, so this guard fires only for re-notifications
         return;
 
     if (SetOcaRevisionAndDeviceModel(newGuid)) // validate guid and determines revision and device model
@@ -992,11 +1088,28 @@ void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
     QueryObjectValues();
 }
 
+/**
+ * Validates a GUID string and sets `m_ocp1DeviceStackIdent` / `m_connectedDbDeviceModel`.
+ *
+ * GUID format (8 ASCII hex characters):
+ * - [0..3] "DB00" — d&b manufacturer prefix; any other value rejects the GUID.
+ * - [4..5] firmware version code (hex string), compared lexicographically against
+ *          known threshold values to determine the OCA revision.
+ * - [6..7] device model code: "D0" = DS100, "D1" = DS100D, "D2" = DS100M.
+ *
+ * `m_ocp1DeviceStackIdent` values:
+ * - 0 : legacy OCA definitions; speaker position lives at `Positioning_Source_Speaker_Position`.
+ * - 1 : extended definitions; speaker position lives at `Positioning_Speaker_Position`.
+ *
+ * @note [MANUAL CONTEXT NEEDED] Map the version code thresholds ("0C", "02") to
+ *       human-readable firmware release version numbers, and document what "scalability"
+ *       means functionally (e.g. larger output channel count, new OCA object tree path).
+ */
 bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
 {
-    if (guid.length() != 8) // d&b guids as string are 8 characters
+    if (guid.length() != 8) // d&b GUIDs are always exactly 8 characters
         return false;
-    if (!guid.startsWith("DB00")) // identify d&b device
+    if (!guid.startsWith("DB00")) // mandatory d&b manufacturer prefix
         return false;
 
     int deviceBytes = 2;

@@ -32,28 +32,71 @@ class UmsciDiscoveringHintComponent;
 class UmsciConnectingComponent;
 class AboutComponent;
 
+/**
+ * @class MainComponent
+ * @brief Root JUCE component — the top-level UI that wires together the device
+ *        connection, the visualisation, and user settings.
+ *
+ * ## Application architecture overview
+ * ```
+ * JUCEApplication
+ *   └── MainWindow
+ *         └── MainComponent                  ← this class
+ *               ├── DeviceController (singleton)  ← OCP.1 TCP + DS100 logic
+ *               ├── UmsciControlComponent          ← visualisation (3 stacked layers)
+ *               ├── UmsciConnectingComponent       ← shown during Connecting/Subscribing/GetValues
+ *               ├── UmsciDiscoveringHintComponent  ← shown when no device is configured
+ *               └── AboutComponent                 ← info overlay
+ * ```
+ *
+ * ## Responsibility
+ * - Creates and owns `DeviceController` (singleton) and `UmsciControlComponent`.
+ * - Subscribes to `DeviceController::onStateChanged` to switch between the three
+ *   overlay states (hint / connecting / control).
+ * - Subscribes to `DeviceController::onRemoteObjectReceived` and routes decoded
+ *   `RemoteObject` values to `UmsciControlComponent`.
+ * - Owns `UmsciAppConfiguration` and implements its Dumper/Watcher interfaces so
+ *   that all settings are persisted to/restored from XML automatically.
+ * - Presents the settings popup menu (gear button) for look-and-feel, colour,
+ *   upmix format, icon size, connection settings, and fullscreen mode.
+ *
+ * ## Settings option enum
+ * `UmsciSettingsOption` enumerates every entry in the settings menu.  The integer
+ * values are used as menu-item IDs in the JUCE popup menu and must not be reordered
+ * without updating the corresponding `handleSettings*` handlers.
+ *
+ * @note [MANUAL CONTEXT NEEDED] A screenshot or wireframe of the UI annotated with
+ *       component boundaries would greatly help a new developer understand how the
+ *       overlaid components interact visually.
+ */
 class MainComponent :   public juce::Component,
                         //public juce::Timer,
                         public UmsciAppConfiguration::Dumper,
                         public UmsciAppConfiguration::Watcher
 {
 public:
+    /**
+     * @brief Enumerates every user-selectable setting exposed via the settings menu.
+     *
+     * Values are split into logical groups with First/Last sentinels to allow
+     * range-based checks in the menu-result handlers.
+     */
     enum UmsciSettingsOption
     {
         LookAndFeel_First = 1,
-        LookAndFeel_FollowHost = LookAndFeel_First,
-        LookAndFeel_Dark,
-        LookAndFeel_Light,
+        LookAndFeel_FollowHost = LookAndFeel_First, ///< Inherit host application L&F.
+        LookAndFeel_Dark,                           ///< Force dark colour scheme.
+        LookAndFeel_Light,                          ///< Force light colour scheme.
         LookAndFeel_Last = LookAndFeel_Light,
         ControlColour_First,
-        ControlColour_Green = ControlColour_First,
+        ControlColour_Green = ControlColour_First,  ///< Green source icons.
         ControlColour_Red,
         ControlColour_Blue,
         ControlColour_Pink,
-        ControlColour_Laser,
+        ControlColour_Laser,                        ///< Bright laser-style highlight.
         ControlColour_Last = ControlColour_Laser,
-        ConnectionSettings,
-        FullscreenWindowMode,
+        ConnectionSettings,     ///< Opens the connection settings dialog.
+        FullscreenWindowMode,   ///< Toggles fullscreen / windowed.
         ControlFormat_First,
         ControlFormat_Stereo = ControlFormat_First,
         ControlFormat_LRS,
@@ -66,11 +109,11 @@ public:
         ControlFormat_7point1point4,
         ControlFormat_9point1point6,
         ControlFormat_Last = ControlFormat_9point1point6,
-        UpmixSettings,
+        UpmixSettings,          ///< Opens the upmix settings dialog.
         ControlSize_First,
-        ControlSize_S = ControlSize_First,
-        ControlSize_M,
-        ControlSize_L,
+        ControlSize_S = ControlSize_First, ///< Small icons.
+        ControlSize_M,                     ///< Medium icons.
+        ControlSize_L,                     ///< Large icons.
         ControlSize_Last = ControlSize_L
     };
 
@@ -78,6 +121,7 @@ public:
     MainComponent();
     ~MainComponent() override;
 
+    /** @brief Applies a single settings option (called from both menu handlers and config restore). */
     void applySettingsOption(const UmsciSettingsOption& option);
 
     //==============================================================================
@@ -85,19 +129,28 @@ public:
     void paint(juce::Graphics& g) override;
     void lookAndFeelChanged() override;
 
+    /** @brief Handles the Escape key (exits fullscreen) and F key (toggles fullscreen). */
     bool keyPressed(const juce::KeyPress& key) override;
 
     //==============================================================================
+    /** @brief `UmsciAppConfiguration::Dumper` — serialises all current settings to XML. */
     void performConfigurationDump() override;
+    /** @brief `UmsciAppConfiguration::Watcher` — called when the config XML changes on disk. */
     void onConfigUpdated() override;
 
     //==============================================================================
     bool isFullscreenEnabled();
 
     //==============================================================================
+    /**
+     * @brief Fired when the look-and-feel palette changes, so the host application
+     *        (if this is used as a plugin) can update its own colour scheme.
+     * Parameters: (paletteIndex, isDark).
+     */
     std::function<void(int, bool)> onPaletteStyleChange;
 
     //==============================================================================
+    /** @brief Fired when the user requests fullscreen mode; the host window applies it. */
     std::function<void(bool)> onSetFullscreenWindow;
 
 private:

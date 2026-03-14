@@ -10,3 +10,6 @@
 [submodule "submodules/NanoOcp"]
 	path = submodules/NanoOcp
 	url = https://github.com/ChristianAhrens/NanoOcp
+[submodule "submodules/doxygen-awesome-css"]
+	path = submodules/doxygen-awesome-css
+	url = https://github.com/jothepro/doxygen-awesome-css.git
