@@ -12,6 +12,7 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
 * [Umsci - app functionality](#Umsci-app-functionality)
   * [Main Umsci UI](#Umsci-ui)
   * [Umsci settings menu](#Umsci-settings-menu)
+* [Command-line parameters](#commandlineparameters)
 
 
 <a name="overview" />
@@ -41,3 +42,13 @@ Use what is provided here at your own risk!
 
 ![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Umsci settings")
 
+<a name="commandlineparameters" />
+
+## Command-line parameters
+
+Umsci has a set of command-line parameters. Parameters are passed directly when launching the executable from a terminal or as part of a launch script.
+
+| Parameter | Description |
+|:----------|:------------|
+| `--noupdates` |  Disables the automatic online update check performed by `JUCEAppBasics::WebUpdateDetector` at startup. Useful in network-restricted environments, automated deployments, or kiosk setups where outbound HTTP requests to GitHub should be avoided. |
+| `--noconfigui` | Hides the three configuration buttons (About, Settings, Connection) in the upper-left corner of the UI. Intended for kiosk or embedded deployments where the user should not be able to change settings or disconnect from the soundscape signal engine. |
