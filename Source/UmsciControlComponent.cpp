@@ -649,6 +649,12 @@ void UmsciControlComponent::setUpmixOffset(float x, float y)
         m_upmixIndicatorPaintAndControlComponent->setUpmixOffset(x, y);
 }
 
+void UmsciControlComponent::triggerUpmixTransformApplied()
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->notifyTransformChanged();
+}
+
 float UmsciControlComponent::getUpmixOffsetX() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)

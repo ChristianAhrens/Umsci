@@ -183,6 +183,17 @@ public:
 
     //==============================================================================
     /**
+     * @brief Fires live-mode position callbacks and `onTransformChanged` after a
+     *        programmatic transform change (e.g. from MIDI control).
+     *
+     * `setUpmixTransform()` and `setUpmixOffset()` deliberately do not fire callbacks
+     * (to avoid side effects during config restore).  Call this immediately after a
+     * programmatic update to produce the same side effects as an interactive drag.
+     */
+    void notifyTransformChanged();
+
+    //==============================================================================
+    /**
      * @brief Fired when the user drags a source circle in live mode (pass-through
      *        from this component, analogous to `UmsciSoundobjectsPaintComponent`).
      */
@@ -275,6 +286,11 @@ private:
 
     bool           m_flashState = false;                 ///< Toggled by timer for live-mode dot animation.
     bool           m_liveMode   = false;                 ///< When true, overlays real DS100 source positions.
+    /** @brief Number of `setSourcePosition` echo-backs to absorb without calling
+     *         `updateFlashState`.  Incremented by `notifyTransformChanged` for every
+     *         position sent to DS100 so that the expected OCP.1 echoes do not
+     *         spuriously start the flash timer. */
+    int            m_inhibitFlashCount = 0;
     IndicatorShape m_shape      = IndicatorShape::Circle; ///< Current ring geometry.
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)

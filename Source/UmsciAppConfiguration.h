@@ -70,8 +70,16 @@ public:
         UPMIXSCALE,         ///< Upmix ring radial scale.
         UPMIXHEIGHTSCALE,   ///< Upmix height ring scale.
         UPMIXANGLESTRETCH,  ///< Upmix angular stretch.
-        UPMIXOFFSETX,       ///< Upmix X offset.
-        UPMIXOFFSETY        ///< Upmix Y offset.
+        UPMIXOFFSETX,           ///< Upmix X offset.
+        UPMIXOFFSETY,           ///< Upmix Y offset.
+        EXTERNALCONTROLCONFIG,  ///< External (MIDI) control assignments container.
+        MIDIINPUTDEVICE,        ///< Selected MIDI input device identifier.
+        MIDI_UPMIXROT,          ///< MIDI assignment for upmix rotation.
+        MIDI_UPMIXSCALE,        ///< MIDI assignment for upmix translation (radial scale).
+        MIDI_UPMIXHEIGHTSCALE,  ///< MIDI assignment for upmix height translation.
+        MIDI_UPMIXANGLESTRETCH, ///< MIDI assignment for upmix angle stretch.
+        MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
+        MIDI_UPMIXOFFSETY       ///< MIDI assignment for upmix Y offset.
     };
     static juce::String getTagName(TagID ID)
     {
@@ -105,6 +113,22 @@ public:
             return "UPMIXOFFSETX";
         case UPMIXOFFSETY:
             return "UPMIXOFFSETY";
+        case EXTERNALCONTROLCONFIG:
+            return "EXTERNALCONTROLCONFIG";
+        case MIDIINPUTDEVICE:
+            return "MIDIINPUTDEVICE";
+        case MIDI_UPMIXROT:
+            return "MIDI_UPMIXROT";
+        case MIDI_UPMIXSCALE:
+            return "MIDI_UPMIXSCALE";
+        case MIDI_UPMIXHEIGHTSCALE:
+            return "MIDI_UPMIXHEIGHTSCALE";
+        case MIDI_UPMIXANGLESTRETCH:
+            return "MIDI_UPMIXANGLESTRETCH";
+        case MIDI_UPMIXOFFSETX:
+            return "MIDI_UPMIXOFFSETX";
+        case MIDI_UPMIXOFFSETY:
+            return "MIDI_UPMIXOFFSETY";
         default:
             return "INVALID";
         }

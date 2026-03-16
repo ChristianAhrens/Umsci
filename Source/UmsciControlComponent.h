@@ -203,6 +203,17 @@ public:
 
     //==============================================================================
     /**
+     * @brief Fires live-mode position callbacks and `onUpmixTransformChanged` after
+     *        a programmatic transform update (e.g. from MIDI control).
+     *
+     * Call this after `setUpmixTransform()` / `setUpmixOffset()` when the change
+     * originates outside the UI (MIDI, automation) to ensure DS100 positions are
+     * updated in live mode and the config is marked dirty.
+     */
+    void triggerUpmixTransformApplied();
+
+    //==============================================================================
+    /**
      * @brief When false, only sound objects that are part of the upmix group
      *        (i.e. channels >= sourceStartId within the upmix channel count) are
      *        rendered; all others are hidden.

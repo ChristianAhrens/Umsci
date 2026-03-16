@@ -21,7 +21,10 @@
 #include <JuceHeader.h>
 
 #include "UmsciAppConfiguration.h"
+#include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
+
+#include <MidiCommandRangeAssignment.h>
 
 
  /**
@@ -70,7 +73,7 @@ class AboutComponent;
  *       overlaid components interact visually.
  */
 class MainComponent :   public juce::Component,
-                        //public juce::Timer,
+                        public juce::MidiInputCallback,
                         public UmsciAppConfiguration::Dumper,
                         public UmsciAppConfiguration::Watcher
 {
@@ -110,6 +113,7 @@ public:
         ControlFormat_9point1point6,
         ControlFormat_Last = ControlFormat_9point1point6,
         UpmixSettings,          ///< Opens the upmix settings dialog.
+        ExternalControlSettings,///< Opens the external (MIDI) control settings dialog.
         ControlSize_First,
         ControlSize_S = ControlSize_First, ///< Small icons.
         ControlSize_M,                     ///< Medium icons.
@@ -163,6 +167,20 @@ private:
     void handleSettingsFullscreenModeToggleResult();
     void showConnectionSettings();
     void showUpmixSettings();
+    void showExternalControlSettings();
+
+    //==============================================================================
+    /** @brief `juce::MidiInputCallback` — receives incoming MIDI messages for parameter control.
+     *         Called on the MIDI thread; posts processing to the message thread. */
+    void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) override;
+
+    /** @brief Opens (or re-opens) the MIDI input device with the given identifier.
+     *         Closes any previously open device first. */
+    void openMidiInputDevice(const juce::String& deviceIdentifier);
+
+    /** @brief Maps a normalised MIDI value [0,1] to the upmix parameter domain and
+     *         applies it to `m_controlComponent`.  Must be called on the message thread. */
+    void applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param, float normalised);
 
     //==============================================================================
     void setControlColour(const juce::Colour& meteringColour);
@@ -186,10 +204,20 @@ private:
 
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
+    std::unique_ptr<UmsciExternalControlComponent>  m_externalControlComponent;
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 
     std::unique_ptr<UmsciAppConfiguration>          m_config;
+
+    //==============================================================================
+    /** @brief Currently open MIDI input device used for upmix parameter control. */
+    std::unique_ptr<juce::MidiInput>                m_midiInput;
+    /** @brief Device identifier of the currently open MIDI input (empty = none). */
+    juce::String                                    m_midiInputDeviceIdentifier;
+    /** @brief Stored MIDI assignments for each of the six upmix parameters. */
+    std::array<JUCEAppBasics::MidiCommandRangeAssignment,
+               UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_upmixMidiAssignments;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
