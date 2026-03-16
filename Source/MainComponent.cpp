@@ -26,6 +26,7 @@
 #include "UmsciConnectingComponent.h"
 
 #include "AboutComponent.h"
+#include "UmsciExternalControlComponent.h"
 
 #include <CustomLookAndFeel.h>
 #include <WebUpdateDetector.h>
@@ -106,6 +107,8 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::ConnectionSettings] = std::make_pair("Connection settings...", 0);
     // upmix settings
     m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
+    // external (MIDI) control settings
+    m_settingsItems[UmsciSettingsOption::ExternalControlSettings] = std::make_pair("External control...", 0);
     // control size
     m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
     m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
@@ -137,6 +140,7 @@ MainComponent::MainComponent()
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
+        settingsMenu.addItem(UmsciSettingsOption::ExternalControlSettings, m_settingsItems[UmsciSettingsOption::ExternalControlSettings].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
@@ -340,6 +344,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         handleSettingsControlFormatMenuResult(selectedId);
     else if (UmsciSettingsOption::UpmixSettings == selectedId)
         showUpmixSettings();
+    else if (UmsciSettingsOption::ExternalControlSettings == selectedId)
+        showExternalControlSettings();
     else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
         handleSettingsControlSizeMenuResult(selectedId);
     else
@@ -803,6 +809,34 @@ void MainComponent::performConfigurationDump()
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
+        // external control (MIDI) config
+        static const UmsciAppConfiguration::TagID midiParamTagIds[] = {
+            UmsciAppConfiguration::TagID::MIDI_UPMIXROT,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXSCALE,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALE,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXANGLESTRETCH,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETX,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY
+        };
+
+        auto extCtrlXmlElement = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::EXTERNALCONTROLCONFIG));
+
+        auto midiDeviceXmlElement = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::MIDIINPUTDEVICE));
+        midiDeviceXmlElement->addTextElement(m_midiInputDeviceIdentifier);
+        extCtrlXmlElement->addChildElement(midiDeviceXmlElement.release());
+
+        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        {
+            auto assiXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(midiParamTagIds[i]));
+            assiXmlElement->addTextElement(m_upmixMidiAssignments[i].serializeToHexString());
+            extCtrlXmlElement->addChildElement(assiXmlElement.release());
+        }
+
+        m_config->setConfigState(std::move(extCtrlXmlElement),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::EXTERNALCONTROLCONFIG));
     }
 }
 
@@ -912,6 +946,36 @@ void MainComponent::onConfigUpdated()
             upmixOffsetY = e->getAllSubText().getFloatValue();
         m_controlComponent->setUpmixOffset(upmixOffsetX, upmixOffsetY);
     }
+
+    // external control (MIDI) config
+    auto extCtrlState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::EXTERNALCONTROLCONFIG));
+    if (extCtrlState)
+    {
+        if (auto* midiDevXml = extCtrlState->getChildByName(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::MIDIINPUTDEVICE)))
+            openMidiInputDevice(midiDevXml->getAllSubText());
+
+        static const UmsciAppConfiguration::TagID midiParamTagIds[] = {
+            UmsciAppConfiguration::TagID::MIDI_UPMIXROT,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXSCALE,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALE,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXANGLESTRETCH,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETX,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY
+        };
+
+        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        {
+            if (auto* assiXml = extCtrlState->getChildByName(
+                    UmsciAppConfiguration::getTagName(midiParamTagIds[i])))
+            {
+                auto hexStr = assiXml->getAllSubText();
+                if (hexStr.isNotEmpty())
+                    m_upmixMidiAssignments[i].deserializeFromHexString(hexStr);
+            }
+        }
+    }
 }
 
 bool MainComponent::isFullscreenEnabled()
@@ -926,5 +990,142 @@ bool MainComponent::isFullscreenEnabled()
     jassertfalse;
     return false;
 #endif
+}
+
+void MainComponent::showExternalControlSettings()
+{
+    m_messageBox = std::make_unique<juce::AlertWindow>(
+        "External control...",
+        "Configure MIDI assignments for upmix transform parameters.",
+        juce::MessageBoxIconType::NoIcon);
+
+    m_externalControlComponent = std::make_unique<UmsciExternalControlComponent>();
+    m_externalControlComponent->setMidiInputDeviceIdentifier(m_midiInputDeviceIdentifier);
+    for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        m_externalControlComponent->setMidiAssi(
+            static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
+            m_upmixMidiAssignments[i]);
+    m_messageBox->addCustomComponent(m_externalControlComponent.get());
+
+    m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
+    m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
+        if (returnValue == 1)
+        {
+            openMidiInputDevice(m_externalControlComponent->getMidiInputDeviceIdentifier());
+            for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+                m_upmixMidiAssignments[i] = m_externalControlComponent->getMidiAssi(
+                    static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i));
+            if (m_config)
+                m_config->triggerConfigurationDump();
+        }
+        m_externalControlComponent.reset();
+        m_messageBox.reset();
+    }));
+}
+
+void MainComponent::openMidiInputDevice(const juce::String& deviceIdentifier)
+{
+    if (m_midiInputDeviceIdentifier == deviceIdentifier && m_midiInput != nullptr)
+        return;
+
+    if (m_midiInput)
+    {
+        m_midiInput->stop();
+        m_midiInput.reset();
+    }
+
+    m_midiInputDeviceIdentifier = deviceIdentifier;
+
+    if (deviceIdentifier.isNotEmpty())
+    {
+        m_midiInput = juce::MidiInput::openDevice(deviceIdentifier, this);
+        if (m_midiInput)
+            m_midiInput->start();
+    }
+}
+
+void MainComponent::handleIncomingMidiMessage(juce::MidiInput*, const juce::MidiMessage& message)
+{
+    // Called on the MIDI thread — copy the message and dispatch to the message thread.
+    auto msgCopy = message;
+    juce::MessageManager::callAsync([this, msgCopy]() {
+        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        {
+            auto& assi = m_upmixMidiAssignments[i];
+            if (assi.getCommandType() == JUCEAppBasics::MidiCommandRangeAssignment::CT_Invalid)
+                continue;
+            // isMatchingCommand checks both command type AND specific CC/note number;
+            // isMatchingCommandRange covers assignments learned across a range of commands.
+            if (!assi.isMatchingCommand(msgCopy) && !assi.isMatchingCommandRange(msgCopy))
+                continue;
+            if (!assi.isMatchingValueRange(msgCopy) && !assi.isMatchingCommandRange(msgCopy))
+                continue;
+
+            // Normalise the MIDI value to [0, 1] using the learned value range.
+            float normalised = 0.5f;
+            if (assi.isValueRangeAssignment())
+            {
+                auto range = assi.getValueRange();
+                auto val = JUCEAppBasics::MidiCommandRangeAssignment::getValue(msgCopy);
+                if (range.getLength() > 0)
+                    normalised = juce::jlimit(0.0f, 1.0f,
+                                              float(val - range.getStart()) / float(range.getLength()));
+            }
+
+            applyUpmixMidiValue(static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i), normalised);
+        }
+    });
+}
+
+void MainComponent::applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param,
+                                        float normalised)
+{
+    if (!m_controlComponent)
+        return;
+
+    auto [minVal, maxVal] = UmsciExternalControlComponent::s_paramRanges[param];
+    auto value = minVal + normalised * (maxVal - minVal);
+
+    switch (param)
+    {
+    case UmsciExternalControlComponent::UpmixMidiParam_Rotation:
+        m_controlComponent->setUpmixTransform(value,
+                                              m_controlComponent->getUpmixTrans(),
+                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_Translation:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              value,
+                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslation:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTrans(),
+                                              value,
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_AngleStretch:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTrans(),
+                                              m_controlComponent->getUpmixHeightTrans(),
+                                              value);
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_OffsetX:
+        m_controlComponent->setUpmixOffset(value, m_controlComponent->getUpmixOffsetY());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_OffsetY:
+        m_controlComponent->setUpmixOffset(m_controlComponent->getUpmixOffsetX(), value);
+        break;
+    default:
+        break;
+    }
+
+    // Fire live-mode position updates and trigger config persistence via the
+    // callback chain: notifyTransformChanged → onTransformChanged → onUpmixTransformChanged
+    // → triggerConfigurationDump.  This mirrors what the interactive drag handlers do.
+    m_controlComponent->triggerUpmixTransformApplied();
 }
 

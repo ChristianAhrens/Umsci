@@ -158,7 +158,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::setSourcePositions(const std::ma
 void UmsciUpmixIndicatorPaintNControlComponent::setSourcePosition(std::int16_t sourceId, const std::array<std::float_t, 3>& position)
 {
     m_sourcePositions[sourceId] = position;
-    updateFlashState();
+    if (m_inhibitFlashCount > 0)
+        --m_inhibitFlashCount;
+    else
+        updateFlashState();
 }
 
 bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
@@ -841,6 +844,32 @@ void UmsciUpmixIndicatorPaintNControlComponent::setUpmixOffset(float x, float y)
 
 float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetX() const { return m_upmixOffsetX; }
 float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetY() const { return m_upmixOffsetY; }
+
+void UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
+{
+    if (m_liveMode)
+    {
+        m_inhibitFlashCount += static_cast<int>(m_renderedFloorPositions.size() + m_renderedHeightPositions.size());
+        stopTimer();
+        m_flashState = false;
+        repaint();
+
+        for (auto const& rcp : m_renderedFloorPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
+        for (auto const& rcp : m_renderedHeightPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
+    }
+    if (onTransformChanged)
+        onTransformChanged();
+}
 
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)
 {

@@ -35,6 +35,9 @@
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">
         <GROUP id="{685EBDF9-A066-9110-AD26-50B977D7D27C}" name="Resources">
           <GROUP id="{16C5529F-D9E1-857B-0233-BD27FA4BBC8E}" name="Images">
+            <FILE id="ejhgze" name="clear_black_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/clear_black_24dp.svg"/>
+            <FILE id="RLedEJ" name="school-24px.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/school-24px.svg"/>
             <FILE id="yFUubM" name="find_replace-24px.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/find_replace-24px.svg"/>
             <FILE id="UhDnz2" name="link_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/link_24dp.svg"/>
@@ -67,6 +70,14 @@
           <FILE id="TT1rKA" name="Image_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.h"/>
           <FILE id="k1LZHM" name="iOS_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.cpp"/>
           <FILE id="ovl1VU" name="iOS_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.h"/>
+          <FILE id="cT98gL" name="MidiCommandRangeAssignment.cpp" compile="1"
+                resource="0" file="submodules/JUCE-AppBasics/Source/MidiCommandRangeAssignment.cpp"/>
+          <FILE id="fITC2f" name="MidiCommandRangeAssignment.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/MidiCommandRangeAssignment.h"/>
+          <FILE id="ugW2Ku" name="MidiLearnerComponent.cpp" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/MidiLearnerComponent.cpp"/>
+          <FILE id="NnB6Y4" name="MidiLearnerComponent.h" compile="0" resource="0"
+                file="submodules/JUCE-AppBasics/Source/MidiLearnerComponent.h"/>
           <FILE id="WHNX6e" name="ToggleStateSlider.cpp" compile="1" resource="0"
                 file="submodules/JUCE-AppBasics/Source/ToggleStateSlider.cpp"/>
           <FILE id="nDHk4a" name="ToggleStateSlider.h" compile="0" resource="0"
@@ -145,6 +156,10 @@
             file="Source/UmsciAppConfiguration.cpp"/>
       <FILE id="i1JOYd" name="UmsciAppConfiguration.h" compile="0" resource="0"
             file="Source/UmsciAppConfiguration.h"/>
+      <FILE id="EJ7Wra" name="UmsciExternalControlComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciExternalControlComponent.cpp"/>
+      <FILE id="qmNMPJ" name="UmsciExternalControlComponent.h" compile="0"
+            resource="0" file="Source/UmsciExternalControlComponent.h"/>
       <FILE id="OmQ8H9" name="DeviceController.cpp" compile="1" resource="0"
             file="Source/DeviceController.cpp"/>
       <FILE id="j4rQTY" name="DeviceController.h" compile="0" resource="0"
