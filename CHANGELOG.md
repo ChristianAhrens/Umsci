@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.2.2] 2026-03-16
+### Added
+- Added commandline parameter --noupdates
+- Added commandline parameter --noconfigui
+- Added basic midi external control for rot, trans, htrans, anglestretch, offset xy
+
+### Changed
+- Changed company website and about dialog link to github pages url
+- Changed VS build to statically link vs runtime
+- Updated readme
+
+### Fixed
+
 ## [0.2.1] 2026-03-09
 ### Added
 - Added upmix control angle stretch parameter
