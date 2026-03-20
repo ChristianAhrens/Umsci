@@ -46,6 +46,10 @@ public:
 
     //==============================================================================
     void resized() override;
+    /** @brief Resizes the component to 80 % of the parent's width whenever the
+     *         parent (AlertWindow) is resized, matching the width that AlertWindow
+     *         gives to its built-in text editors and combo boxes. */
+    void parentSizeChanged() override;
 
     //==============================================================================
     /** @brief `ZeroconfSearcherListener` callback — called when devices appear or disappear. */

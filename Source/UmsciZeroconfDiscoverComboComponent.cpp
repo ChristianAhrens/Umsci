@@ -49,6 +49,12 @@ void UmsciZeroconfDiscoverComboComponent::resized()
     m_comboBox->setBounds(getLocalBounds());
 }
 
+void UmsciZeroconfDiscoverComboComponent::parentSizeChanged()
+{
+    if (auto* parent = getParentComponent())
+        setSize(juce::roundToInt(parent->getWidth() * 0.8f), getHeight());
+}
+
 void UmsciZeroconfDiscoverComboComponent::handleServicesChanged(std::string /*serviceName*/)
 {
     juce::MessageManager::callAsync([this]() { updateComboBox(); });

@@ -563,7 +563,7 @@ void MainComponent::showConnectionSettings()
     m_messageBox->addTextBlock("\nOCA/OCP.1 connection parameters:");
     
     m_zeroconfDiscoverComboComponent = std::make_unique<UmsciZeroconfDiscoverComboComponent>();
-    m_zeroconfDiscoverComboComponent->setSize(380, 26);
+    m_zeroconfDiscoverComboComponent->setSize(10, 26); // width is set dynamically via parentSizeChanged()
     m_zeroconfDiscoverComboComponent->onServiceSelected = [this](const ZeroconfSearcher::ZeroconfSearcher::ServiceInfo& service) {
         if (auto* ed = m_messageBox->getTextEditor("Device IP"))
             ed->setText(juce::String(service.ip), juce::sendNotification);
