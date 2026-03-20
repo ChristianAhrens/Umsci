@@ -71,12 +71,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     // draw height annotation in lower-right corner
     if (!m_renderedFloorPositions.empty())
     {
-        g.setFont(juce::Font(juce::FontOptions(12.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(12.0f * getControlsSizeMultiplier(), juce::Font::plain)));
         g.setColour(indicatorColour);
         g.setOpacity(opacity);
 
         auto bounds = getLocalBounds().toFloat();
-        auto lineHeight = 16.0f;
+        auto lineHeight = 16.0f * getControlsSizeMultiplier();
         auto annotationWidth = bounds.getWidth() * 0.25f;
         auto margin = 4.0f;
 
@@ -85,7 +85,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
             auto heightLine = juce::Rectangle<float>(annotationWidth, lineHeight)
                 .withBottomY(bounds.getBottom() - margin)
                 .withRightX(bounds.getRight() - margin);
-            g.drawFittedText(juce::String("Height: ") + juce::String(m_speakersRealBoundingCube[5], 2) + juce::String(" m"),
+            auto effectiveHeightZ = m_speakersRealBoundingCube[5]
+                + (m_speakersRealBoundingCube[5] - m_speakersRealBoundingCube[2]) * m_boundingFitFactor;
+            g.drawFittedText(juce::String("Height: ") + juce::String(effectiveHeightZ, 2) + juce::String(" m"),
                              heightLine.toNearestInt(), juce::Justification::bottomRight, 1);
 
             auto floorLine = heightLine.withBottomY(heightLine.getY());
