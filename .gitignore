@@ -4,3 +4,4 @@ JuceLibraryCode
 *.dmg
 *.exe
 .claude
+Resources/Images/dmgIcon.png
