@@ -633,6 +633,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     {
         auto maxStretchedAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
         float anchorX, anchorY;
+        float rectEdgeTangentX = 0.0f, rectEdgeTangentY = 0.0f;
         if (m_shape == IndicatorShape::Rectangle)
         {
             auto baseAngleRad = juce::degreesToRadians(maxStretchedAngleDeg);
@@ -641,6 +642,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             auto t = radius / std::max(std::abs(dx), std::abs(dy));
             anchorX = cx + (t * dx) * cosRot - (t * dy) * sinRot;
             anchorY = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+            // Tangent along the rectangle edge in the unrotated frame:
+            //   |dx| >= |dy|  →  left/right (vertical) edge  →  unrotated tangent (0, 1)
+            //   |dy| >  |dx|  →  top/bottom (horizontal) edge →  unrotated tangent (1, 0)
+            // Then rotate by m_upmixRot into screen space.
+            float utx = (std::abs(dx) >= std::abs(dy)) ? 0.0f : 1.0f;
+            float uty = (std::abs(dx) >= std::abs(dy)) ? 1.0f : 0.0f;
+            rectEdgeTangentX = utx * cosRot - uty * sinRot;
+            rectEdgeTangentY = utx * sinRot + uty * cosRot;
         }
         else
         {
@@ -655,10 +664,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         {
             float ux = dirX / dirLen;
             float uy = dirY / dirLen;
-            m_stretchHandlePos     = { anchorX + ux * m_subCircleRadius * 1.5f,
-                                       anchorY + uy * m_subCircleRadius * 1.5f };
-            // tangent: 90° CW from radial (ux, uy) in screen space = (uy, -ux)
-            m_stretchHandleTangent = { uy, -ux };
+            m_stretchHandlePos = { anchorX + ux * m_subCircleRadius * 1.5f,
+                                   anchorY + uy * m_subCircleRadius * 1.5f };
+            if (m_shape == IndicatorShape::Rectangle)
+                // Tangent lies along the rectangle edge at the anchor point.
+                m_stretchHandleTangent = { rectEdgeTangentX, rectEdgeTangentY };
+            else
+                // Tangent: 90° CW from radial (ux, uy) in screen space = (uy, -ux)
+                m_stretchHandleTangent = { uy, -ux };
         }
     }
 
