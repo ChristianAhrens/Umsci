@@ -201,6 +201,8 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, true, false)) return;
+
     // Stretch handle takes priority over ring drags
     if (!m_renderedFloorPositions.empty() && m_stretchHandleTangent != juce::Point<float>{})
     {
@@ -289,6 +291,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, false)) return;
+
     if (m_draggingStretchHandle)
     {
         auto dx = e.position.x - m_upmixCenter.x;
@@ -401,8 +405,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
     repaint();
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::mouseUp(const juce::MouseEvent& /*e*/)
+void UmsciUpmixIndicatorPaintNControlComponent::mouseUp(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, true)) return;
+
     if (onTransformChanged)
         onTransformChanged();
 }

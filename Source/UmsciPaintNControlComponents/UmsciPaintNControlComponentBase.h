@@ -130,6 +130,23 @@ protected:
     void mouseMagnify(const juce::MouseEvent&, float scaleFactor) override;
 
     /**
+     * @brief Manual two-touch pinch-zoom tracking for platforms (iOS) where JUCE
+     *        does not synthesise `mouseMagnify` from touch events.
+     *
+     * Call this at the top of each derived-class `mouseDown`, `mouseDrag`, and
+     * `mouseUp` override, passing the event and the appropriate `isDown`/`isUp`
+     * flags.  When the method returns `true` the event has been consumed by the
+     * pinch recogniser and the caller should return immediately without performing
+     * any normal single-touch interaction.
+     *
+     * @param e       The incoming mouse event.
+     * @param isDown  True when called from `mouseDown`.
+     * @param isUp    True when called from `mouseUp`.
+     * @return        True if the event was consumed by pinch tracking.
+     */
+    bool processPinchGesture(const juce::MouseEvent& e, bool isDown, bool isUp);
+
+    /**
      * @brief Called after any zoom state change.
      *
      * Base implementation calls `repaint()`.  Derived classes should override to
@@ -157,6 +174,13 @@ private:
 
     float                   m_zoomFactor     = 1.0f;      ///< Current zoom scale (1.0 = no zoom).
     juce::Point<float>      m_zoomPanOffset;               ///< Pan as fraction of base content size.
+
+    // Two-touch pinch state (used by processPinchGesture).
+    juce::Point<float>      m_pinchPos[2]         = {};
+    bool                    m_pinchDown[2]         = { false, false };
+    float                   m_pinchStartDistance   = 0.0f;
+    float                   m_pinchStartZoom       = 1.0f;
+    bool                    m_pinchActive          = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)
 };

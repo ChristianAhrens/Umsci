@@ -129,6 +129,59 @@ void UmsciPaintNControlComponentBase::mouseMagnify(const juce::MouseEvent& e, fl
         onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
 }
 
+bool UmsciPaintNControlComponentBase::processPinchGesture(const juce::MouseEvent& e, bool isDown, bool isUp)
+{
+    const int idx = e.source.getIndex();
+    if (idx < 0 || idx > 1)
+        return false; // only track the first two simultaneous touches
+
+    if (isDown)
+    {
+        m_pinchDown[idx] = true;
+        m_pinchPos[idx]  = e.position;
+
+        if (m_pinchDown[0] && m_pinchDown[1])
+        {
+            auto d = m_pinchPos[1] - m_pinchPos[0];
+            m_pinchStartDistance = std::hypot(d.x, d.y);
+            m_pinchStartZoom     = m_zoomFactor;
+            if (m_pinchStartDistance > 1.0f)
+                m_pinchActive = true;
+        }
+        // Suppress non-primary touches from triggering element interactions.
+        return idx > 0;
+    }
+    else if (isUp)
+    {
+        const bool wasActive = m_pinchActive;
+        m_pinchDown[idx] = false;
+        if (!m_pinchDown[0] || !m_pinchDown[1])
+            m_pinchActive = false;
+        // Suppress the up event for non-primary touches, or whenever a pinch just ended.
+        return idx > 0 || wasActive;
+    }
+    else // drag
+    {
+        m_pinchPos[idx] = e.position;
+
+        if (m_pinchActive && m_pinchDown[0] && m_pinchDown[1])
+        {
+            auto d = m_pinchPos[1] - m_pinchPos[0];
+            const float currentDist = std::hypot(d.x, d.y);
+            if (currentDist > 1.0f && m_pinchStartDistance > 1.0f)
+            {
+                auto midpoint = (m_pinchPos[0] + m_pinchPos[1]) * 0.5f;
+                applyZoomAtScreenPoint(m_pinchStartZoom * currentDist / m_pinchStartDistance, midpoint);
+                onZoomChanged();
+                if (onViewportZoomChanged)
+                    onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
+            }
+            return true;
+        }
+        return m_pinchActive;
+    }
+}
+
 void UmsciPaintNControlComponentBase::onZoomChanged()
 {
     repaint();
