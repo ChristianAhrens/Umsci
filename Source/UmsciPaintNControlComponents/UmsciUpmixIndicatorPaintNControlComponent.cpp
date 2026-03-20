@@ -353,6 +353,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
         return;
     }
 
+    // Ignore drags that originated on the refit button — a tiny touch/mouse slip
+    // must not bleed through into the ring rotation/scale logic.
+    if (getRefitButtonBounds().contains(e.getMouseDownPosition()))
+        return;
+
     auto dx = e.position.x - m_upmixCenter.x;
     auto dy = e.position.y - m_upmixCenter.y;
 
