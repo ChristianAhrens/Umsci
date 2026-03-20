@@ -114,7 +114,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.setColour(indicatorColour);
         g.setOpacity(1.0f);
         g.fillRect(refitBounds);
-        g.setFont(juce::Font(juce::FontOptions(11.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(11.0f * std::min(getControlsSizeMultiplier(), 1.5f), juce::Font::plain)));
         g.setColour(labelColour);
         g.drawFittedText("Re-fit to\nbounding cube", refitBounds.reduced(4), juce::Justification::centred, 2);
     }
@@ -885,8 +885,9 @@ bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const ju
 juce::Rectangle<int> UmsciUpmixIndicatorPaintNControlComponent::getRefitButtonBounds() const
 {
     auto margin = 4;
-    auto buttonHeight = 40;
-    auto buttonWidth = 60;
+    auto buttonScale  = std::min(getControlsSizeMultiplier(), 1.5f);
+    auto buttonHeight = juce::roundToInt(40.0f * buttonScale);
+    auto buttonWidth  = juce::roundToInt(60.0f * buttonScale);
     return juce::Rectangle<int>(getWidth() - buttonWidth - margin, margin, buttonWidth, buttonHeight);
 }
 
