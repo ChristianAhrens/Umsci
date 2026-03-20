@@ -105,6 +105,19 @@ public:
      */
     std::function<void(float, juce::Point<float>)> onViewportZoomChanged;
 
+    /**
+     * @brief Applies an incremental pinch-zoom step, as if the user performed a native
+     *        pinch gesture centred at @p centre (in component-local pixel coordinates).
+     *
+     * Intended for use with a platform-native gesture recognizer (e.g. UIPinchGestureRecognizer
+     * on iOS) that delivers incremental scale factors.  The call fires `onViewportZoomChanged`
+     * so that sibling layers are synchronised via the normal zoom-sync path.
+     *
+     * @param scaleFactor  Incremental scale factor since the previous callback (>0, 1.0 = no change).
+     * @param centre       Focal point in component-local pixel space.
+     */
+    void simulatePinchZoom(float scaleFactor, juce::Point<float> centre);
+
 protected:
     //==============================================================================
     /**

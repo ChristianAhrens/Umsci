@@ -22,6 +22,10 @@
 #include "UmsciPaintNControlComponents/UmsciSoundobjectsPaintComponent.h"
 #include "UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"
 
+#if JUCE_IOS
+#include <iOS_utils.h>
+#endif
+
 
 UmsciControlComponent::UmsciControlComponent()
     : juce::Component()
@@ -80,6 +84,10 @@ UmsciControlComponent::UmsciControlComponent()
 
 UmsciControlComponent::~UmsciControlComponent()
 {
+#if JUCE_IOS
+    if (m_nativePinchViewHandle)
+        JUCEAppBasics::iOS_utils::unregisterNativePinchOnView(m_nativePinchViewHandle);
+#endif
 }
 
 void UmsciControlComponent::paint(Graphics &g)
@@ -104,6 +112,35 @@ void UmsciControlComponent::resized()
         m_soundobjectsInAreaPaintComponent->setBounds(bounds);
     if (m_upmixIndicatorPaintAndControlComponent && m_upmixIndicatorPaintAndControlComponent->isVisible())
         m_upmixIndicatorPaintAndControlComponent->setBounds(bounds);
+}
+
+void UmsciControlComponent::parentHierarchyChanged()
+{
+#if JUCE_IOS
+    auto* peer = getPeer();
+    auto nativeHandle = peer ? peer->getNativeHandle() : nullptr;
+
+    if (nativeHandle && !m_nativePinchViewHandle)
+    {
+        m_nativePinchViewHandle = nativeHandle;
+        JUCEAppBasics::iOS_utils::registerNativePinchOnView(
+            nativeHandle,
+            [this](float incrementalScale, float cx, float cy) {
+                // cx, cy are in the peer UIView's coordinate space (= screen logical points).
+                // Convert to the paint component's local coordinate space before applying zoom.
+                auto localPt = m_loudspeakersInAreaPaintComponent->getLocalPoint(
+                    nullptr, juce::Point<float>(cx, cy));
+                // Calling simulatePinchZoom on any one component fires onViewportZoomChanged,
+                // which the syncViewportZoom lambda propagates to all three siblings via setZoom().
+                m_loudspeakersInAreaPaintComponent->simulatePinchZoom(incrementalScale, localPt);
+            });
+    }
+    else if (!nativeHandle && m_nativePinchViewHandle)
+    {
+        JUCEAppBasics::iOS_utils::unregisterNativePinchOnView(m_nativePinchViewHandle);
+        m_nativePinchViewHandle = nullptr;
+    }
+#endif
 }
 
 std::unique_ptr<XmlElement> UmsciControlComponent::createStateXml()

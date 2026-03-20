@@ -132,6 +132,7 @@ void UmsciPaintNControlComponentBase::mouseMagnify(const juce::MouseEvent& e, fl
 bool UmsciPaintNControlComponentBase::processPinchGesture(const juce::MouseEvent& e, bool isDown, bool isUp)
 {
     const int idx = e.source.getIndex();
+
     if (idx < 0 || idx > 1)
         return false; // only track the first two simultaneous touches
 
@@ -180,6 +181,14 @@ bool UmsciPaintNControlComponentBase::processPinchGesture(const juce::MouseEvent
         }
         return m_pinchActive;
     }
+}
+
+void UmsciPaintNControlComponentBase::simulatePinchZoom(float scaleFactor, juce::Point<float> centre)
+{
+    applyZoomAtScreenPoint(m_zoomFactor * scaleFactor, centre);
+    onZoomChanged();
+    if (onViewportZoomChanged)
+        onViewportZoomChanged(m_zoomFactor, m_zoomPanOffset);
 }
 
 void UmsciPaintNControlComponentBase::onZoomChanged()

@@ -79,6 +79,7 @@ public:
     //==============================================================================
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void parentHierarchyChanged() override;
 
     //==============================================================================
     std::unique_ptr<XmlElement> createStateXml() override;
@@ -285,6 +286,10 @@ private:
     std::map<std::int16_t, bool>                        m_speakerMute;
     std::map<std::int16_t, std::float_t>                m_speakerGain;
     std::map<std::int16_t, std::array<std::float_t, 6>> m_speakerPosition;
+
+#if JUCE_IOS
+    void* m_nativePinchViewHandle = nullptr; ///< Handle to the peer UIView that has the pinch recognizer registered.
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciControlComponent)
 };
