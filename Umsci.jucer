@@ -70,6 +70,8 @@
           <FILE id="TT1rKA" name="Image_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/Image_utils.h"/>
           <FILE id="k1LZHM" name="iOS_utils.cpp" compile="1" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.cpp"/>
           <FILE id="ovl1VU" name="iOS_utils.h" compile="0" resource="0" file="submodules/JUCE-AppBasics/Source/iOS_utils.h"/>
+          <FILE id="iOSNtv" name="iOS_utils_native.mm" compile="1" resource="0"
+                file="submodules/JUCE-AppBasics/Source/iOS_utils_native.mm"/>
           <FILE id="cT98gL" name="MidiCommandRangeAssignment.cpp" compile="1"
                 resource="0" file="submodules/JUCE-AppBasics/Source/MidiCommandRangeAssignment.cpp"/>
           <FILE id="fITC2f" name="MidiCommandRangeAssignment.h" compile="0" resource="0"
@@ -241,7 +243,7 @@
     </LINUX_MAKE>
     <XCODE_IPHONE targetFolder="Builds/iOS" smallIcon="wKQgbQ" bigIcon="wKQgbQ"
                   customLaunchStoryboard="Resources/Deployment/iOS/Launchscreen.storyboard"
-                  iosScreenOrientation="UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait"
+                  iosScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iPadScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iosDevelopmentTeamID="SB7Q3PP4FQ" UIRequiresFullScreen="0" customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist&gt;&#10;  &lt;dict&gt;&#10;    &#9;&lt;key&gt;UIBackgroundModes&lt;/key&gt;&#10;    &#9;&lt;array&gt;&#10;&#9;      &#9;&lt;string&gt;processing&lt;/string&gt;&#10;    &#9;&lt;/array&gt;&#10;    &lt;key&gt;BGTaskSchedulerPermittedIdentifiers&lt;/key&gt;&#10;    &lt;array&gt;&#10;      &lt;string&gt;com.ChristianAhrens.Umsci&lt;/string&gt;&#10;    &lt;/array&gt;&#10;    &lt;!-- New Xcode .icon integration --&gt;&#10;    &lt;key&gt;CFBundleIconName&lt;/key&gt;&#10;    &lt;string&gt;Umsci&lt;/string&gt;&#10;&lt;/dict&gt;&#10;&lt;/plist&gt;"
                   customXcodeResourceFolders="Resources/Images/Umsci.icon">

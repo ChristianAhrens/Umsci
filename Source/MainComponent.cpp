@@ -266,10 +266,19 @@ MainComponent::MainComponent()
     setWantsKeyboardFocus(true);
 
     lookAndFeelChanged();
+
+    // On iOS/iPadOS, UIKit populates safeAreaInsets asynchronously after the
+    // window is shown. initialise() registers a callback so resized() is re-run
+    // once the insets are valid and on any subsequent geometry change
+    // (Stage Manager, split-screen, etc.). No-op on all other platforms.
+    JUCEAppBasics::iOS_utils::initialise([this] {
+        juce::MessageManager::callAsync([this] { resized(); });
+    });
 }
 
 MainComponent::~MainComponent()
 {
+    JUCEAppBasics::iOS_utils::deinitialise();
 }
 
 void MainComponent::resized()
