@@ -49,6 +49,14 @@
  * On `mouseDown`, the nearest source within a hit-radius is identified and tracked as
  * `m_draggedSourceId`.  On `mouseDrag`, the new world position is computed via
  * `GetRealCoordinateForPoint()` and sent to the DS100 via `onSourcePositionChanged`.
+ *
+ * ## Touch-zoom and hitTest dead zones
+ * Because `hitTest()` only covers painted circles, the large empty area of the
+ * component is transparent to touch events.  On iOS, individual fingers of a pinch
+ * may therefore land in a dead zone and not be routed to this component at all,
+ * making the JUCE-level `processPinchGesture()` fallback unreliable.  Two-finger
+ * pinch zoom on iOS is handled by a native `UIPinchGestureRecognizer` registered by
+ * `UmsciControlComponent` (see that class for details).
  */
 class UmsciSoundobjectsPaintComponent :   public UmsciPaintNControlComponentBase
 {

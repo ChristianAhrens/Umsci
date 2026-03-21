@@ -69,6 +69,24 @@ class UmsciSoundobjectsPaintComponent;
  *       used by the DS100 (e.g. metres, normalised 0-1) and how they relate to the
  *       stage/room geometry so that contributors understand what the displayed
  *       numbers mean physically.
+ *
+ * ## Viewport zoom and sibling synchronisation
+ * All three layers share a single zoom state (scale factor + pan offset).  When the
+ * user zooms on any layer, that layer fires `UmsciPaintNControlComponentBase::onViewportZoomChanged`;
+ * the `syncViewportZoom` lambda (wired up in the constructor) forwards the new state
+ * to the other two layers via `setZoom()`, which does not re-fire the callback.
+ *
+ * On iOS/iPadOS, JUCE 8's touch routing delivers each finger as a separate
+ * `MouseEvent` routed to whichever component passes `hitTest()` at that position.
+ * Both fingers of a pinch therefore rarely arrive at the same JUCE component, making
+ * the JUCE-level `processPinchGesture()` fallback unreliable.  `parentHierarchyChanged()`
+ * therefore attaches a native `UIPinchGestureRecognizer` (via
+ * `JUCEAppBasics::iOS_utils::registerNativePinchOnView()`) to the JUCE peer UIView
+ * the first time a peer becomes available.  The UIKit gesture fires at the gesture-
+ * recognizer layer before JUCE's per-component touch routing, so it works regardless
+ * of which components the individual fingers hit.  The incremental scale and centre
+ * point are forwarded to `simulatePinchZoom()` on one of the paint layers, which
+ * fires `onViewportZoomChanged` and thus synchronises all three siblings normally.
  */
 class UmsciControlComponent :   public juce::Component, public UmsciAppConfiguration::XmlConfigurableElement
 {
