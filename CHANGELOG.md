@@ -4,12 +4,19 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.3] 2026-03-22
 ### Added
+- Added two finger pinch-zoom support
 
 ### Changed
 
 ### Fixed
+- Fixed 'refit to bounding cube' to scale with Control size settings
+- Fixed 'refit to bounding cube' button to not accidentally trigger Upmix modifier rotation
+- Fixed iOS native device insets handling (e.g. iPad top-bar overlap) by integrating updated JUCE-AppBasics
+- Fixed upmix stretch handle rot/pos in rectangle control mode
+- Fixed lower right corner height annotation value display.
+- Fixed Connection settings dialog discovered device dropdown cropping
 
 ## [0.2.2] 2026-03-16
 ### Added
