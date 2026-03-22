@@ -28,13 +28,30 @@
  * @brief A ComboBox that continuously scans the local network for DS100 devices
  *        announced via Zeroconf/mDNS and lets the user select one to connect to.
  *
- * Used inside the connection settings dialog (`MainComponent::showConnectionSettings()`).
- * When the user picks an entry, `onServiceSelected` fires with the resolved IP and
- * port so the caller can call `DeviceController::setConnectionParameters()`.
+ * Used inside the connection settings dialog (`MainComponent::showConnectionSettings()`),
+ * embedded via `juce::AlertWindow::addCustomComponent()`.
  *
- * Backed by `ZeroconfSearcher::ZeroconfSearcher` from the JUCEAppBasics submodule,
- * which handles the mDNS browsing on a background thread.  `handleServicesChanged()`
- * is called on the message thread whenever the service list changes.
+ * When the user picks an entry, `onServiceSelected` fires with the resolved IP and
+ * port so the caller can populate the IP/port text editors in the same dialog.
+ *
+ * ## Network discovery
+ * Backed by `ZeroconfSearcher::ZeroconfSearcher("OCA", "_oca._tcp")` from the
+ * JUCEAppBasics submodule, which handles mDNS browsing on a background thread.
+ * `handleServicesChanged()` is called on the JUCE message thread via
+ * `MessageManager::callAsync` whenever the service list changes, rebuilding the
+ * combo items with entries of the form `"DeviceName  (ip:port)"`.
+ *
+ * ## Layout adaptation inside AlertWindow
+ * `juce::AlertWindow::updateLayout()` only calls `setTopLeftPosition()` for custom
+ * components — it never resizes them.  If the component were left at its initial size
+ * it would overflow and be clipped whenever the dialog is narrower than that size
+ * (e.g. on narrow Stage Manager windows or small device screens).
+ *
+ * `parentSizeChanged()` therefore overrides the JUCE hook that fires on each parent
+ * resize to set the component's width to 80 % of the parent dialog's width, matching
+ * the width that AlertWindow gives to its own built-in text editors and combo boxes.
+ * The initial `setSize()` call in the caller sets a small placeholder width (10 px)
+ * so the component does not inflate the dialog before `parentSizeChanged()` runs.
  */
 class UmsciZeroconfDiscoverComboComponent
     : public juce::Component,
@@ -46,6 +63,10 @@ public:
 
     //==============================================================================
     void resized() override;
+    /** @brief Resizes the component to 80 % of the parent's width whenever the
+     *         parent (AlertWindow) is resized, matching the width that AlertWindow
+     *         gives to its built-in text editors and combo boxes. */
+    void parentSizeChanged() override;
 
     //==============================================================================
     /** @brief `ZeroconfSearcherListener` callback — called when devices appear or disappear. */

@@ -42,8 +42,23 @@
  * - `m_zoomPanOffset` — centre offset expressed as a fraction of the *base* content
  *   width/height so that the pan survives component resizes without drifting.
  *
- * Mouse-wheel and pinch-magnify gestures call `applyZoomAtScreenPoint()` which
- * keeps the point under the cursor fixed in world space.  Double-click resets zoom.
+ * Zoom input is accepted from multiple sources depending on platform:
+ * - **Mouse-wheel** (`mouseWheelMove`) — all desktop platforms.
+ * - **Trackpad / Magic Mouse pinch** (`mouseMagnify`) — macOS and iPadOS pointer devices.
+ * - **Native two-finger touch pinch** (`simulatePinchZoom`) — iOS/iPadOS touchscreens.
+ *   `UmsciControlComponent` attaches a `UIPinchGestureRecognizer` to the JUCE peer
+ *   UIView via `parentHierarchyChanged()`, then routes each incremental-scale callback
+ *   to `simulatePinchZoom()`.  This is required because JUCE 8's iOS peer routes each
+ *   finger touch to whichever JUCE component passes `hitTest()` at that position, so
+ *   both fingers of a pinch rarely land on the same component — making the JUCE-level
+ *   fallback below unreliable.
+ * - **JUCE-level two-touch fallback** (`processPinchGesture`) — for platforms where
+ *   neither `mouseMagnify` nor a native gesture recognizer is available (e.g. Android).
+ *   Tracks the two lowest touch indices independently; activates only when both fingers
+ *   arrive at the same component.
+ *
+ * All paths ultimately call `applyZoomAtScreenPoint()` which keeps the focal point
+ * stationary in world space.  Double-clicking any empty area resets zoom to 1.0.
  *
  * `setZoom()` silently applies new zoom values (used when synchronising siblings).
  * `resetZoom()` fires `onViewportZoomChanged` so all siblings reset together.
@@ -105,6 +120,19 @@ public:
      */
     std::function<void(float, juce::Point<float>)> onViewportZoomChanged;
 
+    /**
+     * @brief Applies an incremental pinch-zoom step, as if the user performed a native
+     *        pinch gesture centred at @p centre (in component-local pixel coordinates).
+     *
+     * Intended for use with a platform-native gesture recognizer (e.g. UIPinchGestureRecognizer
+     * on iOS) that delivers incremental scale factors.  The call fires `onViewportZoomChanged`
+     * so that sibling layers are synchronised via the normal zoom-sync path.
+     *
+     * @param scaleFactor  Incremental scale factor since the previous callback (>0, 1.0 = no change).
+     * @param centre       Focal point in component-local pixel space.
+     */
+    void simulatePinchZoom(float scaleFactor, juce::Point<float> centre);
+
 protected:
     //==============================================================================
     /**
@@ -128,6 +156,31 @@ protected:
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
     /** @brief Trackpad pinch-to-zoom (macOS). */
     void mouseMagnify(const juce::MouseEvent&, float scaleFactor) override;
+
+    /**
+     * @brief JUCE-level two-touch pinch-zoom fallback for platforms where neither
+     *        `mouseMagnify` nor a native gesture recognizer is available.
+     *
+     * Tracks the two lowest `source.getIndex()` values independently.  A pinch
+     * activates only when both touches are tracked by the same component — which
+     * requires both fingers to pass that component's `hitTest()`.  On iOS this
+     * condition is rarely met (fingers land on different JUCE components), so the
+     * native `UIPinchGestureRecognizer` path via `simulatePinchZoom()` is preferred
+     * there.  On Android or other platforms without a native recognizer this fallback
+     * remains the primary two-finger zoom mechanism.
+     *
+     * Call this at the top of each derived-class `mouseDown`, `mouseDrag`, and
+     * `mouseUp` override, passing the event and the appropriate `isDown`/`isUp`
+     * flags.  When the method returns `true` the event has been consumed by the
+     * pinch recogniser and the caller should return immediately without performing
+     * any normal single-touch interaction.
+     *
+     * @param e       The incoming mouse event.
+     * @param isDown  True when called from `mouseDown`.
+     * @param isUp    True when called from `mouseUp`.
+     * @return        True if the event was consumed by pinch tracking.
+     */
+    bool processPinchGesture(const juce::MouseEvent& e, bool isDown, bool isUp);
 
     /**
      * @brief Called after any zoom state change.
@@ -157,6 +210,13 @@ private:
 
     float                   m_zoomFactor     = 1.0f;      ///< Current zoom scale (1.0 = no zoom).
     juce::Point<float>      m_zoomPanOffset;               ///< Pan as fraction of base content size.
+
+    // Two-touch pinch state (used by processPinchGesture).
+    juce::Point<float>      m_pinchPos[2]         = {};
+    bool                    m_pinchDown[2]         = { false, false };
+    float                   m_pinchStartDistance   = 0.0f;
+    float                   m_pinchStartZoom       = 1.0f;
+    bool                    m_pinchActive          = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciPaintNControlComponentBase)
 };

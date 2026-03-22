@@ -117,6 +117,8 @@ void UmsciSoundobjectsPaintComponent::setSourcePosition(std::int16_t sourceId, c
 
 void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, true, false)) return;
+
     auto const hitRadius = 14.0f * getControlsSizeMultiplier(); // matches knobSize in paint()
     auto clickPos = e.getPosition();
 
@@ -135,6 +137,8 @@ void UmsciSoundobjectsPaintComponent::mouseDown(const juce::MouseEvent& e)
 
 void UmsciSoundobjectsPaintComponent::mouseDrag(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, false)) return;
+
     if (m_draggedSourceId == -1)
         return;
 
@@ -153,8 +157,10 @@ void UmsciSoundobjectsPaintComponent::mouseDrag(const juce::MouseEvent& e)
     repaint();
 }
 
-void UmsciSoundobjectsPaintComponent::mouseUp(const juce::MouseEvent& /*e*/)
+void UmsciSoundobjectsPaintComponent::mouseUp(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, true)) return;
+
     if (m_draggedSourceId != -1)
     {
         m_draggedSourceId = -1;

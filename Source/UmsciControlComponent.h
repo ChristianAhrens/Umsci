@@ -69,6 +69,24 @@ class UmsciSoundobjectsPaintComponent;
  *       used by the DS100 (e.g. metres, normalised 0-1) and how they relate to the
  *       stage/room geometry so that contributors understand what the displayed
  *       numbers mean physically.
+ *
+ * ## Viewport zoom and sibling synchronisation
+ * All three layers share a single zoom state (scale factor + pan offset).  When the
+ * user zooms on any layer, that layer fires `UmsciPaintNControlComponentBase::onViewportZoomChanged`;
+ * the `syncViewportZoom` lambda (wired up in the constructor) forwards the new state
+ * to the other two layers via `setZoom()`, which does not re-fire the callback.
+ *
+ * On iOS/iPadOS, JUCE 8's touch routing delivers each finger as a separate
+ * `MouseEvent` routed to whichever component passes `hitTest()` at that position.
+ * Both fingers of a pinch therefore rarely arrive at the same JUCE component, making
+ * the JUCE-level `processPinchGesture()` fallback unreliable.  `parentHierarchyChanged()`
+ * therefore attaches a native `UIPinchGestureRecognizer` (via
+ * `JUCEAppBasics::iOS_utils::registerNativePinchOnView()`) to the JUCE peer UIView
+ * the first time a peer becomes available.  The UIKit gesture fires at the gesture-
+ * recognizer layer before JUCE's per-component touch routing, so it works regardless
+ * of which components the individual fingers hit.  The incremental scale and centre
+ * point are forwarded to `simulatePinchZoom()` on one of the paint layers, which
+ * fires `onViewportZoomChanged` and thus synchronises all three siblings normally.
  */
 class UmsciControlComponent :   public juce::Component, public UmsciAppConfiguration::XmlConfigurableElement
 {
@@ -79,6 +97,7 @@ public:
     //==============================================================================
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void parentHierarchyChanged() override;
 
     //==============================================================================
     std::unique_ptr<XmlElement> createStateXml() override;
@@ -285,6 +304,10 @@ private:
     std::map<std::int16_t, bool>                        m_speakerMute;
     std::map<std::int16_t, std::float_t>                m_speakerGain;
     std::map<std::int16_t, std::array<std::float_t, 6>> m_speakerPosition;
+
+#if JUCE_IOS
+    void* m_nativePinchViewHandle = nullptr; ///< Handle to the peer UIView that has the pinch recognizer registered.
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciControlComponent)
 };

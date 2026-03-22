@@ -68,6 +68,18 @@
  * - Dragging the centre handle → XY offset (`m_upmixOffsetX/Y`).
  * Any transform change fires `onTransformChanged` so the caller can persist the values.
  *
+ * ## hitTest and touch routing
+ * `hitTest()` returns true only over the interactive elements (ring arc, sub-circles,
+ * handles, refit button, and the full area when the hint is flashing).  Areas of the
+ * component outside those elements return false and pass touch/mouse events through to
+ * lower layers.
+ *
+ * On iOS this means the two fingers of a pinch gesture may individually hit different
+ * components (or no component at all), making JUCE-level two-touch tracking
+ * unreliable.  Pinch zoom on iOS is therefore handled by a native
+ * `UIPinchGestureRecognizer` at the UIKit layer (see `UmsciControlComponent`), which
+ * fires independently of per-component `hitTest()` results.
+ *
  * ## Timer
  * A JUCE `Timer` drives the `m_flashState` flag used to animate the live-mode
  * overlay (flashing dots when source positions are updating).

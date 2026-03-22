@@ -71,12 +71,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     // draw height annotation in lower-right corner
     if (!m_renderedFloorPositions.empty())
     {
-        g.setFont(juce::Font(juce::FontOptions(12.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(12.0f * getControlsSizeMultiplier(), juce::Font::plain)));
         g.setColour(indicatorColour);
         g.setOpacity(opacity);
 
         auto bounds = getLocalBounds().toFloat();
-        auto lineHeight = 16.0f;
+        auto lineHeight = 16.0f * getControlsSizeMultiplier();
         auto annotationWidth = bounds.getWidth() * 0.25f;
         auto margin = 4.0f;
 
@@ -85,7 +85,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
             auto heightLine = juce::Rectangle<float>(annotationWidth, lineHeight)
                 .withBottomY(bounds.getBottom() - margin)
                 .withRightX(bounds.getRight() - margin);
-            g.drawFittedText(juce::String("Height: ") + juce::String(m_speakersRealBoundingCube[5], 2) + juce::String(" m"),
+            auto effectiveHeightZ = m_speakersRealBoundingCube[5]
+                + (m_speakersRealBoundingCube[5] - m_speakersRealBoundingCube[2]) * m_boundingFitFactor;
+            g.drawFittedText(juce::String("Height: ") + juce::String(effectiveHeightZ, 2) + juce::String(" m"),
                              heightLine.toNearestInt(), juce::Justification::bottomRight, 1);
 
             auto floorLine = heightLine.withBottomY(heightLine.getY());
@@ -114,7 +116,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         g.setColour(indicatorColour);
         g.setOpacity(1.0f);
         g.fillRect(refitBounds);
-        g.setFont(juce::Font(juce::FontOptions(11.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(11.0f * std::min(getControlsSizeMultiplier(), 1.5f), juce::Font::plain)));
         g.setColour(labelColour);
         g.drawFittedText("Re-fit to\nbounding cube", refitBounds.reduced(4), juce::Justification::centred, 2);
     }
@@ -199,6 +201,8 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, true, false)) return;
+
     // Stretch handle takes priority over ring drags
     if (!m_renderedFloorPositions.empty() && m_stretchHandleTangent != juce::Point<float>{})
     {
@@ -287,6 +291,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, false)) return;
+
     if (m_draggingStretchHandle)
     {
         auto dx = e.position.x - m_upmixCenter.x;
@@ -353,6 +359,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
         return;
     }
 
+    // Ignore drags that originated on the refit button — a tiny touch/mouse slip
+    // must not bleed through into the ring rotation/scale logic.
+    if (getRefitButtonBounds().contains(e.getMouseDownPosition()))
+        return;
+
     auto dx = e.position.x - m_upmixCenter.x;
     auto dy = e.position.y - m_upmixCenter.y;
 
@@ -394,8 +405,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
     repaint();
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::mouseUp(const juce::MouseEvent& /*e*/)
+void UmsciUpmixIndicatorPaintNControlComponent::mouseUp(const juce::MouseEvent& e)
 {
+    if (processPinchGesture(e, false, true)) return;
+
     if (onTransformChanged)
         onTransformChanged();
 }
@@ -628,6 +641,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     {
         auto maxStretchedAngleDeg = *std::max_element(upmixPositionAnglesDeg.begin(), upmixPositionAnglesDeg.end());
         float anchorX, anchorY;
+        float rectEdgeTangentX = 0.0f, rectEdgeTangentY = 0.0f;
         if (m_shape == IndicatorShape::Rectangle)
         {
             auto baseAngleRad = juce::degreesToRadians(maxStretchedAngleDeg);
@@ -636,6 +650,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             auto t = radius / std::max(std::abs(dx), std::abs(dy));
             anchorX = cx + (t * dx) * cosRot - (t * dy) * sinRot;
             anchorY = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+            // Tangent along the rectangle edge in the unrotated frame:
+            //   |dx| >= |dy|  →  left/right (vertical) edge  →  unrotated tangent (0, 1)
+            //   |dy| >  |dx|  →  top/bottom (horizontal) edge →  unrotated tangent (1, 0)
+            // Then rotate by m_upmixRot into screen space.
+            float utx = (std::abs(dx) >= std::abs(dy)) ? 0.0f : 1.0f;
+            float uty = (std::abs(dx) >= std::abs(dy)) ? 1.0f : 0.0f;
+            rectEdgeTangentX = utx * cosRot - uty * sinRot;
+            rectEdgeTangentY = utx * sinRot + uty * cosRot;
         }
         else
         {
@@ -650,10 +672,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         {
             float ux = dirX / dirLen;
             float uy = dirY / dirLen;
-            m_stretchHandlePos     = { anchorX + ux * m_subCircleRadius * 1.5f,
-                                       anchorY + uy * m_subCircleRadius * 1.5f };
-            // tangent: 90° CW from radial (ux, uy) in screen space = (uy, -ux)
-            m_stretchHandleTangent = { uy, -ux };
+            m_stretchHandlePos = { anchorX + ux * m_subCircleRadius * 1.5f,
+                                   anchorY + uy * m_subCircleRadius * 1.5f };
+            if (m_shape == IndicatorShape::Rectangle)
+                // Tangent lies along the rectangle edge at the anchor point.
+                m_stretchHandleTangent = { rectEdgeTangentX, rectEdgeTangentY };
+            else
+                // Tangent: 90° CW from radial (ux, uy) in screen space = (uy, -ux)
+                m_stretchHandleTangent = { uy, -ux };
         }
     }
 
@@ -885,8 +911,9 @@ bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const ju
 juce::Rectangle<int> UmsciUpmixIndicatorPaintNControlComponent::getRefitButtonBounds() const
 {
     auto margin = 4;
-    auto buttonHeight = 40;
-    auto buttonWidth = 60;
+    auto buttonScale  = std::min(getControlsSizeMultiplier(), 1.5f);
+    auto buttonHeight = juce::roundToInt(40.0f * buttonScale);
+    auto buttonWidth  = juce::roundToInt(60.0f * buttonScale);
     return juce::Rectangle<int>(getWidth() - buttonWidth - margin, margin, buttonWidth, buttonHeight);
 }
 
