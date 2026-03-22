@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.2.3" companyWebsite="https://christianahrens.github.io/Umsci"
+              jucerFormatVersion="1" version="0.2.4" companyWebsite="https://christianahrens.github.io/Umsci"
               bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
