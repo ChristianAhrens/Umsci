@@ -11,6 +11,11 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
 ## Table of contents
 
 * [Overview](#overview)
+* [Getting started](#getting-started)
+  * [Step 1 — Configure the connection to the signal engine](#step1-connection-config)
+  * [Step 2 — Connect and verify](#step2-connect)
+  * [Step 3 — Read the scene](#step3-scene)
+  * [Step 4 — Set up and adjust the upmix indicator](#step4-upmix)
 * [Use cases](#use-cases)
 * [Umsci - app functionality](#Umsci-app-functionality)
   * [Main Umsci UI](#Umsci-ui)
@@ -46,6 +51,105 @@ Its source code and prebuilt binaries are made publicly available to enable inte
 Use what is provided here at your own risk!
 
 
+<a name="getting-started" />
+
+## Getting started
+
+This walkthrough assumes you have a **d&b Soundscape DS100** signal processing engine reachable on your local network and an upmix renderer (DAW plug-in, hardware processor, or similar) feeding output channels into consecutive DS100 sound objects.  If you only want to monitor or edit soundobject positions without the upmix workflow, steps 3 and 4 are still fully relevant — simply ignore the upmix-specific parts.
+
+---
+
+<a name="step1-connection-config" />
+
+### Step 1 — Configure the connection to the signal engine
+
+Open the **Settings menu** by clicking the gear icon (⚙) in the upper-left corner of the Umsci window, then choose **Connection settings…**.
+
+![Showreel.002.png](Resources/Documentation/Showreel/Showreel.002.png "Connection Settings")
+
+Enter the **IP address** of your DS100, leave the **port** at the default `50014`, and set the **IOsize** to match your DS100 license (`64x64` for L, `128x64` for XL) — a mismatched IOsize will prevent the connection from completing.  The *Discovered devices* drop-down lists DS100 devices found automatically via mDNS; selecting one fills in the address and port.
+
+Press **Ok** to store the settings.  See [Connection settings](#connection-settings) for the full field reference.
+
+---
+
+<a name="step2-connect" />
+
+### Step 2 — Connect and verify
+
+Click the **connection toggle button** in the upper-right corner of the main window.  The button cycles through *disconnected → connecting → connected* states.
+
+![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Connection status")
+
+Once the button settles into the *connected* state the three scene layers populate automatically:
+
+- **Loudspeaker icons** appear at the positions stored in the DS100 (bottom layer, display-only).
+- **Soundobject circles** appear at their live positions and can be dragged (middle layer).
+- The **upmix indicator ring** appears if a format other than *None* is selected (top layer).
+
+If the button does not reach the connected state, double-check the IP address, port, and IOsize values from Step 1.  A mismatch between the IOsize and the actual DS100 license is the most common cause.
+
+---
+
+<a name="step3-scene" />
+
+### Step 3 — Read the scene
+
+The main view is a shared 2D top-down representation of the physical room as configured in the DS100.  All coordinates use the DS100's normalised 0–1 space (X = left → right, Y = front → back).
+
+![Showreel.004.png](Resources/Documentation/Showreel/Showreel.004.png "Scene annotated")
+
+Key things to notice:
+
+| Element | What it tells you |
+|:--------|:-----------------|
+| Loudspeaker icons | The physical layout of the room as seen by the DS100. They do not move unless you change the DS100 configuration elsewhere. |
+| Soundobject circles | Live positions of all DS100 inputs.  Their colour matches the chosen *Control colour*. |
+| Upmix ring arc | The idealised geometry for the selected immersive format (Stereo → 9.1.6), centred at the ring's transform-adjusted origin. |
+| Coloured dots on the ring (Live mode) | Actual DS100 positions for the upmix channels.  A flashing dot means Umsci just sent an update and is waiting for the DS100 echo. |
+
+Use the mouse wheel or a trackpad/touch pinch to zoom, and a modifier key + scroll to pan — see [Zoom and pan](#zoom-and-pan) for all input options.
+
+---
+
+<a name="step4-upmix" />
+
+### Step 4 — Set up and adjust the upmix indicator
+
+The upmix indicator ring is the core workflow tool.  This step walks through configuring it and using its interactive handles to align the virtual speaker ring with the physical room layout.
+
+#### 4a — Choose the channel format and first soundobject
+
+Open **Settings → Upmix control settings…**.  The two settings that matter most at first are:
+
+- **Channel format** — the immersive format your renderer produces (e.g. `7.1.4` for a 12-channel Atmos bed).
+- **First soundobject** — the 1-based DS100 input channel where your renderer's output starts (e.g. `17` if the renderer occupies channels 17–28).
+
+Start with **Control mode** set to *Manual* so you can preview adjustments before committing them, and leave **Indicator shape** at *Circle* unless your room is clearly rectangular.  See [Upmix control settings](#upmix-control-settings) for all options.
+
+![Showreel.005.png](Resources/Documentation/Showreel/Showreel.005.png "Upmix control settings")
+
+Press **Ok**.  The ring updates to show the correct number of channel spokes and labels for the chosen format.
+
+#### 4b — Align the ring to the room
+
+Use the five interactive handles on the ring to match the idealised geometry to the physical loudspeaker layout visible in the bottom layer.  A practical starting point: click the **Refit button** (top-right of the ring) to auto-fit the ring to the loudspeaker bounding box, then fine-tune **rotation** and **centre offset** to taste.  Double-click any handle to reset it to its default.  See [Upmix indicator handles](#upmix-indicator-handles) for a description of all five handles.
+
+![Showreel.006.png](Resources/Documentation/Showreel/Showreel.006.png "Upmix indicator and modifiers")
+
+#### 4c — Commit the positions (Manual mode) or work live
+
+- **Manual mode:** drag the handles to the desired geometry, then **double-click** the ring or a handle to push the positions to the DS100.  The soundobject circles in the middle layer will jump to match.
+- **Live mode:** every handle drag immediately sends updated positions to the DS100.  The coloured dots on the ring show the DS100's echoed-back positions tracking your adjustments in real time.
+
+See [Control modes](#control-modes) for a full comparison.
+
+![Showreel.007.png](Resources/Documentation/Showreel/Showreel.007.png "Upmix manual vs live")
+
+Once the ring is aligned and positions are committed, Umsci will hold the subscriptions to all DS100 position values.  Any external position change (from a third-party controller, automation, or another Umsci instance) will be reflected live in the scene view. Any conflicting changes will set the upmix indicator back to flashing state to visualise that it is not aligned.
+
+---
+
 <a name="use-cases" />
 
 ## Use cases
@@ -66,6 +170,7 @@ Using the `--noconfigui` and `--noupdates` command-line flags, Umsci can be lock
 
 Umsci runs natively on iOS/iPadOS.  The full touch interaction model — including two-finger pinch zoom on the scene view — is supported.  An iPad can act as a wireless remote control surface for a DS100 on the same network, using Zeroconf/mDNS auto-discovery to find the device without entering an IP address manually.
 
+---
 
 <a name="Umsci-app-functionality" />
 
@@ -75,7 +180,7 @@ Umsci runs natively on iOS/iPadOS.  The full touch interaction model — includi
 
 ### Main Umsci UI
 
-![Showreel.002.png](Resources/Documentation/Showreel/Showreel.002.png "Umsci main")
+![Showreel.008.png](Resources/Documentation/Showreel/Showreel.008.png "Umsci main")
 
 The main view shows three transparent layers stacked on top of each other — all sharing the same coordinate space and zoom/pan state:
 
@@ -135,7 +240,7 @@ The *Control mode* setting (in *Upmix control settings*) governs how soundobject
 
 ### Umsci settings menu
 
-![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Umsci settings")
+![Showreel.009.png](Resources/Documentation/Showreel/Showreel.009.png "Umsci settings")
 
 The gear button (top-left) opens the settings menu.  Available options:
 
