@@ -122,7 +122,7 @@ void DeviceController::setState(const State& s, juce::NotificationType notificat
 
     if (m_currentState != s)
     {
-        DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
+        { juce::String _s; _s << __FUNCTION__ << " " << stateToString(s); juce::Logger::writeToLog(_s); }
         m_currentState = s;
 
         if (onStateChanged && juce::NotificationType::sendNotification == notificationType)
@@ -139,10 +139,10 @@ bool DeviceController::connect()
 {
     if (State::Disconnected != getState())
     {
-        DBG(juce::String(__FUNCTION__) << " - nothing to do as we're not disconnected");
+        { juce::String _s; _s << __FUNCTION__ << " - nothing to do as we're not disconnected"; juce::Logger::writeToLog(_s); }
         return false;
     }
-    DBG(__FUNCTION__);
+    juce::Logger::writeToLog(__FUNCTION__);
 
     setState(State::Connecting);
 
@@ -156,8 +156,8 @@ bool DeviceController::connect()
 
 void DeviceController::disconnect()
 {
-    DBG(__FUNCTION__);
-    
+    juce::Logger::writeToLog(__FUNCTION__);
+
     setState(State::Disconnected);
 
     if (m_ocp1Connection)
@@ -168,7 +168,7 @@ void DeviceController::disconnect()
 
 void DeviceController::setConnectionParameters(juce::IPAddress ip, int port, int timeoutMs)
 {
-    DBG(juce::String(__FUNCTION__) << " new connection params: " << ip.toString() << ":" << port << " (t:" << timeoutMs << ")");
+    { juce::String _s; _s << __FUNCTION__ << " new connection params: " << ip.toString() << ":" << port << " (t:" << timeoutMs << ")"; juce::Logger::writeToLog(_s); }
     m_ocp1IPAddress = ip;
     m_ocp1Port = port;
     jassert(0 < timeoutMs);
@@ -415,7 +415,7 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
     {
         if (!useDefinitionRemapping)
         {
-            DBG(juce::String(__FUNCTION__) + " skipping Positioning_SourcePosition X Y XY");
+            juce::Logger::writeToLog(juce::String(__FUNCTION__) + " skipping Positioning_SourcePosition X Y XY");
             return {};
         }
     }
@@ -428,7 +428,7 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
     {
         if (!useDefinitionRemapping)
         {
-            DBG(juce::String(__FUNCTION__) + " skipping CoordinateMapping_SourcePosition X Y XY");
+            juce::Logger::writeToLog(juce::String(__FUNCTION__) + " skipping CoordinateMapping_SourcePosition X Y XY");
             return {};
         }
     }
@@ -531,7 +531,7 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
     case RemoteObject::SoundObjectRouting_Gain:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_SoundObjectRouting_Gain(second, first));
     default:
-        DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(roi) << " -> not implmented");
+        { juce::String _s; _s << __FUNCTION__ << " " << RemoteObject::GetObjectDescription(roi) << " -> not implmented"; juce::Logger::writeToLog(_s); }
         return {};
     }
 }
@@ -550,8 +550,8 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
             if (UpdateObjectValue(notifObj))
                 return true;
 
-            DBG(juce::String(__FUNCTION__) << " Got an unhandled OCA notification for ONo 0x"
-                << juce::String::toHexString(notifObj->GetEmitterOno()));
+            { juce::String _s; _s << __FUNCTION__ << " Got an unhandled OCA notification for ONo 0x"
+                << juce::String::toHexString(notifObj->GetEmitterOno()); juce::Logger::writeToLog(_s); }
             return false;
         }
         case NanoOcp1::Ocp1Message::Response:
@@ -561,8 +561,8 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
             auto handle = responseObj->GetResponseHandle();
             if (responseObj->GetResponseStatus() != 0)
             {
-                DBG(juce::String(__FUNCTION__) << " Got an OCA response (handle:" << NanoOcp1::HandleToString(handle) <<
-                    ") with status " << NanoOcp1::StatusToString(responseObj->GetResponseStatus()));
+                { juce::String _s; _s << __FUNCTION__ << " Got an OCA response (handle:" << NanoOcp1::HandleToString(handle)
+                    << ") with status " << NanoOcp1::StatusToString(responseObj->GetResponseStatus()); juce::Logger::writeToLog(_s); }
 
                 auto externalId = -1;
                 PopPendingSubscriptionHandle(handle);
@@ -594,8 +594,8 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                 {
                     if (!UpdateObjectValue(GetValONo, responseObj))
                     {
-                        DBG(juce::String(__FUNCTION__) << " Got an unhandled OCA getvalue response message (handle:"
-                            << NanoOcp1::HandleToString(handle) + ", targetONo:0x" << juce::String::toHexString(GetValONo) << ")");
+                        { juce::String _s; _s << __FUNCTION__ << " Got an unhandled OCA getvalue response message (handle:"
+                            << NanoOcp1::HandleToString(handle) + ", targetONo:0x" << juce::String::toHexString(GetValONo) << ")"; juce::Logger::writeToLog(_s); }
                         return false;
                     }
                     else
@@ -628,9 +628,9 @@ bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
                     return true;
                 }
 
-                DBG(juce::String(__FUNCTION__) << " Got an OCA response for UNKNOWN handle " << NanoOcp1::HandleToString(handle) <<
-                    "; status " << NanoOcp1::StatusToString(responseObj->GetResponseStatus()) <<
-                    "; paramCount " << juce::String(responseObj->GetParamCount()));
+                { juce::String _s; _s << __FUNCTION__ << " Got an OCA response for UNKNOWN handle " << NanoOcp1::HandleToString(handle)
+                    << "; status " << NanoOcp1::StatusToString(responseObj->GetResponseStatus())
+                    << "; paramCount " << juce::String(responseObj->GetParamCount()); juce::Logger::writeToLog(_s); }
 
                 return false;
             }
@@ -752,8 +752,8 @@ bool DeviceController::SetObjectValue(const RemoteObject& remObj)
     bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->SetValueCommand(remObj.Var), handle).GetMemoryBlock());
     AddPendingSetValueHandle(handle, objDef->m_targetOno, remObj.Addr.pri);
 
-    DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(remObj.Id)
-        << "(" << remObj.Addr.toNiceString() << " handle:" << NanoOcp1::HandleToString(handle) << ")");
+    { juce::String _s; _s << __FUNCTION__ << " " << RemoteObject::GetObjectDescription(remObj.Id)
+        << "(" << remObj.Addr.toNiceString() << " handle:" << NanoOcp1::HandleToString(handle) << ")"; juce::Logger::writeToLog(_s); }
 
     return success;
 }
@@ -1012,8 +1012,8 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
         break;
     default:
-        DBG(juce::String(__FUNCTION__) << " unknown: " << RemoteObject::GetObjectDescription(roi)
-            << " (" << static_cast<int>(objectDetails.first.pri) << "," << static_cast<int>(objectDetails.first.sec) << ") ");
+        { juce::String _s; _s << __FUNCTION__ << " unknown: " << RemoteObject::GetObjectDescription(roi)
+            << " (" << static_cast<int>(objectDetails.first.pri) << "," << static_cast<int>(objectDetails.first.sec) << ") "; juce::Logger::writeToLog(_s); }
         return false;
     }
 
@@ -1133,18 +1133,18 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
             ocp1DeviceStackIdent = 1;
         else
             ocp1DeviceStackIdent = 0;
-        DBG(juce::String(__FUNCTION__) << " detected DS100 (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
+        { juce::String _s; _s << __FUNCTION__ << " detected DS100 (ocp stack:" << ocp1DeviceStackIdent << ") " << guid; juce::Logger::writeToLog(_s); }
         break;
     case DbDeviceModel::DS100D:
         ocp1DeviceStackIdent = 1; // this was implemented pre-release of DS100D and assuming there will be no FW-version without scalability
-        DBG(juce::String(__FUNCTION__) << " detected DS100D (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
+        { juce::String _s; _s << __FUNCTION__ << " detected DS100D (ocp stack:" << ocp1DeviceStackIdent << ") " << guid; juce::Logger::writeToLog(_s); }
         break;
     case DbDeviceModel::DS100M:
         if (versionChars >= "02") // DS100M added scalability with FW version "02"
             ocp1DeviceStackIdent = 1;
         else
             ocp1DeviceStackIdent = 0;
-        DBG(juce::String(__FUNCTION__) << " detected DS100M (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
+        { juce::String _s; _s << __FUNCTION__ << " detected DS100M (ocp stack:" << ocp1DeviceStackIdent << ") " << guid; juce::Logger::writeToLog(_s); }
         break;
     default:
         return false;

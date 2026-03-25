@@ -284,9 +284,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
     // determine whether the drag targets the height ring or the floor ring
     m_draggingHeightRing = m_upmixHeightIndicator.contains(e.position.x, e.position.y);
 
-    DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot
+    { juce::String _s; _s << __FUNCTION__ << " rot:" << m_upmixRot
         << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans
-        << " heightRing:" << (int)m_draggingHeightRing);
+        << " heightRing:" << (int)m_draggingHeightRing; juce::Logger::writeToLog(_s); }
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent& e)
@@ -380,8 +380,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
             m_upmixTrans = juce::jlimit(0.1f, 10.0f, m_dragStartTrans * scaleFactor);
     }
 
-    DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot
-        << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans);
+    { juce::String _s; _s << __FUNCTION__ << " rot:" << m_upmixRot
+        << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans; juce::Logger::writeToLog(_s); }
 
     PrerenderUpmixIndicatorInBounds();
 

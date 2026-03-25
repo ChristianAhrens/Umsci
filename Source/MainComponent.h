@@ -20,6 +20,7 @@
 
 #include <JuceHeader.h>
 
+#include "LogComponent.h"
 #include "UmsciAppConfiguration.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
@@ -118,7 +119,8 @@ public:
         ControlSize_S = ControlSize_First, ///< Small icons.
         ControlSize_M,                     ///< Medium icons.
         ControlSize_L,                     ///< Large icons.
-        ControlSize_Last = ControlSize_L
+        ControlSize_Last = ControlSize_L,
+        ShowLog          ///< Opens the debug log window.
     };
 
 public:
@@ -168,6 +170,7 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
+    void showLogOutput();
 
     //==============================================================================
     /** @brief `juce::MidiInputCallback` — receives incoming MIDI messages for parameter control.
@@ -201,6 +204,9 @@ private:
 
     std::unique_ptr<juce::DrawableButton>           m_aboutButton;
     std::unique_ptr<AboutComponent>                 m_aboutComponent;
+
+    std::unique_ptr<LoggerImpl>                     m_logger;
+    std::unique_ptr<LogComponent>                   m_logOutput;
 
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;

@@ -216,7 +216,7 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
 
 void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject& obj)
 {
-    DBG(juce::String(__FUNCTION__) << " " << DeviceController::RemoteObject::GetObjectDescription(obj.Id) << " " << obj.Addr.toNiceString());
+    { juce::String _s; _s << __FUNCTION__ << " " << DeviceController::RemoteObject::GetObjectDescription(obj.Id) << " " << obj.Addr.toNiceString(); juce::Logger::writeToLog(_s); }
 
     switch (obj.Id)
     {
@@ -321,8 +321,8 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
     case DeviceController::RemoteObject::MatrixOutput_Polarity:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
     default:
-        DBG(juce::String(__FUNCTION__) << " unhandled/unkown: " << DeviceController::RemoteObject::GetObjectDescription(obj.Id)
-            << " (" << static_cast<int>(obj.Addr.pri) << "," << static_cast<int>(obj.Addr.sec) << ") ");
+        { juce::String _s; _s << __FUNCTION__ << " unhandled/unkown: " << DeviceController::RemoteObject::GetObjectDescription(obj.Id)
+            << " (" << static_cast<int>(obj.Addr.pri) << "," << static_cast<int>(obj.Addr.sec) << ") "; juce::Logger::writeToLog(_s); }
         break;
     }
 
@@ -381,7 +381,7 @@ void UmsciControlComponent::updatePaintComponents()
 
 void UmsciControlComponent::setDatabaseComplete(bool complete)
 {
-    DBG(juce::String(__FUNCTION__) << (complete ? " compl." : " incmplt."));
+    { juce::String _s; _s << __FUNCTION__ << (complete ? " compl." : " incmplt."); juce::Logger::writeToLog(_s); }
     m_databaseComplete = complete;
 
     if (complete)

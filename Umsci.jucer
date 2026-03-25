@@ -47,6 +47,8 @@
                   file="submodules/JUCE-AppBasics/Resources/Images/question_mark_24dp.svg"/>
             <FILE id="FefYZE" name="settings_24dp.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/settings_24dp.svg"/>
+            <FILE id="tHx9Km" name="terminal_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/terminal_24dp.svg"/>
             <FILE id="g7A5Pi" name="loudspeaker_hor-24px.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/loudspeaker_hor-24px.svg"/>
             <FILE id="Xenppw" name="loudspeaker_vert-24px.svg" compile="0" resource="1"
@@ -172,6 +174,9 @@
             file="Source/AboutComponent.h"/>
       <FILE id="nutmhe" name="CustomPopupMenuComponent.h" compile="0" resource="0"
             file="Source/CustomPopupMenuComponent.h"/>
+      <FILE id="DbgLgC" name="LogComponent.cpp" compile="1" resource="0"
+            file="Source/LogComponent.cpp"/>
+      <FILE id="DbgLgH" name="LogComponent.h" compile="0" resource="0" file="Source/LogComponent.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

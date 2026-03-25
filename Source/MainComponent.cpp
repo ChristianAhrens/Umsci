@@ -37,6 +37,8 @@
 MainComponent::MainComponent()
     : juce::Component()
 {
+    m_logger = std::make_unique<LoggerImpl>();
+
     // create the configuration object (is being initialized from disk automatically)
     m_config = std::make_unique<UmsciAppConfiguration>(JUCEAppBasics::AppConfigurationBase::getDefaultConfigFilePath());
     m_config->addDumper(this);
@@ -117,6 +119,8 @@ MainComponent::MainComponent()
     // fullscreen toggling
     m_settingsItems[UmsciSettingsOption::FullscreenWindowMode] = std::make_pair("Toggle fullscreen mode" + fullscreenShortCutHint, 0);
 #endif
+    // debug log
+    m_settingsItems[UmsciSettingsOption::ShowLog] = std::make_pair("Show log...", 0);
     // Further components
     m_settingsButton = std::make_unique<juce::DrawableButton>("Settings", juce::DrawableButton::ButtonStyle::ImageFitted);
     m_settingsButton->setTooltip(juce::String("Settings for ") + juce::JUCEApplication::getInstance()->getApplicationName());
@@ -145,6 +149,8 @@ MainComponent::MainComponent()
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
 #endif
+        settingsMenu.addSeparator();
+        settingsMenu.addItem(UmsciSettingsOption::ShowLog, m_settingsItems[UmsciSettingsOption::ShowLog].first, true, false);
         settingsMenu.showMenuAsync(juce::PopupMenu::Options(), [=](int selectedId) {
             handleSettingsMenuResult(selectedId);
             if (m_config)
@@ -357,6 +363,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         showExternalControlSettings();
     else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
         handleSettingsControlSizeMenuResult(selectedId);
+    else if (UmsciSettingsOption::ShowLog == selectedId)
+        showLogOutput();
     else
         jassertfalse; // unhandled menu entry!?
 }
@@ -1031,6 +1039,28 @@ void MainComponent::showExternalControlSettings()
         m_externalControlComponent.reset();
         m_messageBox.reset();
     }));
+}
+
+void MainComponent::showLogOutput()
+{
+    if (m_logOutput != nullptr)
+        m_logOutput->toFront(true);
+    else
+    {
+        m_logOutput = std::make_unique<LogComponent>(*m_logger);
+
+        auto windowStyleFlags = ComponentPeer::StyleFlags::windowAppearsOnTaskbar
+            | ComponentPeer::StyleFlags::windowHasCloseButton
+            | ComponentPeer::StyleFlags::windowHasMaximiseButton
+            | ComponentPeer::StyleFlags::windowHasTitleBar
+            | ComponentPeer::StyleFlags::windowIsResizable;
+
+        m_logOutput->addToDesktop(windowStyleFlags);
+        m_logOutput->setBounds(0, 0, 800, 400);
+        m_logOutput->setVisible(true);
+
+        m_logOutput->onCloseButtonPressed = [this] { m_logOutput.reset(); };
+    }
 }
 
 void MainComponent::openMidiInputDevice(const juce::String& deviceIdentifier)
