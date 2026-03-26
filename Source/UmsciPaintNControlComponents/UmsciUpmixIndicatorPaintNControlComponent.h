@@ -204,6 +204,17 @@ public:
      */
     void notifyTransformChanged();
 
+    /**
+     * @brief Checks whether the ideal ring positions diverge from the stored DS100
+     *        positions and starts the flash timer if they do.
+     *
+     * Use this after a programmatic transform update in manual mode (live mode off)
+     * to give the operator a visual cue that the device positions are out of sync and
+     * need to be sent manually.  In live mode `notifyTransformChanged()` should be
+     * called instead (it sends the positions immediately).
+     */
+    void triggerFlashCheck();
+
     //==============================================================================
     /**
      * @brief Fired when the user drags a source circle in live mode (pass-through

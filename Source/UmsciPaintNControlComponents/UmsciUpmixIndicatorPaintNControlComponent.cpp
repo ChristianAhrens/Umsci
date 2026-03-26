@@ -897,6 +897,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
         onTransformChanged();
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::triggerFlashCheck()
+{
+    updateFlashState();
+}
+
 bool UmsciUpmixIndicatorPaintNControlComponent::setChannelConfiguration(const juce::AudioChannelSet& channelLayout)
 {
     auto rVal = TwoDFieldBase::setChannelConfiguration(channelLayout);

@@ -692,6 +692,12 @@ void UmsciControlComponent::triggerUpmixTransformApplied()
         m_upmixIndicatorPaintAndControlComponent->notifyTransformChanged();
 }
 
+void UmsciControlComponent::triggerUpmixFlashCheck()
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->triggerFlashCheck();
+}
+
 float UmsciControlComponent::getUpmixOffsetX() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)

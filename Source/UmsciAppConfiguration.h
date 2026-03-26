@@ -66,12 +66,6 @@ public:
         CONTROLFORMAT,      ///< Upmix channel format.
         UPMIXCONFIG,        ///< Upmix behaviour settings.
         CONTROLSIZE,        ///< Icon size (S/M/L).
-        UPMIXROT,           ///< Upmix ring rotation.
-        UPMIXSCALE,         ///< Upmix ring radial scale.
-        UPMIXHEIGHTSCALE,   ///< Upmix height ring scale.
-        UPMIXANGLESTRETCH,  ///< Upmix angular stretch.
-        UPMIXOFFSETX,           ///< Upmix X offset.
-        UPMIXOFFSETY,           ///< Upmix Y offset.
         EXTERNALCONTROLCONFIG,  ///< External (MIDI) control assignments container.
         MIDIINPUTDEVICE,        ///< Selected MIDI input device identifier.
         MIDI_UPMIXROT,          ///< MIDI assignment for upmix rotation.
@@ -79,7 +73,8 @@ public:
         MIDI_UPMIXHEIGHTSCALE,  ///< MIDI assignment for upmix height translation.
         MIDI_UPMIXANGLESTRETCH, ///< MIDI assignment for upmix angle stretch.
         MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
-        MIDI_UPMIXOFFSETY       ///< MIDI assignment for upmix Y offset.
+        MIDI_UPMIXOFFSETY,      ///< MIDI assignment for upmix Y offset.
+        UPMIXSNAPSHOTCONFIG     ///< Upmix snapshot container (optional; absent = no snapshot stored).
     };
     static juce::String getTagName(TagID ID)
     {
@@ -101,18 +96,6 @@ public:
             return "UPMIXCONFIG";
         case CONTROLSIZE:
             return "CONTROLSIZE";
-        case UPMIXROT:
-            return "UPMIXROT";
-        case UPMIXSCALE:
-            return "UPMIXSCALE";
-        case UPMIXHEIGHTSCALE:
-            return "UPMIXHEIGHTSCALE";
-        case UPMIXANGLESTRETCH:
-            return "UPMIXANGLESTRETCH";
-        case UPMIXOFFSETX:
-            return "UPMIXOFFSETX";
-        case UPMIXOFFSETY:
-            return "UPMIXOFFSETY";
         case EXTERNALCONTROLCONFIG:
             return "EXTERNALCONTROLCONFIG";
         case MIDIINPUTDEVICE:
@@ -129,6 +112,8 @@ public:
             return "MIDI_UPMIXOFFSETX";
         case MIDI_UPMIXOFFSETY:
             return "MIDI_UPMIXOFFSETY";
+        case UPMIXSNAPSHOTCONFIG:
+            return "UPMIXSNAPSHOTCONFIG";
         default:
             return "INVALID";
         }
