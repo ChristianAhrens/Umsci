@@ -6,10 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Added single upmix indicator state store & recall as dedicated buttons on UI
+- Added basic osc external control for upmix rotation, translation, height translation, angle stretch, offset x and offset y
 
 ### Changed
 
 ### Fixed
+- Fixed upmix indicator corruption when using stretch handle to pull >=180deg
 
 ## [0.2.3] 2026-03-22
 ### Added
