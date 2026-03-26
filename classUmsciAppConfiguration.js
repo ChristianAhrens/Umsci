@@ -1,0 +1,47 @@
+var classUmsciAppConfiguration =
+[
+    [ "AttributeID", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61", [
+      [ "ENABLED", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a30be76f38ac2dd1e3f150623d0309ac7", null ],
+      [ "IP", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a0326cdefb27e3c23cb16345b758841d9", null ],
+      [ "PORT", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61aa782395a7dc1d11e840171a4a7c1ab39", null ],
+      [ "IOSIZE", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a919f159110220d115daa78614135dc2b", null ],
+      [ "UPMIXSOURCESTARTID", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61ae07c2b06658f830b6b461634cc9956da", null ],
+      [ "UPMIXLIVEMODE", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a1cbbb609d6b845457f2132c26509b925", null ],
+      [ "UPMIXSHAPE", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a69497cb6a5912206b5af7a03627a1ba1", null ],
+      [ "UPMIXSHOWALLSOURCES", "classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61a4973b9a46e9ad1e7346fa34b86b311c8", null ]
+    ] ],
+    [ "TagID", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0a", [
+      [ "CONNECTIONCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa38d67a26ed7c60ea23547a6e562f1471", null ],
+      [ "VISUCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aad2aaa668bdaad5f47a4fee1ecc5d9fe2", null ],
+      [ "CONTROLCOLOUR", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa4dc5530fde2938c2c2c6d09b8d38cc34", null ],
+      [ "LOOKANDFEEL", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aac085e31b83c7947268f973e681b08467", null ],
+      [ "CONTROLCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa1f4de2cf9cbe1a1546d386aacc785869", null ],
+      [ "CONTROLFORMAT", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa7cfd981c3d85086d8c2e4a4ccc9b82c2", null ],
+      [ "UPMIXCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aacf1dde6592ed2a20a4685a59e8f1d59e", null ],
+      [ "CONTROLSIZE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa6d64314f48dd35ce9d20b5a7b0236495", null ],
+      [ "EXTERNALCONTROLCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa6aabfacc443dbb605449f54fa1925572", null ],
+      [ "MIDIINPUTDEVICE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa471c55d76a59908c1c0f9c1af9c6ffdb", null ],
+      [ "MIDI_UPMIXROT", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aaab42f0f1a4d87dce62038296c595a099", null ],
+      [ "MIDI_UPMIXSCALE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa5b352352263e6b797165d6911a7c530a", null ],
+      [ "MIDI_UPMIXHEIGHTSCALE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa1519ed049fd861b8109fbba8cd16b00c", null ],
+      [ "MIDI_UPMIXANGLESTRETCH", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa7d4a546cc86ccc5b464cfbb817de0c12", null ],
+      [ "MIDI_UPMIXOFFSETX", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa0bb95b74a8a17a89487301b5dbcc3f2d", null ],
+      [ "MIDI_UPMIXOFFSETY", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa738428207cd7e524bb2a33c92cbfcbe7", null ],
+      [ "UPMIXSNAPSHOTCONFIG", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa48f35faca8762dbf03811712ed30c8cc", null ],
+      [ "OSCINPUTPORT", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aaa9f3e69e77c7accf12d069ff5828e158", null ],
+      [ "OSC_UPMIXROT", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa595d6ae1f570b5e29054a5fcb40e256b", null ],
+      [ "OSC_UPMIXSCALE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aabb7b86ec114248a66734192856a6ccde", null ],
+      [ "OSC_UPMIXHEIGHTSCALE", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa385e78452284471b3b7caea5e97a3d9b", null ],
+      [ "OSC_UPMIXANGLESTRETCH", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa4518e5311b223ceb7588455e9f5b358f", null ],
+      [ "OSC_UPMIXOFFSETX", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa4f72025c06d0b829663e2b9ed7bc9171", null ],
+      [ "OSC_UPMIXOFFSETY", "classUmsciAppConfiguration.html#aef74076a8edeb902217a87f7f67ecc0aa7eda07d99907dead1a06b94a2ca3ecdf", null ]
+    ] ],
+    [ "UmsciAppConfiguration", "classUmsciAppConfiguration.html#ac9839e285a15827bb5c1cccaf0f98847", null ],
+    [ "~UmsciAppConfiguration", "classUmsciAppConfiguration.html#a10d37b125bdd9c03df325fc199d15776", null ],
+    [ "getAttributeName", "classUmsciAppConfiguration.html#ae2c5e6ebde3c31adade00da2eb2bb692", null ],
+    [ "getTagName", "classUmsciAppConfiguration.html#acace9fc6247944eab97a113ef7b89c8d", null ],
+    [ "HandleConfigVersionConflict", "classUmsciAppConfiguration.html#a81a92e5793520c437426dc96ec4bc8bf", null ],
+    [ "isValid", "classUmsciAppConfiguration.html#a265a5ff57d17438f6b0ad0a90d793b52", null ],
+    [ "isValid", "classUmsciAppConfiguration.html#ab498657aea1fb253ee77af51f070bfcb", null ],
+    [ "ResetToDefault", "classUmsciAppConfiguration.html#ab8aa30834dfb2ee94da5e82258abada1", null ]
+];

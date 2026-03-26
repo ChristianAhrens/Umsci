@@ -1,0 +1,31 @@
+<map id="Source/MainComponent.h" name="Source/MainComponent.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="525,5,715,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="525,240,632,265"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="617,32,600,79,587,160,582,227,577,226,582,159,595,78,612,30"/>
+<area shape="rect" id="Node000003" href="$UmsciAppConfiguration_8h.html" title=" " alt="" coords="99,86,285,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="558,33,268,86,267,81,557,28"/>
+<area shape="rect" id="Node000005" href="$UmsciExternalControlComponent_8h.html" title=" " alt="" coords="709,167,960,192"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="715,25,822,43,866,58,894,77,900,88,902,99,895,121,880,142,862,160,858,156,876,138,890,119,896,99,895,89,890,80,864,63,820,48,714,30"/>
+<area shape="rect" id="Node000008" href="$UmsciZeroconfDiscoverComboComponent_8h.html" title=" " alt="" coords="309,79,533,119"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="592,33,483,76,481,71,590,28"/>
+<area shape="rect" id="Node000010" href="$MidiController_8h.html" title=" " alt="" coords="755,86,880,111"/>
+<area shape="poly" id="edge12_Node000001_Node000010" title=" " alt="" coords="650,28,777,78,775,83,648,33"/>
+<area shape="rect" id="Node000011" href="$OscController_8h.html" title=" " alt="" coords="609,86,730,111"/>
+<area shape="poly" id="edge16_Node000001_Node000011" title=" " alt="" coords="630,29,657,73,653,76,625,32"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="198,111,215,151,229,172,248,190,268,200,295,209,364,224,512,243,511,249,363,230,293,214,266,205,245,194,225,176,210,153,193,113"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,167,184,192"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="179,114,121,160,118,156,176,109"/>
+<area shape="poly" id="edge6_Node000005_Node000002" title=" " alt="" coords="794,195,634,239,632,234,793,189"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="874,240,1121,265"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="862,190,959,232,957,237,860,194"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="663,240,849,265"/>
+<area shape="poly" id="edge8_Node000005_Node000007" title=" " alt="" coords="824,194,781,233,777,229,820,190"/>
+<area shape="poly" id="edge10_Node000008_Node000002" title=" " alt="" coords="445,117,497,165,560,228,556,232,493,169,441,121"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="259,167,483,192"/>
+<area shape="poly" id="edge11_Node000008_Node000009" title=" " alt="" coords="411,120,388,156,383,154,407,117"/>
+<area shape="poly" id="edge13_Node000010_Node000002" title=" " alt="" coords="796,114,699,169,606,234,603,229,696,164,793,109"/>
+<area shape="poly" id="edge15_Node000010_Node000005" title=" " alt="" coords="822,111,832,153,827,154,817,112"/>
+<area shape="poly" id="edge14_Node000010_Node000006" title=" " alt="" coords="874,109,926,129,952,145,974,165,991,194,998,225,993,226,986,196,970,168,949,149,924,134,872,114"/>
+<area shape="poly" id="edge17_Node000011_Node000002" title=" " alt="" coords="665,113,595,230,590,227,660,110"/>
+<area shape="poly" id="edge18_Node000011_Node000005" title=" " alt="" coords="695,109,799,158,797,163,692,114"/>
+</map>

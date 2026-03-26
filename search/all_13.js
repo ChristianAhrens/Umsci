@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['paint_0',['paint',['../classMainComponent.html#a0f1717686e9ae1cd697238b41c347725',1,'MainComponent::paint()'],['../classUmsciConnectingComponent.html#a95ba23b5a38f9736269091ea29be91f2',1,'UmsciConnectingComponent::paint()'],['../classUmsciControlComponent.html#af774cd371cf65238abd9489eace9d439',1,'UmsciControlComponent::paint()'],['../classUmsciDiscoveringHintComponent.html#a2bd690424a20a2f71de37f5404e2e98a',1,'UmsciDiscoveringHintComponent::paint()'],['../classUmsciLoudspeakersPaintComponent.html#a23d102982ad12c622940b50e67e68742',1,'UmsciLoudspeakersPaintComponent::paint()'],['../classUmsciSoundobjectsPaintComponent.html#a466f4b2384d1b6b6782f0be475515216',1,'UmsciSoundobjectsPaintComponent::paint()'],['../classUmsciUpmixIndicatorPaintNControlComponent.html#a4deb0a45f150f8c7af3958583b6fdedc',1,'UmsciUpmixIndicatorPaintNControlComponent::paint()'],['../classAboutComponent.html#a92dbb254a563841a4a134687daff2fd6',1,'AboutComponent::paint()']]],
+  ['pan_1',['Zoom and pan',['../index.html#autotoc_md59',1,'']]],
+  ['pan_20internals_2',['Zoom and pan internals',['../index.html#autotoc_md73',1,'']]],
+  ['parameter_20assignments_3',['Parameter assignments',['../index.html#autotoc_md66',1,'']]],
+  ['parameter_20id_20enum_20tt_20upmixmidiparam_20tt_4',['Parameter ID enum (&lt;tt&gt;UpmixMidiParam&lt;/tt&gt;)',['../classUmsciExternalControlComponent.html#autotoc_md17',1,'']]],
+  ['parameters_5',['parameters',['../index.html#autotoc_md69',1,'Command-line parameters'],['../classUmsciUpmixIndicatorPaintNControlComponent.html#autotoc_md29',1,'Transform parameters']]],
+  ['parenthierarchychanged_6',['parentHierarchyChanged',['../classUmsciControlComponent.html#a901a4aadf3a8c9ef1408631a14a4cd72',1,'UmsciControlComponent']]],
+  ['parentsizechanged_7',['parentSizeChanged',['../classUmsciZeroconfDiscoverComboComponent.html#a316c94aff2f4fa6f539591073971dbc0',1,'UmsciZeroconfDiscoverComboComponent']]],
+  ['performconfigurationdump_8',['performConfigurationDump',['../classMainComponent.html#a16bffc5742b93dfe9f96c4f4fc9b6409',1,'MainComponent']]],
+  ['persistence_9',['Configuration persistence',['../index.html#autotoc_md75',1,'']]],
+  ['pipeline_10',['pipeline',['../classUmsciLoudspeakersPaintComponent.html#autotoc_md18',1,'Rendering pipeline'],['../classUmsciSoundobjectsPaintComponent.html#autotoc_md23',1,'Rendering pipeline']]],
+  ['platform_20support_11',['Platform support',['../index.html#autotoc_md67',1,'']]],
+  ['port_12',['PORT',['../classUmsciAppConfiguration.html#a5e67616c3aac0b239721e86c4837ad61aa782395a7dc1d11e840171a4a7c1ab39',1,'UmsciAppConfiguration']]],
+  ['position_20monitoring_20and_20editing_13',['General soundobject position monitoring and editing',['../index.html#autotoc_md52',1,'']]],
+  ['positioning_5fsourcedelaymode_14',['Positioning_SourceDelayMode',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764aac52bdc512d07bf2fe6410b7bf9bbfd6',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fsourceposition_15',['Positioning_SourcePosition',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764a880179ba71e8b9a3eaf0291cfa6cd7f4',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fsourceposition_5fx_16',['Positioning_SourcePosition_X',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764af62cd956b2444cf74cb18ba1cd3b942d',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fsourceposition_5fxy_17',['Positioning_SourcePosition_XY',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764a21067aa261ead94f20232963285288db',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fsourceposition_5fy_18',['Positioning_SourcePosition_Y',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764a3431d6d385033f620dba9cd9ac43069d',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fsourcespread_19',['Positioning_SourceSpread',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764a6a4b20bd03c730d17a076629dd991da4',1,'DeviceController::RemoteObject']]],
+  ['positioning_5fspeakerposition_20',['Positioning_SpeakerPosition',['../structDeviceController_1_1RemoteObject.html#a8e4deb35cacaac102404f25bddfc4764a07b82cbbf7c051d67d820acf32148e4a',1,'DeviceController::RemoteObject']]],
+  ['positions_20manual_20mode_20or_20work_20live_21',['4c — Commit the positions (Manual mode) or work live',['../index.html#autotoc_md48',1,'']]],
+  ['pri_22',['pri',['../structDeviceController_1_1RemObjAddr.html#a3d3b7af3e174bfbaf74449d3b7855702',1,'DeviceController::RemObjAddr']]],
+  ['processpinchgesture_23',['processPinchGesture',['../classUmsciPaintNControlComponentBase.html#a5697ea682bbc7af881f3a1f21f18a18b',1,'UmsciPaintNControlComponentBase']]],
+  ['purpose_24',['Purpose',['../classUmsciUpmixIndicatorPaintNControlComponent.html#autotoc_md27',1,'']]]
+];

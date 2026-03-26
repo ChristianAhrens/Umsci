@@ -1,0 +1,22 @@
+<map id="Source/UmsciExternalControlComponent.h" name="Source/UmsciExternalControlComponent.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="224,5,436,45"/>
+<area shape="rect" id="Node000002" href="$MainComponent_8cpp.html" title=" " alt="" coords="5,255,209,280"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="212,48,158,67,109,96,80,120,60,145,52,172,58,206,74,232,95,253,91,257,70,236,53,208,46,172,55,142,76,116,106,91,156,62,210,43"/>
+<area shape="rect" id="Node000003" href="$MainComponent_8h.html" title=" " alt="" coords="281,181,470,207"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="339,58,358,133,374,180,368,182,353,134,334,60"/>
+<area shape="rect" id="Node000005" href="$MidiController_8h.html" title=" " alt="" coords="119,101,293,126"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="293,56,224,103,221,98,289,51"/>
+<area shape="rect" id="Node000007" href="$OscController_8h.html" title=" " alt="" coords="368,101,537,126"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="370,51,438,98,435,103,367,56"/>
+<area shape="rect" id="Node000009" href="$UmsciExternalControlComponent_8cpp.html" title=" " alt="" coords="561,93,773,133"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="418,46,594,91,593,96,417,51"/>
+<area shape="poly" id="edge4_Node000003_Node000002" title=" " alt="" coords="319,213,151,257,150,252,318,208"/>
+<area shape="rect" id="Node000004" href="$Main_8cpp.html" title=" " alt="" coords="311,255,440,280"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="378,220,378,255,373,255,373,220"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="244,129,352,179,350,184,242,134"/>
+<area shape="rect" id="Node000006" href="$MidiController_8cpp.html" title=" " alt="" coords="68,181,256,207"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="195,139,171,182,166,180,190,137"/>
+<area shape="poly" id="edge9_Node000007_Node000003" title=" " alt="" coords="434,138,389,183,385,179,430,134"/>
+<area shape="rect" id="Node000008" href="$OscController_8cpp.html" title=" " alt="" coords="494,181,678,207"/>
+<area shape="poly" id="edge10_Node000007_Node000008" title=" " alt="" coords="485,131,568,179,565,183,483,135"/>
+</map>
