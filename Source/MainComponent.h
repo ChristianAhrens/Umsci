@@ -23,8 +23,8 @@
 #include "UmsciAppConfiguration.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
-
-#include <MidiCommandRangeAssignment.h>
+#include "MidiController.h"
+#include "OscController.h"
 
 
  /**
@@ -73,8 +73,6 @@ class AboutComponent;
  *       overlaid components interact visually.
  */
 class MainComponent :   public juce::Component,
-                        public juce::MidiInputCallback,
-                        public juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>,
                         public UmsciAppConfiguration::Dumper,
                         public UmsciAppConfiguration::Watcher
 {
@@ -171,27 +169,9 @@ private:
     void showExternalControlSettings();
 
     //==============================================================================
-    /** @brief `juce::MidiInputCallback` — receives incoming MIDI messages for parameter control.
-     *         Called on the MIDI thread; posts processing to the message thread. */
-    void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) override;
-
-    /** @brief Opens (or re-opens) the MIDI input device with the given identifier.
-     *         Closes any previously open device first. */
-    void openMidiInputDevice(const juce::String& deviceIdentifier);
-
-    /** @brief Maps a normalised MIDI value [0,1] to the upmix parameter domain and
-     *         applies it to `m_controlComponent`.  Must be called on the message thread. */
-    void applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param, float normalised);
-
-    //==============================================================================
-    /** @brief `juce::OSCReceiver::Listener` — called on the message thread for each incoming OSC message. */
-    void oscMessageReceived(const juce::OSCMessage& message) override;
-
-    /** @brief Opens (or re-opens) the OSC UDP listen port.  Pass 0 to disconnect. */
-    void openOscInputPort(int port);
-
-    /** @brief Maps a raw OSC float value to the upmix parameter domain and applies it. */
-    void applyOscValue(UmsciExternalControlComponent::UpmixMidiParam param, float rawValue);
+    /** @brief Applies a domain-mapped parameter value from either MIDI or OSC to
+     *         `m_controlComponent`.  Must be called on the message thread. */
+    void applyUpmixParamValue(UmsciExternalControlComponent::UpmixMidiParam param, float domainValue);
 
     //==============================================================================
     void setControlColour(const juce::Colour& meteringColour);
@@ -261,22 +241,8 @@ private:
     std::unique_ptr<UmsciAppConfiguration>          m_config;
 
     //==============================================================================
-    /** @brief Currently open MIDI input device used for upmix parameter control. */
-    std::unique_ptr<juce::MidiInput>                m_midiInput;
-    /** @brief Device identifier of the currently open MIDI input (empty = none). */
-    juce::String                                    m_midiInputDeviceIdentifier;
-    /** @brief Stored MIDI assignments for each of the six upmix parameters. */
-    std::array<JUCEAppBasics::MidiCommandRangeAssignment,
-               UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_upmixMidiAssignments;
-
-    //==============================================================================
-    /** @brief OSC receiver used for upmix parameter control. */
-    juce::OSCReceiver                               m_oscReceiver;
-    /** @brief Currently open OSC listen port (0 = not listening). */
-    int                                             m_oscInputPort = 0;
-    /** @brief OSC address strings for each of the six upmix parameters. */
-    std::array<juce::String,
-               UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_oscAddresses;
+    std::unique_ptr<MidiController>                 m_midiController;
+    std::unique_ptr<OscController>                  m_oscController;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
