@@ -218,6 +218,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
             m_draggingStretchHandle = true;
             m_draggingHeightRing    = false;
             m_dragStartStretch      = m_upmixAngleStretch;
+            m_dragStartAngle        = std::atan2(e.position.x - m_upmixCenter.x,
+                                                 -(e.position.y - m_upmixCenter.y)) - m_upmixRot;
             return;
         }
     }
@@ -297,11 +299,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
     {
         auto dx = e.position.x - m_upmixCenter.x;
         auto dy = e.position.y - m_upmixCenter.y;
-        // ring-frame angle: subtract rotation so we get the channel-space angle
-        auto ringAngle = std::atan2(dx, -dy) - m_upmixRot;
+        // Delta-drag: accumulate the angular delta from the drag-start angle so that
+        // the atan2 discontinuity at ±π never causes a snap.
+        auto currentAngle = std::atan2(dx, -dy) - m_upmixRot;
+        auto deltaAngle   = currentAngle - m_dragStartAngle;
+        // Unwrap to (−π, π] so one revolution cannot produce a large jump.
+        if (deltaAngle >  juce::MathConstants<float>::pi)  deltaAngle -= juce::MathConstants<float>::twoPi;
+        if (deltaAngle < -juce::MathConstants<float>::pi)  deltaAngle += juce::MathConstants<float>::twoPi;
         if (m_naturalFloorMaxAngleDeg > 0.0f)
-            m_upmixAngleStretch = juce::jlimit(0.05f, 2.0f,
-                ringAngle / juce::degreesToRadians(m_naturalFloorMaxAngleDeg));
+            m_upmixAngleStretch = juce::jlimit(0.05f,
+                180.0f / m_naturalFloorMaxAngleDeg,
+                m_dragStartStretch + deltaAngle / juce::degreesToRadians(m_naturalFloorMaxAngleDeg));
 
         PrerenderUpmixIndicatorInBounds();
 
@@ -850,7 +858,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, flo
     m_upmixRot          = rot;
     m_upmixTrans        = trans;
     m_upmixHeightTrans  = heightTrans;
-    m_upmixAngleStretch = angleStretch;
+    m_upmixAngleStretch = m_naturalFloorMaxAngleDeg > 0.0f
+                              ? juce::jlimit(0.05f, 180.0f / m_naturalFloorMaxAngleDeg, angleStretch)
+                              : angleStretch;
     PrerenderUpmixIndicatorInBounds();
     repaint();
 }
