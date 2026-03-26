@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.2.4" companyWebsite="https://christianahrens.github.io/Umsci"
+              jucerFormatVersion="1" version="0.2.5" companyWebsite="https://christianahrens.github.io/Umsci"
               bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
@@ -172,8 +172,7 @@
             file="Source/MidiController.h"/>
       <FILE id="oC2eZr" name="OscController.cpp" compile="1" resource="0"
             file="Source/OscController.cpp"/>
-      <FILE id="oC2fAs" name="OscController.h" compile="0" resource="0"
-            file="Source/OscController.h"/>
+      <FILE id="oC2fAs" name="OscController.h" compile="0" resource="0" file="Source/OscController.h"/>
       <FILE id="OmQ8H9" name="DeviceController.cpp" compile="1" resource="0"
             file="Source/DeviceController.cpp"/>
       <FILE id="j4rQTY" name="DeviceController.h" compile="0" resource="0"
