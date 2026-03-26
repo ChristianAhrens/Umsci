@@ -231,6 +231,15 @@ public:
      */
     void triggerUpmixTransformApplied();
 
+    /**
+     * @brief Starts the flash animation on the upmix indicator if the ideal ring
+     *        positions diverge from the current DS100 positions.
+     *
+     * Call this after a programmatic transform update when live mode is off, so the
+     * operator sees a visual cue that the device positions are out of sync.
+     */
+    void triggerUpmixFlashCheck();
+
     //==============================================================================
     /**
      * @brief When false, only sound objects that are part of the upmix group

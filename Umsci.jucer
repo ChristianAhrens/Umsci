@@ -51,6 +51,10 @@
                   file="submodules/JUCE-AppBasics/Resources/Images/loudspeaker_hor-24px.svg"/>
             <FILE id="Xenppw" name="loudspeaker_vert-24px.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/loudspeaker_vert-24px.svg"/>
+            <FILE id="vAd1xK" name="variable_add_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/variable_add_24dp.svg"/>
+            <FILE id="vIn2yL" name="variable_insert_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/variable_insert_24dp.svg"/>
           </GROUP>
         </GROUP>
         <GROUP id="{36706580-EB97-426D-6CA8-72022124062F}" name="Source">
@@ -162,6 +166,14 @@
             resource="0" file="Source/UmsciExternalControlComponent.cpp"/>
       <FILE id="qmNMPJ" name="UmsciExternalControlComponent.h" compile="0"
             resource="0" file="Source/UmsciExternalControlComponent.h"/>
+      <FILE id="mC1dXp" name="MidiController.cpp" compile="1" resource="0"
+            file="Source/MidiController.cpp"/>
+      <FILE id="mC1hYq" name="MidiController.h" compile="0" resource="0"
+            file="Source/MidiController.h"/>
+      <FILE id="oC2eZr" name="OscController.cpp" compile="1" resource="0"
+            file="Source/OscController.cpp"/>
+      <FILE id="oC2fAs" name="OscController.h" compile="0" resource="0"
+            file="Source/OscController.h"/>
       <FILE id="OmQ8H9" name="DeviceController.cpp" compile="1" resource="0"
             file="Source/DeviceController.cpp"/>
       <FILE id="j4rQTY" name="DeviceController.h" compile="0" resource="0"

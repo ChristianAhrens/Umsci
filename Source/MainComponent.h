@@ -23,8 +23,8 @@
 #include "UmsciAppConfiguration.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
-
-#include <MidiCommandRangeAssignment.h>
+#include "MidiController.h"
+#include "OscController.h"
 
 
  /**
@@ -73,7 +73,6 @@ class AboutComponent;
  *       overlaid components interact visually.
  */
 class MainComponent :   public juce::Component,
-                        public juce::MidiInputCallback,
                         public UmsciAppConfiguration::Dumper,
                         public UmsciAppConfiguration::Watcher
 {
@@ -170,17 +169,9 @@ private:
     void showExternalControlSettings();
 
     //==============================================================================
-    /** @brief `juce::MidiInputCallback` — receives incoming MIDI messages for parameter control.
-     *         Called on the MIDI thread; posts processing to the message thread. */
-    void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) override;
-
-    /** @brief Opens (or re-opens) the MIDI input device with the given identifier.
-     *         Closes any previously open device first. */
-    void openMidiInputDevice(const juce::String& deviceIdentifier);
-
-    /** @brief Maps a normalised MIDI value [0,1] to the upmix parameter domain and
-     *         applies it to `m_controlComponent`.  Must be called on the message thread. */
-    void applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param, float normalised);
+    /** @brief Applies a domain-mapped parameter value from either MIDI or OSC to
+     *         `m_controlComponent`.  Must be called on the message thread. */
+    void applyUpmixParamValue(UmsciExternalControlComponent::UpmixMidiParam param, float domainValue);
 
     //==============================================================================
     void setControlColour(const juce::Colour& meteringColour);
@@ -202,6 +193,45 @@ private:
     std::unique_ptr<juce::DrawableButton>           m_aboutButton;
     std::unique_ptr<AboutComponent>                 m_aboutComponent;
 
+    //==============================================================================
+    struct UpmixSnapshot
+    {
+        float rot { 0.0f }, scale { 1.0f }, heightScale { 0.6f },
+              angleStretch { 1.0f }, offsetX { 0.0f }, offsetY { 0.0f };
+
+        juce::String toString() const
+        {
+            return "rot=" + juce::String(rot)
+                + ";scale=" + juce::String(scale)
+                + ";heightScale=" + juce::String(heightScale)
+                + ";angleStretch=" + juce::String(angleStretch)
+                + ";offsetX=" + juce::String(offsetX)
+                + ";offsetY=" + juce::String(offsetY);
+        }
+
+        static UpmixSnapshot fromString(const juce::String& s)
+        {
+            UpmixSnapshot p;
+            for (auto& token : juce::StringArray::fromTokens(s, ";", ""))
+            {
+                auto kv = juce::StringArray::fromTokens(token.trim(), "=", "");
+                if (kv.size() != 2) continue;
+                auto key = kv[0].trim();
+                auto val = kv[1].trim().getFloatValue();
+                if      (key == "rot")         p.rot         = val;
+                else if (key == "scale")       p.scale       = val;
+                else if (key == "heightScale") p.heightScale = val;
+                else if (key == "angleStretch")p.angleStretch= val;
+                else if (key == "offsetX")     p.offsetX     = val;
+                else if (key == "offsetY")     p.offsetY     = val;
+            }
+            return p;
+        }
+    };
+    std::optional<UpmixSnapshot>                    m_upmixSnapshot;
+    std::unique_ptr<juce::DrawableButton>           m_upmixSnapshotStoreButton;
+    std::unique_ptr<juce::DrawableButton>           m_upmixSnapshotRecallButton;
+
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
     std::unique_ptr<UmsciExternalControlComponent>  m_externalControlComponent;
@@ -211,13 +241,8 @@ private:
     std::unique_ptr<UmsciAppConfiguration>          m_config;
 
     //==============================================================================
-    /** @brief Currently open MIDI input device used for upmix parameter control. */
-    std::unique_ptr<juce::MidiInput>                m_midiInput;
-    /** @brief Device identifier of the currently open MIDI input (empty = none). */
-    juce::String                                    m_midiInputDeviceIdentifier;
-    /** @brief Stored MIDI assignments for each of the six upmix parameters. */
-    std::array<JUCEAppBasics::MidiCommandRangeAssignment,
-               UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_upmixMidiAssignments;
+    std::unique_ptr<MidiController>                 m_midiController;
+    std::unique_ptr<OscController>                  m_oscController;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

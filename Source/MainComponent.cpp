@@ -185,12 +185,60 @@ MainComponent::MainComponent()
         m_connectionToggleButton->setVisible(false);
     }
 
+    m_upmixSnapshotStoreButton = std::make_unique<juce::DrawableButton>("SnapshotStore", juce::DrawableButton::ButtonStyle::ImageFitted);
+    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
+    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_upmixSnapshotStoreButton->setTooltip("Store upmix indicator state");
+    m_upmixSnapshotStoreButton->onClick = [this] {
+        if (m_controlComponent)
+        {
+            m_upmixSnapshot = UpmixSnapshot{
+                m_controlComponent->getUpmixRot(),
+                m_controlComponent->getUpmixTrans(),
+                m_controlComponent->getUpmixHeightTrans(),
+                m_controlComponent->getUpmixAngleStretch(),
+                m_controlComponent->getUpmixOffsetX(),
+                m_controlComponent->getUpmixOffsetY()
+            };
+            m_upmixSnapshotRecallButton->setEnabled(true);
+            if (m_config)
+                m_config->triggerConfigurationDump();
+        }
+    };
+    m_upmixSnapshotStoreButton->setAlwaysOnTop(true);
+    m_upmixSnapshotStoreButton->setVisible(false);
+    addAndMakeVisible(m_upmixSnapshotStoreButton.get());
+
+    m_upmixSnapshotRecallButton = std::make_unique<juce::DrawableButton>("SnapshotRecall", juce::DrawableButton::ButtonStyle::ImageFitted);
+    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
+    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_upmixSnapshotRecallButton->setTooltip("Recall upmix indicator state");
+    m_upmixSnapshotRecallButton->onClick = [this] {
+        if (m_controlComponent && m_upmixSnapshot.has_value())
+        {
+            const auto& s = *m_upmixSnapshot;
+            m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
+            m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
+            if (m_controlComponent->getUpmixLiveMode())
+                m_controlComponent->triggerUpmixTransformApplied();  // sends positions to DS100 immediately
+            else
+                m_controlComponent->triggerUpmixFlashCheck();        // flashes indicator; user sends manually
+            if (m_config)
+                m_config->triggerConfigurationDump();
+        }
+    };
+    m_upmixSnapshotRecallButton->setAlwaysOnTop(true);
+    m_upmixSnapshotRecallButton->setEnabled(false);
+    m_upmixSnapshotRecallButton->setVisible(false);
+    addAndMakeVisible(m_upmixSnapshotRecallButton.get());
+
     m_controlComponent->onUpmixTransformChanged = [this]() {
         if (m_config)
             m_config->triggerConfigurationDump();
     };
 
     DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
+        auto noconfigui = juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui");
         switch (s)
         {
             case DeviceController::State::Disconnected:
@@ -199,6 +247,8 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(true);
+                m_upmixSnapshotStoreButton->setVisible(false);
+                m_upmixSnapshotRecallButton->setVisible(false);
                 break;
             case DeviceController::State::Connecting:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -206,6 +256,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
+                m_upmixSnapshotStoreButton->setVisible(false);
+                m_upmixSnapshotRecallButton->setVisible(false);
                 break;
             case DeviceController::State::Subscribing:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -213,6 +265,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
+                m_upmixSnapshotStoreButton->setVisible(false);
+                m_upmixSnapshotRecallButton->setVisible(false);
                 break;
             case DeviceController::State::GetValues:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -220,12 +274,19 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Reading);
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(false);
+                m_upmixSnapshotStoreButton->setVisible(false);
+                m_upmixSnapshotRecallButton->setVisible(false);
                 break;
             case DeviceController::State::Connected:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
                 m_connectingComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(true);
+                if (!noconfigui)
+                {
+                    m_upmixSnapshotStoreButton->setVisible(true);
+                    m_upmixSnapshotRecallButton->setVisible(true);
+                }
                 break;
             default:
                 break;
@@ -258,6 +319,17 @@ MainComponent::MainComponent()
     }
 #endif
 
+
+    // MIDI and OSC controllers
+    m_midiController = std::make_unique<MidiController>();
+    m_midiController->onParamValueChanged = [this](UmsciExternalControlComponent::UpmixMidiParam param, float domainValue) {
+        applyUpmixParamValue(param, domainValue);
+    };
+
+    m_oscController = std::make_unique<OscController>();
+    m_oscController->onParamValueChanged = [this](UmsciExternalControlComponent::UpmixMidiParam param, float domainValue) {
+        applyUpmixParamValue(param, domainValue);
+    };
 
     // add this main component to watchers
     m_config->addWatcher(this); // without initial update - that we have to do externally after lambdas were assigned
@@ -301,6 +373,9 @@ void MainComponent::resized()
         m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
         m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
         m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
+
+        m_upmixSnapshotStoreButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
+        m_upmixSnapshotRecallButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
     }
 }
 
@@ -327,6 +402,14 @@ void MainComponent::lookAndFeelChanged()
         m_connectionToggleButton->setImages(connectedDrawable.get());
     else
         m_connectionToggleButton->setImages(disconnectedDrawable.get());
+
+    auto snapshotStoreDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_add_24dp_svg).get());
+    snapshotStoreDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
+    m_upmixSnapshotStoreButton->setImages(snapshotStoreDrawable.get());
+
+    auto snapshotRecallDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_insert_24dp_svg).get());
+    snapshotRecallDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
+    m_upmixSnapshotRecallButton->setImages(snapshotRecallDrawable.get());
 
     applyControlColour();
 }
@@ -791,32 +874,28 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
-        auto upmixRotXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT));
-        upmixRotXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixRot() : 0.0f));
-        upmixConfigXmlElement->addChildElement(upmixRotXmlElement.release());
-
-        auto upmixScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE));
-        upmixScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixTrans() : 1.0f));
-        upmixConfigXmlElement->addChildElement(upmixScaleXmlElement.release());
-
-        auto upmixHeightScaleXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE));
-        upmixHeightScaleXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixHeightTrans() : 0.6f));
-        upmixConfigXmlElement->addChildElement(upmixHeightScaleXmlElement.release());
-
-        auto upmixAngleStretchXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH));
-        upmixAngleStretchXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f));
-        upmixConfigXmlElement->addChildElement(upmixAngleStretchXmlElement.release());
-
-        auto upmixOffsetXXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX));
-        upmixOffsetXXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetX() : 0.0f));
-        upmixConfigXmlElement->addChildElement(upmixOffsetXXmlElement.release());
-
-        auto upmixOffsetYXmlElement = std::make_unique<juce::XmlElement>(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY));
-        upmixOffsetYXmlElement->addTextElement(juce::String(m_controlComponent ? m_controlComponent->getUpmixOffsetY() : 0.0f));
-        upmixConfigXmlElement->addChildElement(upmixOffsetYXmlElement.release());
+        upmixConfigXmlElement->addTextElement(UpmixSnapshot{
+            m_controlComponent ? m_controlComponent->getUpmixRot()          : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixTrans()        : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixHeightTrans()  : 0.6f,
+            m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetX()      : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetY()      : 0.0f
+        }.toString());
 
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+
+        // upmix snapshot (optional — only written when a snapshot has been stored)
+        if (m_upmixSnapshot.has_value())
+        {
+            const auto& s = *m_upmixSnapshot;
+            auto snapshotXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
+            snapshotXmlElement->addTextElement(s.toString());
+            m_config->setConfigState(std::move(snapshotXmlElement),
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
+        }
 
         // external control (MIDI) config
         static const UmsciAppConfiguration::TagID midiParamTagIds[] = {
@@ -833,15 +912,39 @@ void MainComponent::performConfigurationDump()
 
         auto midiDeviceXmlElement = std::make_unique<juce::XmlElement>(
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::MIDIINPUTDEVICE));
-        midiDeviceXmlElement->addTextElement(m_midiInputDeviceIdentifier);
+        midiDeviceXmlElement->addTextElement(m_midiController->getDeviceIdentifier());
         extCtrlXmlElement->addChildElement(midiDeviceXmlElement.release());
 
         for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
         {
             auto assiXmlElement = std::make_unique<juce::XmlElement>(
                 UmsciAppConfiguration::getTagName(midiParamTagIds[i]));
-            assiXmlElement->addTextElement(m_upmixMidiAssignments[i].serializeToHexString());
+            assiXmlElement->addTextElement(m_midiController->getAssignment(
+                static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)).serializeToHexString());
             extCtrlXmlElement->addChildElement(assiXmlElement.release());
+        }
+
+        auto oscPortXmlElement = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::OSCINPUTPORT));
+        oscPortXmlElement->addTextElement(juce::String(m_oscController->getPort()));
+        extCtrlXmlElement->addChildElement(oscPortXmlElement.release());
+
+        static const UmsciAppConfiguration::TagID oscParamTagIds[] = {
+            UmsciAppConfiguration::TagID::OSC_UPMIXROT,
+            UmsciAppConfiguration::TagID::OSC_UPMIXSCALE,
+            UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALE,
+            UmsciAppConfiguration::TagID::OSC_UPMIXANGLESTRETCH,
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETX,
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY
+        };
+
+        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        {
+            auto addrXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(oscParamTagIds[i]));
+            addrXmlElement->addTextElement(m_oscController->getAddress(
+                static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
+            extCtrlXmlElement->addChildElement(addrXmlElement.release());
         }
 
         m_config->setConfigState(std::move(extCtrlXmlElement),
@@ -934,26 +1037,20 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
-        auto upmixRot = 0.0f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXROT)))
-            upmixRot = e->getAllSubText().getFloatValue();
-        auto upmixScale = 1.0f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSCALE)))
-            upmixScale = e->getAllSubText().getFloatValue();
-        auto upmixHeightScale = 0.6f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXHEIGHTSCALE)))
-            upmixHeightScale = e->getAllSubText().getFloatValue();
-        auto upmixAngleStretch = 1.0f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXANGLESTRETCH)))
-            upmixAngleStretch = e->getAllSubText().getFloatValue();
-        m_controlComponent->setUpmixTransform(upmixRot, upmixScale, upmixHeightScale, upmixAngleStretch);
-        auto upmixOffsetX = 0.0f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETX)))
-            upmixOffsetX = e->getAllSubText().getFloatValue();
-        auto upmixOffsetY = 0.0f;
-        if (auto* e = upmixConfigState->getChildByName(UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXOFFSETY)))
-            upmixOffsetY = e->getAllSubText().getFloatValue();
-        m_controlComponent->setUpmixOffset(upmixOffsetX, upmixOffsetY);
+        auto upmixParams = UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
+        m_controlComponent->setUpmixTransform(upmixParams.rot, upmixParams.scale,
+                                              upmixParams.heightScale, upmixParams.angleStretch);
+        m_controlComponent->setUpmixOffset(upmixParams.offsetX, upmixParams.offsetY);
+    }
+
+    // upmix snapshot (optional — absent in config means no snapshot stored)
+    auto upmixSnapshotState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
+    if (upmixSnapshotState)
+    {
+        m_upmixSnapshot = UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText());
+        if (m_upmixSnapshotRecallButton)
+            m_upmixSnapshotRecallButton->setEnabled(true);
     }
 
     // external control (MIDI) config
@@ -963,7 +1060,7 @@ void MainComponent::onConfigUpdated()
     {
         if (auto* midiDevXml = extCtrlState->getChildByName(
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::MIDIINPUTDEVICE)))
-            openMidiInputDevice(midiDevXml->getAllSubText());
+            m_midiController->openDevice(midiDevXml->getAllSubText());
 
         static const UmsciAppConfiguration::TagID midiParamTagIds[] = {
             UmsciAppConfiguration::TagID::MIDI_UPMIXROT,
@@ -981,7 +1078,37 @@ void MainComponent::onConfigUpdated()
             {
                 auto hexStr = assiXml->getAllSubText();
                 if (hexStr.isNotEmpty())
-                    m_upmixMidiAssignments[i].deserializeFromHexString(hexStr);
+                {
+                    JUCEAppBasics::MidiCommandRangeAssignment assi;
+                    assi.deserializeFromHexString(hexStr);
+                    m_midiController->setAssignment(
+                        static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i), assi);
+                }
+            }
+        }
+
+        if (auto* portXml = extCtrlState->getChildByName(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::OSCINPUTPORT)))
+            m_oscController->openPort(portXml->getAllSubText().getIntValue());
+
+        static const UmsciAppConfiguration::TagID oscParamTagIds[] = {
+            UmsciAppConfiguration::TagID::OSC_UPMIXROT,
+            UmsciAppConfiguration::TagID::OSC_UPMIXSCALE,
+            UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALE,
+            UmsciAppConfiguration::TagID::OSC_UPMIXANGLESTRETCH,
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETX,
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY
+        };
+
+        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        {
+            if (auto* addrXml = extCtrlState->getChildByName(
+                    UmsciAppConfiguration::getTagName(oscParamTagIds[i])))
+            {
+                auto addr = addrXml->getAllSubText();
+                if (addr.isNotEmpty())
+                    m_oscController->setAddress(
+                        static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i), addr);
             }
         }
     }
@@ -1005,15 +1132,20 @@ void MainComponent::showExternalControlSettings()
 {
     m_messageBox = std::make_unique<juce::AlertWindow>(
         "External control...",
-        "Configure MIDI assignments for upmix transform parameters.",
+        "Configure MIDI and OSC assignments for upmix transform parameters.",
         juce::MessageBoxIconType::NoIcon);
 
     m_externalControlComponent = std::make_unique<UmsciExternalControlComponent>();
-    m_externalControlComponent->setMidiInputDeviceIdentifier(m_midiInputDeviceIdentifier);
+    m_externalControlComponent->setMidiInputDeviceIdentifier(m_midiController->getDeviceIdentifier());
     for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
         m_externalControlComponent->setMidiAssi(
             static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
-            m_upmixMidiAssignments[i]);
+            m_midiController->getAssignment(static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
+    m_externalControlComponent->setOscInputPort(m_oscController->getPort());
+    for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+        m_externalControlComponent->setOscAddr(
+            static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
+            m_oscController->getAddress(static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
     m_messageBox->addCustomComponent(m_externalControlComponent.get());
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
@@ -1021,10 +1153,18 @@ void MainComponent::showExternalControlSettings()
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
-            openMidiInputDevice(m_externalControlComponent->getMidiInputDeviceIdentifier());
+            m_midiController->openDevice(m_externalControlComponent->getMidiInputDeviceIdentifier());
             for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
-                m_upmixMidiAssignments[i] = m_externalControlComponent->getMidiAssi(
-                    static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i));
+                m_midiController->setAssignment(
+                    static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
+                    m_externalControlComponent->getMidiAssi(
+                        static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
+            m_oscController->openPort(m_externalControlComponent->getOscInputPort());
+            for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
+                m_oscController->setAddress(
+                    static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
+                    m_externalControlComponent->getOscAddr(
+                        static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -1033,100 +1173,43 @@ void MainComponent::showExternalControlSettings()
     }));
 }
 
-void MainComponent::openMidiInputDevice(const juce::String& deviceIdentifier)
-{
-    if (m_midiInputDeviceIdentifier == deviceIdentifier && m_midiInput != nullptr)
-        return;
-
-    if (m_midiInput)
-    {
-        m_midiInput->stop();
-        m_midiInput.reset();
-    }
-
-    m_midiInputDeviceIdentifier = deviceIdentifier;
-
-    if (deviceIdentifier.isNotEmpty())
-    {
-        m_midiInput = juce::MidiInput::openDevice(deviceIdentifier, this);
-        if (m_midiInput)
-            m_midiInput->start();
-    }
-}
-
-void MainComponent::handleIncomingMidiMessage(juce::MidiInput*, const juce::MidiMessage& message)
-{
-    // Called on the MIDI thread — copy the message and dispatch to the message thread.
-    auto msgCopy = message;
-    juce::MessageManager::callAsync([this, msgCopy]() {
-        for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
-        {
-            auto& assi = m_upmixMidiAssignments[i];
-            if (assi.getCommandType() == JUCEAppBasics::MidiCommandRangeAssignment::CT_Invalid)
-                continue;
-            // isMatchingCommand checks both command type AND specific CC/note number;
-            // isMatchingCommandRange covers assignments learned across a range of commands.
-            if (!assi.isMatchingCommand(msgCopy) && !assi.isMatchingCommandRange(msgCopy))
-                continue;
-            if (!assi.isMatchingValueRange(msgCopy) && !assi.isMatchingCommandRange(msgCopy))
-                continue;
-
-            // Normalise the MIDI value to [0, 1] using the learned value range.
-            float normalised = 0.5f;
-            if (assi.isValueRangeAssignment())
-            {
-                auto range = assi.getValueRange();
-                auto val = JUCEAppBasics::MidiCommandRangeAssignment::getValue(msgCopy);
-                if (range.getLength() > 0)
-                    normalised = juce::jlimit(0.0f, 1.0f,
-                                              float(val - range.getStart()) / float(range.getLength()));
-            }
-
-            applyUpmixMidiValue(static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i), normalised);
-        }
-    });
-}
-
-void MainComponent::applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param,
-                                        float normalised)
+void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMidiParam param,
+                                         float domainValue)
 {
     if (!m_controlComponent)
         return;
 
-    auto [minVal, maxVal] = UmsciExternalControlComponent::s_paramRanges[param];
-    auto value = minVal + normalised * (maxVal - minVal);
-
     switch (param)
     {
     case UmsciExternalControlComponent::UpmixMidiParam_Rotation:
-        m_controlComponent->setUpmixTransform(value,
+        m_controlComponent->setUpmixTransform(domainValue,
                                               m_controlComponent->getUpmixTrans(),
                                               m_controlComponent->getUpmixHeightTrans(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_Translation:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
-                                              value,
+                                              domainValue,
                                               m_controlComponent->getUpmixHeightTrans(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslation:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
                                               m_controlComponent->getUpmixTrans(),
-                                              value,
+                                              domainValue,
                                               m_controlComponent->getUpmixAngleStretch());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_AngleStretch:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
                                               m_controlComponent->getUpmixTrans(),
                                               m_controlComponent->getUpmixHeightTrans(),
-                                              value);
+                                              domainValue);
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_OffsetX:
-        m_controlComponent->setUpmixOffset(value, m_controlComponent->getUpmixOffsetY());
+        m_controlComponent->setUpmixOffset(domainValue, m_controlComponent->getUpmixOffsetY());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_OffsetY:
-        m_controlComponent->setUpmixOffset(m_controlComponent->getUpmixOffsetX(), value);
+        m_controlComponent->setUpmixOffset(m_controlComponent->getUpmixOffsetX(), domainValue);
         break;
     default:
         break;
