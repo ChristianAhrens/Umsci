@@ -74,7 +74,14 @@ public:
         MIDI_UPMIXANGLESTRETCH, ///< MIDI assignment for upmix angle stretch.
         MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
         MIDI_UPMIXOFFSETY,      ///< MIDI assignment for upmix Y offset.
-        UPMIXSNAPSHOTCONFIG     ///< Upmix snapshot container (optional; absent = no snapshot stored).
+        UPMIXSNAPSHOTCONFIG,    ///< Upmix snapshot container (optional; absent = no snapshot stored).
+        OSCINPUTPORT,           ///< OSC UDP listen port.
+        OSC_UPMIXROT,           ///< OSC address for upmix rotation.
+        OSC_UPMIXSCALE,         ///< OSC address for upmix translation (radial scale).
+        OSC_UPMIXHEIGHTSCALE,   ///< OSC address for upmix height translation.
+        OSC_UPMIXANGLESTRETCH,  ///< OSC address for upmix angle stretch.
+        OSC_UPMIXOFFSETX,       ///< OSC address for upmix X offset.
+        OSC_UPMIXOFFSETY        ///< OSC address for upmix Y offset.
     };
     static juce::String getTagName(TagID ID)
     {
@@ -114,6 +121,20 @@ public:
             return "MIDI_UPMIXOFFSETY";
         case UPMIXSNAPSHOTCONFIG:
             return "UPMIXSNAPSHOTCONFIG";
+        case OSCINPUTPORT:
+            return "OSCINPUTPORT";
+        case OSC_UPMIXROT:
+            return "OSC_UPMIXROT";
+        case OSC_UPMIXSCALE:
+            return "OSC_UPMIXSCALE";
+        case OSC_UPMIXHEIGHTSCALE:
+            return "OSC_UPMIXHEIGHTSCALE";
+        case OSC_UPMIXANGLESTRETCH:
+            return "OSC_UPMIXANGLESTRETCH";
+        case OSC_UPMIXOFFSETX:
+            return "OSC_UPMIXOFFSETX";
+        case OSC_UPMIXOFFSETY:
+            return "OSC_UPMIXOFFSETY";
         default:
             return "INVALID";
         }

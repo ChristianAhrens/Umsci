@@ -74,6 +74,7 @@ class AboutComponent;
  */
 class MainComponent :   public juce::Component,
                         public juce::MidiInputCallback,
+                        public juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>,
                         public UmsciAppConfiguration::Dumper,
                         public UmsciAppConfiguration::Watcher
 {
@@ -183,6 +184,16 @@ private:
     void applyUpmixMidiValue(UmsciExternalControlComponent::UpmixMidiParam param, float normalised);
 
     //==============================================================================
+    /** @brief `juce::OSCReceiver::Listener` — called on the message thread for each incoming OSC message. */
+    void oscMessageReceived(const juce::OSCMessage& message) override;
+
+    /** @brief Opens (or re-opens) the OSC UDP listen port.  Pass 0 to disconnect. */
+    void openOscInputPort(int port);
+
+    /** @brief Maps a raw OSC float value to the upmix parameter domain and applies it. */
+    void applyOscValue(UmsciExternalControlComponent::UpmixMidiParam param, float rawValue);
+
+    //==============================================================================
     void setControlColour(const juce::Colour& meteringColour);
     void applyControlColour();
 
@@ -257,6 +268,15 @@ private:
     /** @brief Stored MIDI assignments for each of the six upmix parameters. */
     std::array<JUCEAppBasics::MidiCommandRangeAssignment,
                UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_upmixMidiAssignments;
+
+    //==============================================================================
+    /** @brief OSC receiver used for upmix parameter control. */
+    juce::OSCReceiver                               m_oscReceiver;
+    /** @brief Currently open OSC listen port (0 = not listening). */
+    int                                             m_oscInputPort = 0;
+    /** @brief OSC address strings for each of the six upmix parameters. */
+    std::array<juce::String,
+               UmsciExternalControlComponent::UpmixMidiParam_COUNT> m_oscAddresses;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
