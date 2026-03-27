@@ -848,6 +848,12 @@ private:
      */
 	bool QueryObjectValue(const RemoteObject::RemObjIdent roi, const RemObjAddr& addr);
 
+    /**
+     * @brief Re-sends GetValue commands for all ONos whose handles are still pending.
+     * Called from timerCallback() when the device has not responded to some queries.
+     */
+    void retryPendingGetValues();
+
 	//==============================================================================
     /**
      * @name Pending-handle bookkeeping

@@ -125,6 +125,11 @@ void DeviceController::setState(const State& s, juce::NotificationType notificat
         DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
         m_currentState = s;
 
+        if (s == State::GetValues)
+            startTimer(m_ocp1Timeout * 20); // (re)start timeout; fires retryPendingGetValues() if device drops a response
+        else if (s == State::Connected)
+            stopTimer();
+
         if (onStateChanged && juce::NotificationType::sendNotification == notificationType)
             onStateChanged(s);
     }
@@ -192,10 +197,38 @@ void DeviceController::timerCallback()
     {
         m_ocp1Connection->connectToSocket(m_ocp1IPAddress.toString(), m_ocp1Port, m_ocp1Timeout);
     }
+    else if (State::GetValues == getState())
+    {
+        retryPendingGetValues();
+    }
     else
     {
         jassertfalse;
         disconnect();
+    }
+}
+
+void DeviceController::retryPendingGetValues()
+{
+    std::vector<std::uint32_t> staleONos;
+    {
+        std::lock_guard<std::mutex> l(m_pendingHandlesMutex);
+        staleONos.reserve(m_pendingGetValueHandlesWithONo.size());
+        for (auto const& [handle, ono] : m_pendingGetValueHandlesWithONo)
+            staleONos.push_back(ono);
+        m_pendingGetValueHandlesWithONo.clear();
+    }
+
+    DBG(juce::String(__FUNCTION__) << " re-querying " << staleONos.size() << " unanswered getvalue ONos");
+
+    for (auto ono : staleONos)
+    {
+        auto it = m_ONoToROIMap.find(ono);
+        if (it != m_ONoToROIMap.end())
+        {
+            auto const& [roi, addr] = it->second;
+            QueryObjectValue(roi, addr);
+        }
     }
 }
 
