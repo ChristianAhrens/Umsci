@@ -51,7 +51,13 @@ public:
     /** @brief Returns the currently held project data (empty until first successful load). */
     const dbpr::ProjectData& getProjectData() const;
 
-    /** @brief Returns true after at least one successful loadProjectFromFile() call. */
+    /**
+     * @brief Directly installs pre-parsed project data (e.g. restored from config).
+     *        Does not fire onProjectLoaded — the caller is responsible for updating the UI.
+     */
+    void setProjectData(const dbpr::ProjectData& data);
+
+    /** @brief Returns true after at least one successful load or setProjectData() call. */
     bool hasProjectLoaded() const;
 
     //==============================================================================

@@ -91,6 +91,12 @@ const dbpr::ProjectData& DbprController::getProjectData() const
     return m_projectData;
 }
 
+void DbprController::setProjectData(const dbpr::ProjectData& data)
+{
+    m_projectData = data;
+    m_hasProject  = true;
+}
+
 bool DbprController::hasProjectLoaded() const
 {
     return m_hasProject;

@@ -349,6 +349,9 @@ MainComponent::MainComponent()
             setDbprPanelState(UmsciDbprProjectComponent::PanelState::Visible);
         }
 
+        if (m_config)
+            m_config->triggerConfigurationDump();
+
         // Warn if the En-Scene inputs don't align with the current upmix configuration
         if (m_controlComponent)
         {
@@ -980,6 +983,16 @@ void MainComponent::performConfigurationDump()
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
         }
 
+        // dbpr project config (optional — only written when a project has been loaded)
+        if (m_dbprController && m_dbprController->hasProjectLoaded())
+        {
+            auto dbprXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
+            dbprXmlElement->addTextElement(juce::String(m_dbprController->getProjectData().toString()));
+            m_config->setConfigState(std::move(dbprXmlElement),
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
+        }
+
         // external control (MIDI) config
         static const UmsciAppConfiguration::TagID midiParamTagIds[] = {
             UmsciAppConfiguration::TagID::MIDI_UPMIXROT,
@@ -1134,6 +1147,20 @@ void MainComponent::onConfigUpdated()
         m_upmixSnapshot = UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText());
         if (m_upmixSnapshotRecallButton)
             m_upmixSnapshotRecallButton->setEnabled(true);
+    }
+
+    // dbpr project config (optional — absent in config means no project was previously loaded)
+    auto dbprProjectState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
+    if (dbprProjectState && m_dbprController)
+    {
+        auto projectData = dbpr::ProjectData::fromString(dbprProjectState->getAllSubText().toStdString());
+        if (!projectData.isEmpty())
+        {
+            m_dbprController->setProjectData(projectData);
+            if (m_dbprProjectComponent)
+                m_dbprProjectComponent->setProjectData(projectData);
+        }
     }
 
     // external control (MIDI) config
