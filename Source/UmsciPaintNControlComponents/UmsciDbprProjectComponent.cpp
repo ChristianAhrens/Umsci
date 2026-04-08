@@ -52,8 +52,9 @@ void UmsciDbprProjectComponent::paint(juce::Graphics& g)
     g.setColour(findColour(juce::ResizableWindow::backgroundColourId).withAlpha(0.93f));
     g.fillRoundedRectangle(bounds.toFloat().reduced(1.0f), 5.0f);
 
-    // ── Border in highlight colour ─────────────────────────────────────────────
-    g.setColour(m_highlightColour);
+    // ── Border in highlight colour (dims during flash-off phase) ──────────────
+    const auto borderOpacity = (isTimerRunning() && !m_flashState) ? 0.25f : 1.0f;
+    g.setColour(m_highlightColour.withAlpha(borderOpacity));
     g.drawRoundedRectangle(bounds.toFloat().reduced(1.0f), 5.0f, 1.5f);
 
     // ── Vertical separator between content and grab strip ─────────────────────
@@ -96,8 +97,12 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
         // Summary rows
         g.setFont(juce::Font(juce::FontOptions(16.5f, juce::Font::plain)));
 
-        const auto cmCount  = static_cast<int>(m_projectData.coordinateMappingData.size());
-        const auto spkCount = static_cast<int>(m_projectData.speakerPositionData.size());
+        auto cmCount  = 0;
+        for (auto const& kv : m_projectData.coordinateMappingData)
+            if (!kv.second.isNull()) ++cmCount;
+        auto spkCount = 0;
+        for (auto const& kv : m_projectData.speakerPositionData)
+            if (!kv.second.isNull()) ++spkCount;
         auto soCount = 0;
         for (auto const& kv : m_projectData.matrixInputData)
             if (kv.second.isEnScene())
@@ -205,6 +210,24 @@ void UmsciDbprProjectComponent::setHighlightColour(const juce::Colour& colour)
 {
     m_highlightColour = colour;
     updateButtonImages();
+    repaint();
+}
+
+void UmsciDbprProjectComponent::setMismatchFlashing(bool mismatch)
+{
+    if (mismatch && !isTimerRunning())
+        startTimer(500);
+    else if (!mismatch && isTimerRunning())
+    {
+        stopTimer();
+        m_flashState = false;
+        repaint();
+    }
+}
+
+void UmsciDbprProjectComponent::timerCallback()
+{
+    m_flashState = !m_flashState;
     repaint();
 }
 

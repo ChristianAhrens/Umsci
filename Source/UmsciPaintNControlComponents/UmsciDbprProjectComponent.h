@@ -56,7 +56,7 @@
  * on-screen (at the window's left edge).  Clicking anywhere in the grab strip
  * fires `onStateChangeRequested`.
  */
-class UmsciDbprProjectComponent : public juce::Component
+class UmsciDbprProjectComponent : public juce::Component, private juce::Timer
 {
 public:
     /** Panel visibility state. Managed externally by the parent component. */
@@ -91,6 +91,16 @@ public:
      *         indicator. Triggers a repaint. */
     void setHighlightColour(const juce::Colour& colour);
 
+    /**
+     * @brief Starts or stops the cyclic border-flash animation.
+     *
+     * When @p mismatch is true, the panel's highlight-coloured border flashes
+     * at 500 ms intervals to indicate that the loaded dbpr data differs from
+     * the values reported by the connected device.  Passing false stops the
+     * timer and restores the solid border.
+     */
+    void setMismatchFlashing(bool mismatch);
+
     //==============================================================================
     /** @brief Records the current state without animating the position.
      *         The parent calls this *after* starting the animation. */
@@ -122,10 +132,12 @@ private:
     void paintGrabStrip(juce::Graphics& g, juce::Rectangle<int> stripBounds);
     void paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds);
     void updateButtonImages();
+    void timerCallback() override;
 
     PanelState          m_state = PanelState::Tucked;
     dbpr::ProjectData   m_projectData;
-    bool                m_hasData = false;
+    bool                m_hasData    = false;
+    bool                m_flashState = false;
     juce::Colour        m_highlightColour { juce::Colours::forestgreen };
 
     std::unique_ptr<juce::DrawableButton> m_syncButton;

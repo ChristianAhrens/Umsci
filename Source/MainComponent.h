@@ -177,6 +177,21 @@ private:
     void setDbprPanelState(UmsciDbprProjectComponent::PanelState state);
 
     //==============================================================================
+    /**
+     * @brief Compares the loaded dbpr project data against the live device data
+     *        and updates the dbpr panel's mismatch-flash state accordingly.
+     *
+     * Compares four dimensions:
+     *  - MatrixInput/Soundobject names (by ID).
+     *  - Loudspeaker count and positions.
+     *  - Function-group count and mode values.
+     *
+     * Calls `m_dbprProjectComponent->setMismatchFlashing(true/false)`.
+     * No-op if either controller or component is null or no project is loaded.
+     */
+    void checkDbprDeviceSync();
+
+    //==============================================================================
     /** @brief Applies a domain-mapped parameter value from either MIDI or OSC to
      *         `m_controlComponent`.  Must be called on the message thread. */
     void applyUpmixParamValue(UmsciExternalControlComponent::UpmixMidiParam param, float domainValue);

@@ -242,6 +242,14 @@ MainComponent::MainComponent()
             m_config->triggerConfigurationDump();
     };
 
+    m_controlComponent->onDatabaseComplete = [this]() {
+        checkDbprDeviceSync();
+    };
+
+    m_controlComponent->onDeviceDataUpdated = [this]() {
+        checkDbprDeviceSync();
+    };
+
     DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
         auto noconfigui = juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui");
         switch (s)
@@ -254,6 +262,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(true);
                 m_upmixSnapshotStoreButton->setVisible(false);
                 m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_dbprProjectComponent)
+                    m_dbprProjectComponent->setMismatchFlashing(false);
                 break;
             case DeviceController::State::Connecting:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -349,6 +359,8 @@ MainComponent::MainComponent()
             setDbprPanelState(UmsciDbprProjectComponent::PanelState::Visible);
         }
 
+        checkDbprDeviceSync();
+
         if (m_config)
             m_config->triggerConfigurationDump();
 
@@ -401,6 +413,7 @@ MainComponent::MainComponent()
             m_dbprController->clearProjectData();
         if (m_dbprProjectComponent)
             m_dbprProjectComponent->clearProjectData();
+        checkDbprDeviceSync();
         if (m_config)
             m_config->triggerConfigurationDump();
     };
@@ -1359,6 +1372,131 @@ void MainComponent::showDbprProjectLoad()
 
             m_fileChooser.reset();
         });
+}
+
+void MainComponent::checkDbprDeviceSync()
+{
+    if (!m_dbprController || !m_dbprProjectComponent || !m_controlComponent)
+        return;
+    if (!m_dbprController->hasProjectLoaded())
+    {
+        m_dbprProjectComponent->setMismatchFlashing(false);
+        return;
+    }
+
+    const auto& projectData      = m_dbprController->getProjectData();
+    const auto& deviceNames      = m_controlComponent->getSourceNames();
+    const auto& devicePositions  = m_controlComponent->getSpeakerPositions();
+    const auto& deviceFgData     = m_controlComponent->getFunctionGroupData();
+
+    bool mismatch = false;
+
+    // ── MatrixInput / Soundobject names ──────────────────────────────────────
+    // Empty names on both sides are skipped; only one-sided or differing
+    // non-empty names count as a mismatch.
+    for (auto const& kv : projectData.matrixInputData)
+    {
+        const auto& projectName = kv.second.name;
+        auto it = deviceNames.find(static_cast<std::int16_t>(kv.first));
+        const auto deviceName = (it != deviceNames.end()) ? it->second : std::string{};
+
+        if (!projectName.empty() || !deviceName.empty())
+            if (projectName != deviceName) { mismatch = true; break; }
+    }
+
+    // ── Loudspeaker count and positions ──────────────────────────────────────
+    // A speaker is considered active only when at least one of its 6DOF values
+    // is non-zero; all-zero means not present.
+    // Device array layout from ToAimingAndPosition(): {hor, vrt, rot, x, y, z}
+    if (!mismatch)
+    {
+        constexpr float eps = 1e-4f;
+
+        auto isDevicePositionNull = [eps](const std::array<std::float_t, 6>& dp) {
+            return std::abs(dp[0]) <= eps && std::abs(dp[1]) <= eps && std::abs(dp[2]) <= eps &&
+                   std::abs(dp[3]) <= eps && std::abs(dp[4]) <= eps && std::abs(dp[5]) <= eps;
+        };
+
+        int projectActiveCount = 0;
+        for (auto const& kv : projectData.speakerPositionData)
+            if (!kv.second.isNull()) ++projectActiveCount;
+        int deviceActiveCount = 0;
+        for (auto const& kv : devicePositions)
+            if (!isDevicePositionNull(kv.second)) ++deviceActiveCount;
+
+        if (projectActiveCount != deviceActiveCount)
+        {
+            mismatch = true;
+        }
+        else
+        {
+            for (auto const& kv : projectData.speakerPositionData)
+            {
+                if (kv.second.isNull())
+                    continue;
+
+                auto it = devicePositions.find(static_cast<std::int16_t>(kv.first));
+                if (it == devicePositions.end() || isDevicePositionNull(it->second))
+                    { mismatch = true; break; }
+
+                const auto& dp = it->second;
+                const auto& pp = kv.second;
+                if (std::abs(dp[0] - static_cast<float>(pp.hor)) > eps ||
+                    std::abs(dp[1] - static_cast<float>(pp.vrt)) > eps ||
+                    std::abs(dp[2] - static_cast<float>(pp.rot)) > eps ||
+                    std::abs(dp[3] - static_cast<float>(pp.x))   > eps ||
+                    std::abs(dp[4] - static_cast<float>(pp.y))   > eps ||
+                    std::abs(dp[5] - static_cast<float>(pp.z))   > eps)
+                {
+                    mismatch = true; break;
+                }
+            }
+        }
+    }
+
+    // ── Function-group count, names, and mode values ─────────────────────────
+    // Mode 0 (None) is equivalent to the FG not being present; only active
+    // (mode != 0) groups are counted and compared.
+    if (!mismatch)
+    {
+        int projectActiveCount = 0;
+        for (auto const& kv : projectData.functionGroupData)
+            if (kv.second.mode != 0) ++projectActiveCount;
+        int deviceActiveCount = 0;
+        for (auto const& kv : deviceFgData)
+            if (kv.second.mode != 0) ++deviceActiveCount;
+
+        if (projectActiveCount != deviceActiveCount)
+        {
+            mismatch = true;
+        }
+        else
+        {
+            for (auto const& kv : projectData.functionGroupData)
+            {
+                if (kv.second.mode == 0)
+                    continue;
+
+                auto it = deviceFgData.find(static_cast<std::int16_t>(kv.first));
+                const auto deviceMode = (it != deviceFgData.end()) ? it->second.mode : std::uint16_t(0);
+
+                if (deviceMode != static_cast<std::uint16_t>(kv.second.mode))
+                {
+                    mismatch = true; break;
+                }
+
+                // Empty names count as not present; only compare when both sides
+                // have a non-empty name.
+                if (!kv.second.name.empty() && !it->second.name.empty()
+                    && it->second.name != kv.second.name)
+                {
+                    mismatch = true; break;
+                }
+            }
+        }
+    }
+
+    m_dbprProjectComponent->setMismatchFlashing(mismatch);
 }
 
 void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newState)
