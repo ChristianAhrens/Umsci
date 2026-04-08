@@ -401,6 +401,7 @@ public:
 			MatrixSettings_ReverbRearLevel,
 			FunctionGroup_Name,
 			FunctionGroup_Delay,
+			FunctionGroup_Mode,
 			FunctionGroup_SpreadFactor,
 			ReverbInput_Gain,
 			ReverbInputProcessing_Mute,
@@ -422,6 +423,7 @@ public:
 			CoordinateMappingSettings_Flip,
 			CoordinateMappingSettings_Name,
 			Positioning_SpeakerPosition,			// 6-float loudspeaker position (x, y, z, hor, vert, rot)
+            Positioning_SpeakerGroup,
 			SoundObjectRouting_Mute,
 			SoundObjectRouting_Gain,
 			Device_Clear,
@@ -567,6 +569,8 @@ public:
 				return "FunctionGroup Name";
 			case FunctionGroup_Delay:
 				return "FunctionGroup Delay";
+			case FunctionGroup_Mode:
+				return "FunctionGroup Mode";
 			case FunctionGroup_SpreadFactor:
 				return "FunctionGroup SpreadFactor";
 			case ReverbInput_Gain:
@@ -611,6 +615,8 @@ public:
 				return "Mapping Area name";
 			case Positioning_SpeakerPosition:
 				return "Speaker Position";
+			case Positioning_SpeakerGroup:
+				return "Speaker Group";
 			case SoundObjectRouting_Mute:
 				return "Soundobject Routing Mute";
 			case SoundObjectRouting_Gain:
@@ -822,7 +828,7 @@ private:
      * All state changes and object updates are posted to the JUCE message thread
      * via `postMessage()`.
      */
-	bool ocp1MessageReceived(const juce::MemoryBlock& data);
+	bool ocp1MessageReceived(const NanoOcp1::ByteVector& data);
 
     /**
      * @brief Sends AddSubscription commands for every object in `m_activeRemoteObjects`.

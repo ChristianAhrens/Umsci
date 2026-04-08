@@ -85,7 +85,7 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
     else
     {
         g.setColour(findColour(juce::Label::textColourId).withAlpha(0.45f));
-        g.setFont(juce::Font(16.5f));
+        g.setFont(juce::Font(juce::FontOptions(16.5f, juce::Font::plain)));
         g.drawText("No project loaded", inner, juce::Justification::centred, true);
     }
 }

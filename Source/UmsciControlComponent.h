@@ -158,6 +158,10 @@ public:
      *       radians, coordinate handedness).
      */
     void setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position);
+    /** @brief Updates the speaker group assignment for a single output channel. */
+    void setSpeakerGroup(std::int16_t speakerId, std::int32_t group);
+    /** @brief Updates the mode for a single function group. */
+    void setFunctionGroupMode(std::int16_t groupId, std::uint16_t mode);
     /** @} */
 
     //==============================================================================
@@ -313,6 +317,8 @@ private:
     std::map<std::int16_t, bool>                        m_speakerMute;
     std::map<std::int16_t, std::float_t>                m_speakerGain;
     std::map<std::int16_t, std::array<std::float_t, 6>> m_speakerPosition;
+    std::map<std::int16_t, std::int32_t>                m_speakerGroup;
+    std::map<std::int16_t, std::uint16_t>               m_functionGroupMode;
 
 #if JUCE_IOS
     void* m_nativePinchViewHandle = nullptr; ///< Handle to the peer UIView that has the pinch recognizer registered.
