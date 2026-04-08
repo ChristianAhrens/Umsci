@@ -101,3 +101,9 @@ bool DbprController::hasProjectLoaded() const
 {
     return m_hasProject;
 }
+
+void DbprController::clearProjectData()
+{
+    m_projectData = dbpr::ProjectData{};
+    m_hasProject  = false;
+}

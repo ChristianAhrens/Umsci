@@ -64,24 +64,28 @@ public:
 
     // ── Layout constants (pixels) ────────────────────────────────────────────
     /** Total component width = contentWidth + grabStripWidth. */
-    static constexpr int panelWidth     = 260;
+    static constexpr int s_panelWidth       = 260;
     /** Fixed component height. */
-    static constexpr int panelHeight    = 148;
+    static constexpr int s_panelHeight      = 148;
     /** Width of the grab-handle strip on the panel's right edge. */
-    static constexpr int grabStripWidth = 21;
+    static constexpr int s_grabStripWidth   = 21;
     /** Left-edge margin from the window when the panel is fully visible. */
-    static constexpr int panelMargin    = 8;
+    static constexpr int s_panelMargin      = 8;
 
     UmsciDbprProjectComponent();
     ~UmsciDbprProjectComponent() override;
 
     //==============================================================================
     void paint(juce::Graphics& g) override;
+    void resized() override;
     void mouseUp(const juce::MouseEvent& e) override;
 
     //==============================================================================
     /** @brief Replaces the displayed project summary. Triggers a repaint. */
     void setProjectData(const dbpr::ProjectData& data);
+
+    /** @brief Clears the displayed project summary and reverts to the empty state. Triggers a repaint. */
+    void clearProjectData();
 
     /** @brief Sets the accent colour used for the panel border and grab-strip
      *         indicator. Triggers a repaint. */
@@ -106,14 +110,26 @@ public:
      */
     std::function<void(PanelState newState)> onStateChangeRequested;
 
+    /** @brief Fired when the user clicks the delete button. The parent should
+     *         clear all project data and reset the app state. */
+    std::function<void()> onDeleteRequested;
+
+    /** @brief Placeholder – fired when the user clicks the sync button. Will be
+     *         used in a future version to push project data to connected devices. */
+    std::function<void()> onSyncRequested;
+
 private:
     void paintGrabStrip(juce::Graphics& g, juce::Rectangle<int> stripBounds);
     void paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds);
+    void updateButtonImages();
 
     PanelState          m_state = PanelState::Tucked;
     dbpr::ProjectData   m_projectData;
     bool                m_hasData = false;
     juce::Colour        m_highlightColour { juce::Colours::forestgreen };
+
+    std::unique_ptr<juce::DrawableButton> m_syncButton;
+    std::unique_ptr<juce::DrawableButton> m_deleteButton;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciDbprProjectComponent)
 };

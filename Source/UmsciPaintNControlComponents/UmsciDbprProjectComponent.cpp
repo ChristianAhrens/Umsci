@@ -21,6 +21,20 @@
 UmsciDbprProjectComponent::UmsciDbprProjectComponent()
 {
     setOpaque(false);
+
+    m_syncButton = std::make_unique<juce::DrawableButton>("Sync", juce::DrawableButton::ButtonStyle::ImageFitted);
+    m_syncButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
+    m_syncButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_syncButton->onClick = [this] { if (onSyncRequested) onSyncRequested(); };
+    addAndMakeVisible(m_syncButton.get());
+
+    m_deleteButton = std::make_unique<juce::DrawableButton>("Delete", juce::DrawableButton::ButtonStyle::ImageFitted);
+    m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
+    m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_deleteButton->onClick = [this] { if (onDeleteRequested) onDeleteRequested(); };
+    addAndMakeVisible(m_deleteButton.get());
+
+    updateButtonImages();
 }
 
 UmsciDbprProjectComponent::~UmsciDbprProjectComponent() = default;
@@ -30,7 +44,7 @@ UmsciDbprProjectComponent::~UmsciDbprProjectComponent() = default;
 void UmsciDbprProjectComponent::paint(juce::Graphics& g)
 {
     const auto bounds        = getLocalBounds();
-    const int  contentWidth  = panelWidth - grabStripWidth;
+    const int  contentWidth  = s_panelWidth - s_grabStripWidth;
     const auto contentBounds = bounds.withWidth(contentWidth);
     const auto stripBounds   = bounds.withLeft(contentWidth);
 
@@ -51,6 +65,21 @@ void UmsciDbprProjectComponent::paint(juce::Graphics& g)
 
     // ── Grab strip ────────────────────────────────────────────────────────────
     paintGrabStrip(g, stripBounds);
+}
+
+void UmsciDbprProjectComponent::resized()
+{
+    constexpr int buttonSize   = 24;
+    constexpr int buttonMargin = 6;
+    const int     contentWidth = s_panelWidth - s_grabStripWidth;
+
+    m_syncButton->setBounds(contentWidth - buttonSize - buttonMargin,
+                            buttonMargin,
+                            buttonSize, buttonSize);
+
+    m_deleteButton->setBounds(contentWidth - buttonSize - buttonMargin,
+                              getHeight() - buttonSize - buttonMargin,
+                              buttonSize, buttonSize);
 }
 
 void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds)
@@ -117,12 +146,39 @@ void UmsciDbprProjectComponent::paintGrabStrip(juce::Graphics& g, juce::Rectangl
     }
 }
 
+void UmsciDbprProjectComponent::updateButtonImages()
+{
+    auto syncDrawable = juce::Drawable::createFromSVG(
+        *juce::XmlDocument::parse(BinaryData::sync_arrow_up_24dp_svg).get());
+    syncDrawable->replaceColour(juce::Colours::black, m_highlightColour);
+    m_syncButton->setImages(syncDrawable.get());
+
+    auto deleteDrawable = juce::Drawable::createFromSVG(
+        *juce::XmlDocument::parse(BinaryData::delete_24dp_svg).get());
+    deleteDrawable->replaceColour(juce::Colours::black, m_highlightColour);
+    m_deleteButton->setImages(deleteDrawable.get());
+}
+
 //==============================================================================
 
 void UmsciDbprProjectComponent::mouseUp(const juce::MouseEvent& e)
 {
-    // Only the grab strip (rightmost grabStripWidth pixels) triggers a state toggle.
-    if (e.x >= (panelWidth - grabStripWidth) && onStateChangeRequested)
+    // Buttons are click-transparent; the parent handles all interactions via
+    // coordinate checks to avoid any child/parent event-routing ambiguity.
+    if (m_deleteButton->getBounds().contains(e.getPosition()))
+    {
+        if (onDeleteRequested) onDeleteRequested();
+        return;
+    }
+
+    if (m_syncButton->getBounds().contains(e.getPosition()))
+    {
+        if (onSyncRequested) onSyncRequested();
+        return;
+    }
+
+    // Only the grab strip (rightmost s_grabStripWidth pixels) triggers a state toggle.
+    if (e.x >= (s_panelWidth - s_grabStripWidth) && onStateChangeRequested)
     {
         const auto newState = (m_state == PanelState::Tucked) ? PanelState::Visible : PanelState::Tucked;
         onStateChangeRequested(newState);
@@ -138,9 +194,17 @@ void UmsciDbprProjectComponent::setProjectData(const dbpr::ProjectData& data)
     repaint();
 }
 
+void UmsciDbprProjectComponent::clearProjectData()
+{
+    m_projectData = dbpr::ProjectData{};
+    m_hasData     = false;
+    repaint();
+}
+
 void UmsciDbprProjectComponent::setHighlightColour(const juce::Colour& colour)
 {
     m_highlightColour = colour;
+    updateButtonImages();
     repaint();
 }
 

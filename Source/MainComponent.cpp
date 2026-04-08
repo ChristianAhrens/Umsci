@@ -396,6 +396,15 @@ MainComponent::MainComponent()
         setDbprPanelState(newState);
     };
 
+    m_dbprProjectComponent->onDeleteRequested = [this] {
+        if (m_dbprController)
+            m_dbprController->clearProjectData();
+        if (m_dbprProjectComponent)
+            m_dbprProjectComponent->clearProjectData();
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+
     // add this main component to watchers
     m_config->addWatcher(this); // without initial update - that we have to do externally after lambdas were assigned
 
@@ -431,15 +440,15 @@ void MainComponent::resized()
     m_connectingComponent->setBounds(safeBounds);
     m_discoverHintComponent->setBounds(safeBounds);
 
-    const auto panelW    = UmsciDbprProjectComponent::panelWidth;
-    const auto panelH    = UmsciDbprProjectComponent::panelHeight;
-    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::panelMargin;
+    const auto panelW    = UmsciDbprProjectComponent::s_panelWidth;
+    const auto panelH    = UmsciDbprProjectComponent::s_panelHeight;
+    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
 
     if (m_dbprProjectComponent)
     {
         const auto x = (m_dbprProjectComponent->getPanelState() == UmsciDbprProjectComponent::PanelState::Tucked)
-            ? -(panelW - UmsciDbprProjectComponent::grabStripWidth)
-            : UmsciDbprProjectComponent::panelMargin;
+            ? -(panelW - UmsciDbprProjectComponent::s_grabStripWidth)
+            : UmsciDbprProjectComponent::s_panelMargin;
         m_dbprProjectComponent->setBounds(x, panelTopY, panelW, panelH);
     }
 
@@ -454,7 +463,7 @@ void MainComponent::resized()
         // Snapshot buttons sit directly above the dbpr panel, aligned to its left edge.
         constexpr int btnSize = 30;
         constexpr int btnGap  = 4;
-        const auto    btnLeft = UmsciDbprProjectComponent::panelMargin;
+        const auto    btnLeft = UmsciDbprProjectComponent::s_panelMargin;
         m_upmixSnapshotStoreButton->setBounds(btnLeft, panelTopY - 2 * (btnGap + btnSize), btnSize, btnSize);
         m_upmixSnapshotRecallButton->setBounds(btnLeft, panelTopY -     (btnGap + btnSize), btnSize, btnSize);
     }
@@ -983,12 +992,13 @@ void MainComponent::performConfigurationDump()
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
         }
 
-        // dbpr project config (optional — only written when a project has been loaded)
-        if (m_dbprController && m_dbprController->hasProjectLoaded())
+        // dbpr project config — always written so clearing removes any previously persisted data
+        if (m_dbprController)
         {
             auto dbprXmlElement = std::make_unique<juce::XmlElement>(
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
-            dbprXmlElement->addTextElement(juce::String(m_dbprController->getProjectData().toString()));
+            if (m_dbprController->hasProjectLoaded())
+                dbprXmlElement->addTextElement(juce::String(m_dbprController->getProjectData().toString()));
             m_config->setConfigState(std::move(dbprXmlElement),
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
         }
@@ -1365,12 +1375,12 @@ void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newS
     safeBounds.removeFromLeft(safety._left);
     safeBounds.removeFromRight(safety._right);
 
-    const auto panelW    = UmsciDbprProjectComponent::panelWidth;
-    const auto panelH    = UmsciDbprProjectComponent::panelHeight;
-    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::panelMargin;
+    const auto panelW    = UmsciDbprProjectComponent::s_panelWidth;
+    const auto panelH    = UmsciDbprProjectComponent::s_panelHeight;
+    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
     const auto x         = (newState == UmsciDbprProjectComponent::PanelState::Tucked)
-        ? -(panelW - UmsciDbprProjectComponent::grabStripWidth)
-        : UmsciDbprProjectComponent::panelMargin;
+        ? -(panelW - UmsciDbprProjectComponent::s_grabStripWidth)
+        : UmsciDbprProjectComponent::s_panelMargin;
 
     juce::Desktop::getInstance().getAnimator().animateComponent(
         m_dbprProjectComponent.get(),

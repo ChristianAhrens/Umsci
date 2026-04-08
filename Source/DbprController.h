@@ -60,6 +60,9 @@ public:
     /** @brief Returns true after at least one successful load or setProjectData() call. */
     bool hasProjectLoaded() const;
 
+    /** @brief Clears all project data and resets to the pre-load state. */
+    void clearProjectData();
+
     //==============================================================================
     /**
      * @brief Fired on the JUCE message thread after each successful project load.
