@@ -110,8 +110,29 @@ struct SpeakerPositionData
 };
 typedef std::map<int, SpeakerPositionData> SpeakerPositionDataMap;
 
-/** Maps matrix-input number → display name (from the MatrixInputs table). */
-typedef std::map<int, std::string> InputNameDataMap;
+//==============================================================================
+/**
+ * @struct MatrixInputData
+ * @brief Data for one DS100 matrix input from the MatrixInputs table.
+ *
+ * `inputMode` controls whether the input participates in En-Scene spatial
+ * processing (1) or is used for matrix routing only (0).  Inputs with
+ * InputMode=1 are the sound objects that Umsci can visualise and control.
+ *
+ * `deviceId` identifies which physical DS100 the input belongs to.  Umsci
+ * supports only a single device, so a loaded project must have a single
+ * unique DeviceId across all its matrix inputs.
+ */
+struct MatrixInputData
+{
+    int         deviceId  = 0; ///< DS100 device identifier (foreign key to device table).
+    std::string name;          ///< Display name of the matrix input.
+    int         inputMode = 0; ///< 0 = Matrix routing only, 1 = En-Scene (sound object).
+
+    /** @brief Returns true when InputMode is 1 (En-Scene / sound object). */
+    bool isEnScene() const { return inputMode == 1; }
+};
+typedef std::map<int, MatrixInputData> MatrixInputDataMap;
 
 //==============================================================================
 /**
@@ -129,15 +150,15 @@ struct ProjectData
 {
     CoordinateMappingDataMap coordinateMappingData; ///< Keyed by mapping-area record number.
     SpeakerPositionDataMap   speakerPositionData;   ///< Keyed by matrix-output number.
-    InputNameDataMap         inputNameData;          ///< Keyed by matrix-input number.
+    MatrixInputDataMap       matrixInputData;        ///< Keyed by matrix-input number (MatrixInput column).
 
     /** @brief Returns true when both coordinate-mapping and speaker maps are empty. */
     bool isEmpty() const;
 
-    /** @brief Returns a short human-readable summary, e.g. "4 CMP, 24 SPK". */
+    /** @brief Returns a short human-readable summary, e.g. "4 CMP, 24 SPK, 12 SO". */
     std::string getInfoString() const;
 
-    /** @brief Clears coordinate-mapping and speaker data (input names are preserved). */
+    /** @brief Clears all three data maps. */
     void clear();
 
     /** @brief Serialises to a pipe-delimited string (all three data sets). */
@@ -152,12 +173,12 @@ struct ProjectData
     /**
      * @brief Opens a .dbpr file and reads all project data in one call.
      *
-     * Reads three tables in sequence:
+     * Reads the following tables:
      * - `MatrixCoordinateMappings` / `VenueObjects` / `VenueObjectPoints`
      *   → `coordinateMappingData`
      * - `MatrixCoordinateMappingPoints` → virtual-point corners of each mapping area
-     * - `MatrixOutputs` → `speakerPositionData`
-     * - `MatrixInputs`  → `inputNameData`
+     * - `MatrixOutputs`  → `speakerPositionData`
+     * - `MatrixInputs`   → `matrixInputData` (DeviceId, MatrixInput, Name, InputMode)
      *
      * @param projectFilePath  Absolute path to the .dbpr SQLite database file.
      * @return Populated ProjectData, or a default-constructed (empty) instance on error.

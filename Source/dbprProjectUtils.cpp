@@ -206,19 +206,24 @@ std::string ProjectData::getInfoString() const
 {
     auto cmdCount = 0;
     auto spdCount = 0;
+    auto soCount  = 0;
     for (auto const& kv : coordinateMappingData)
         if (!kv.second.isNull())
             cmdCount++;
     for (auto const& kv : speakerPositionData)
         if (!kv.second.isNull())
             spdCount++;
-    return std::to_string(cmdCount) + " CMP, " + std::to_string(spdCount) + " SPK";
+    for (auto const& kv : matrixInputData)
+        if (kv.second.isEnScene())
+            soCount++;
+    return std::to_string(cmdCount) + " CMP, " + std::to_string(spdCount) + " SPK, " + std::to_string(soCount) + " SO";
 }
 
 void ProjectData::clear()
 {
     coordinateMappingData.clear();
     speakerPositionData.clear();
+    matrixInputData.clear();
 }
 
 std::string ProjectData::toString() const
@@ -233,9 +238,9 @@ std::string ProjectData::toString() const
     oss << "|SPKPOSDATA|";
     for (auto const& kv : speakerPositionData)
         oss << kv.first << ":" << kv.second.toString() << ";";
-    oss << "|INPUTNAMEDATA|";
-    for (auto const& kv : inputNameData)
-        oss << kv.first << ":" << kv.second << ";";
+    oss << "|MATRIXINPUTDATA|";
+    for (auto const& kv : matrixInputData)
+        oss << kv.first << ":" << kv.second.deviceId << "," << kv.second.name << "," << kv.second.inputMode << ";";
     return oss.str();
 }
 
@@ -271,7 +276,17 @@ ProjectData ProjectData::fromString(const std::string& s)
     {
         const auto kv = splitString(entry, ':');
         if (kv.size() == 2)
-            retv.inputNameData[parseIntValue(kv[0])] = kv[1];
+        {
+            const auto fields = splitString(kv[1], ',');
+            if (fields.size() == 3)
+            {
+                MatrixInputData mid;
+                mid.deviceId  = parseIntValue(fields[0]);
+                mid.name      = fields[1];
+                mid.inputMode = parseIntValue(fields[2]);
+                retv.matrixInputData[parseIntValue(kv[0])] = mid;
+            }
+        }
     }
 
     return retv;
@@ -402,13 +417,15 @@ ProjectData ProjectData::openAndReadProject(const std::string& projectFilePath)
             projectData.speakerPositionData[outputNumber].rot = queryMO.getColumn("AimingAngleRotation").getDouble();   // col 9
         }
 
-        // Read matrix input names
+        // Read matrix input data (DeviceId, MatrixInput, Name, InputMode)
         auto queryMI = SQLite::Statement(db, "SELECT * FROM MatrixInputs");
         while (queryMI.executeStep())
         {
-            auto inputNumber = queryMI.getColumn("MatrixInput").getInt(); // col 1
+            auto inputNumber = queryMI.getColumn("MatrixInput").getInt();
 
-            projectData.inputNameData[inputNumber] = queryMI.getColumn("Name").getString(); // col 2
+            projectData.matrixInputData[inputNumber].deviceId  = queryMI.getColumn("DeviceId").getInt();
+            projectData.matrixInputData[inputNumber].name      = queryMI.getColumn("Name").getString();
+            projectData.matrixInputData[inputNumber].inputMode = queryMI.getColumn("InputMode").getInt();
         }
 
         return projectData;

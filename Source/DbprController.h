@@ -61,6 +61,13 @@ public:
      */
     std::function<void(const dbpr::ProjectData&)> onProjectLoaded;
 
+    /**
+     * @brief Fired on the JUCE message thread when a project load is rejected due
+     *        to a validation error (e.g. multiple DeviceIds, no En-Scene inputs).
+     * Parameter: a human-readable error message.
+     */
+    std::function<void(const std::string&)> onProjectLoadFailed;
+
 private:
     dbpr::ProjectData   m_projectData;
     bool                m_hasProject = false;

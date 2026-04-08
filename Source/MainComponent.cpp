@@ -348,6 +348,45 @@ MainComponent::MainComponent()
             m_dbprProjectComponent->setProjectData(data);
             setDbprPanelState(UmsciDbprProjectComponent::PanelState::Visible);
         }
+
+        // Warn if the En-Scene inputs don't align with the current upmix configuration
+        if (m_controlComponent)
+        {
+            const auto startId      = m_controlComponent->getUpmixSourceStartId();
+            const auto channelCount = static_cast<int>(m_controlComponent->getUpmixChannelConfiguration().size());
+
+            // Check that every input in the range [startId, startId+channelCount-1] is En-Scene.
+            // Any gap (missing or InputMode=0) means upmix will not work correctly.
+            juce::StringArray missingIds;
+            for (int id = startId; id < startId + channelCount; ++id)
+            {
+                auto it = data.matrixInputData.find(id);
+                if (it == data.matrixInputData.end() || !it->second.isEnScene())
+                    missingIds.add(juce::String(id));
+            }
+
+            if (!missingIds.isEmpty())
+            {
+                juce::String warning = "The loaded project's En-Scene inputs do not cover the full upmix range.\n"
+                    "Upmix expects inputs " + juce::String(startId)
+                    + " to " + juce::String(startId + channelCount - 1)
+                    + " to be set to En-Scene, but the following are not:\n  "
+                    + missingIds.joinIntoString(", ")
+                    + "\nPlease adjust the upmix configuration or the project to avoid mismatches.";
+
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::AlertWindow::WarningIcon,
+                    "Upmix Configuration Mismatch",
+                    warning);
+            }
+        }
+    };
+
+    m_dbprController->onProjectLoadFailed = [](const std::string& errorMsg) {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            "Project Load Failed",
+            juce::String(errorMsg));
     };
 
     m_dbprProjectComponent->onStateChangeRequested = [this](UmsciDbprProjectComponent::PanelState newState) {

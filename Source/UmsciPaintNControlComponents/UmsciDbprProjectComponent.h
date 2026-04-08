@@ -66,7 +66,7 @@ public:
     /** Total component width = contentWidth + grabStripWidth. */
     static constexpr int panelWidth     = 260;
     /** Fixed component height. */
-    static constexpr int panelHeight    = 114;
+    static constexpr int panelHeight    = 124;
     /** Width of the grab-handle strip on the panel's right edge. */
     static constexpr int grabStripWidth = 21;
     /** Left-edge margin from the window when the panel is fully visible. */

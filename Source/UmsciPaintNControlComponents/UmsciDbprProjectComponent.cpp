@@ -69,12 +69,18 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
 
         const auto cmCount  = static_cast<int>(m_projectData.coordinateMappingData.size());
         const auto spkCount = static_cast<int>(m_projectData.speakerPositionData.size());
+        auto soCount = 0;
+        for (auto const& kv : m_projectData.matrixInputData)
+            if (kv.second.isEnScene())
+                soCount++;
 
         const auto cmText  = juce::String(cmCount)  + " Coordinate Mapping"  + (cmCount  != 1 ? "s" : "");
         const auto spkText = juce::String(spkCount) + " Speaker"             + (spkCount != 1 ? "s" : "");
+        const auto soText  = juce::String(soCount)  + " Sound Object"        + (soCount  != 1 ? "s" : "");
 
         g.drawText(cmText,  inner.removeFromTop(24), juce::Justification::centredLeft, true);
         g.drawText(spkText, inner.removeFromTop(24), juce::Justification::centredLeft, true);
+        g.drawText(soText,  inner.removeFromTop(24), juce::Justification::centredLeft, true);
     }
     else
     {
