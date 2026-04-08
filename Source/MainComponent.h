@@ -25,6 +25,8 @@
 #include "UmsciZeroconfDiscoverComboComponent.h"
 #include "MidiController.h"
 #include "OscController.h"
+#include "DbprController.h"
+#include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 
 
  /**
@@ -117,7 +119,8 @@ public:
         ControlSize_S = ControlSize_First, ///< Small icons.
         ControlSize_M,                     ///< Medium icons.
         ControlSize_L,                     ///< Large icons.
-        ControlSize_Last = ControlSize_L
+        ControlSize_Last = ControlSize_L,
+        DbprProjectLoad         ///< Opens a file chooser to load a .dbpr project file.
     };
 
 public:
@@ -167,6 +170,11 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
+    void showDbprProjectLoad();
+
+    //==============================================================================
+    /** @brief Animates the dbpr panel to the given state and records the new state. */
+    void setDbprPanelState(UmsciDbprProjectComponent::PanelState state);
 
     //==============================================================================
     /** @brief Applies a domain-mapped parameter value from either MIDI or OSC to
@@ -243,6 +251,11 @@ private:
     //==============================================================================
     std::unique_ptr<MidiController>                 m_midiController;
     std::unique_ptr<OscController>                  m_oscController;
+
+    //==============================================================================
+    std::unique_ptr<DbprController>                 m_dbprController;
+    std::unique_ptr<UmsciDbprProjectComponent>      m_dbprProjectComponent;
+    std::unique_ptr<juce::FileChooser>              m_fileChooser;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

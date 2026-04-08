@@ -154,6 +154,10 @@
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
       <GROUP id="{D10A2BCF-D236-B6F5-7F5D-FC252EA155F6}" name="UmsciPaintNControlComponents">
+        <FILE id="a24SdB" name="UmsciDbprProjectComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.cpp"/>
+        <FILE id="uwRnVz" name="UmsciDbprProjectComponent.h" compile="0" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"/>
         <FILE id="eyijqn" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
               resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.cpp"/>
         <FILE id="gc2JqM" name="UmsciLoudspeakersPaintComponent.h" compile="0"
@@ -171,14 +175,22 @@
         <FILE id="XbpJ1n" name="UmsciUpmixIndicatorPaintNControlComponent.h"
               compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"/>
       </GROUP>
-      <FILE id="IKTqod" name="UmsciZeroconfDiscoverComboComponent.cpp" compile="1"
-            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.cpp"/>
-      <FILE id="vR95jV" name="UmsciZeroconfDiscoverComboComponent.h" compile="0"
-            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.h"/>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="jjkLLp" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="QLc7Xd" name="DbprController.cpp" compile="1" resource="0"
+            file="Source/DbprController.cpp"/>
+      <FILE id="ORbyL1" name="DbprController.h" compile="0" resource="0"
+            file="Source/DbprController.h"/>
+      <FILE id="dBpR01" name="dbprProjectUtils.cpp" compile="1" resource="0"
+            file="Source/dbprProjectUtils.cpp"/>
+      <FILE id="dBpR02" name="dbprProjectUtils.h" compile="0" resource="0"
+            file="Source/dbprProjectUtils.h"/>
+      <FILE id="IKTqod" name="UmsciZeroconfDiscoverComboComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.cpp"/>
+      <FILE id="vR95jV" name="UmsciZeroconfDiscoverComboComponent.h" compile="0"
+            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.h"/>
       <FILE id="D8bpYt" name="UmsciControlComponent.cpp" compile="1" resource="0"
             file="Source/UmsciControlComponent.cpp"/>
       <FILE id="khKIzT" name="UmsciControlComponent.h" compile="0" resource="0"

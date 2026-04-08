@@ -27,6 +27,7 @@
 
 #include "AboutComponent.h"
 #include "UmsciExternalControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 
 #include <CustomLookAndFeel.h>
 #include <WebUpdateDetector.h>
@@ -109,6 +110,8 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
     // external (MIDI) control settings
     m_settingsItems[UmsciSettingsOption::ExternalControlSettings] = std::make_pair("External control...", 0);
+    // dbpr project import
+    m_settingsItems[UmsciSettingsOption::DbprProjectLoad] = std::make_pair("Load dbpr project...", 0);
     // control size
     m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
     m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
@@ -141,6 +144,8 @@ MainComponent::MainComponent()
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::ExternalControlSettings, m_settingsItems[UmsciSettingsOption::ExternalControlSettings].first, true, false);
+        settingsMenu.addSeparator();
+        settingsMenu.addItem(UmsciSettingsOption::DbprProjectLoad, m_settingsItems[UmsciSettingsOption::DbprProjectLoad].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
@@ -331,6 +336,24 @@ MainComponent::MainComponent()
         applyUpmixParamValue(param, domainValue);
     };
 
+    // dbpr project controller and floating panel
+    m_dbprController = std::make_unique<DbprController>();
+    m_dbprProjectComponent = std::make_unique<UmsciDbprProjectComponent>();
+    m_dbprProjectComponent->setHighlightColour(m_controlColour);
+    addAndMakeVisible(m_dbprProjectComponent.get());
+
+    m_dbprController->onProjectLoaded = [this](const dbpr::ProjectData& data) {
+        if (m_dbprProjectComponent)
+        {
+            m_dbprProjectComponent->setProjectData(data);
+            setDbprPanelState(UmsciDbprProjectComponent::PanelState::Visible);
+        }
+    };
+
+    m_dbprProjectComponent->onStateChangeRequested = [this](UmsciDbprProjectComponent::PanelState newState) {
+        setDbprPanelState(newState);
+    };
+
     // add this main component to watchers
     m_config->addWatcher(this); // without initial update - that we have to do externally after lambdas were assigned
 
@@ -366,16 +389,32 @@ void MainComponent::resized()
     m_connectingComponent->setBounds(safeBounds);
     m_discoverHintComponent->setBounds(safeBounds);
 
+    const auto panelW    = UmsciDbprProjectComponent::panelWidth;
+    const auto panelH    = UmsciDbprProjectComponent::panelHeight;
+    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::panelMargin;
+
+    if (m_dbprProjectComponent)
+    {
+        const auto x = (m_dbprProjectComponent->getPanelState() == UmsciDbprProjectComponent::PanelState::Tucked)
+            ? -(panelW - UmsciDbprProjectComponent::grabStripWidth)
+            : UmsciDbprProjectComponent::panelMargin;
+        m_dbprProjectComponent->setBounds(x, panelTopY, panelW, panelH);
+    }
+
     if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
     {
-        auto leftButtons = safeBounds.removeFromLeft(36);
+        auto leftButtons  = safeBounds.removeFromLeft(36);
         auto rightButtons = safeBounds.removeFromLeft(36);
         m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
         m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
         m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
 
-        m_upmixSnapshotStoreButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
-        m_upmixSnapshotRecallButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
+        // Snapshot buttons sit directly above the dbpr panel, aligned to its left edge.
+        constexpr int btnSize = 30;
+        constexpr int btnGap  = 4;
+        const auto    btnLeft = UmsciDbprProjectComponent::panelMargin;
+        m_upmixSnapshotStoreButton->setBounds(btnLeft, panelTopY - 2 * (btnGap + btnSize), btnSize, btnSize);
+        m_upmixSnapshotRecallButton->setBounds(btnLeft, panelTopY -     (btnGap + btnSize), btnSize, btnSize);
     }
 }
 
@@ -440,6 +479,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         showExternalControlSettings();
     else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
         handleSettingsControlSizeMenuResult(selectedId);
+    else if (UmsciSettingsOption::DbprProjectLoad == selectedId)
+        showDbprProjectLoad();
     else
         jassertfalse; // unhandled menu entry!?
 }
@@ -786,6 +827,9 @@ void MainComponent::applyControlColour()
             break;
         }
     }
+
+    if (m_dbprProjectComponent)
+        m_dbprProjectComponent->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -1221,3 +1265,49 @@ void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMid
     m_controlComponent->triggerUpmixTransformApplied();
 }
 
+
+void MainComponent::showDbprProjectLoad()
+{
+    m_fileChooser = std::make_unique<juce::FileChooser>(
+        "Open d\u0026b dbpr project file...",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.dbpr");
+
+    m_fileChooser->launchAsync(
+        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this](const juce::FileChooser& chooser)
+        {
+            const auto results = chooser.getResults();
+            if (!results.isEmpty() && m_dbprController)
+                m_dbprController->loadProjectFromFile(results.getFirst().getFullPathName().toStdString());
+
+            m_fileChooser.reset();
+        });
+}
+
+void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newState)
+{
+    if (!m_dbprProjectComponent)
+        return;
+
+    m_dbprProjectComponent->setPanelState(newState);
+
+    const auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+    auto safeBounds = getLocalBounds();
+    safeBounds.removeFromTop(safety._top);
+    safeBounds.removeFromBottom(safety._bottom);
+    safeBounds.removeFromLeft(safety._left);
+    safeBounds.removeFromRight(safety._right);
+
+    const auto panelW    = UmsciDbprProjectComponent::panelWidth;
+    const auto panelH    = UmsciDbprProjectComponent::panelHeight;
+    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::panelMargin;
+    const auto x         = (newState == UmsciDbprProjectComponent::PanelState::Tucked)
+        ? -(panelW - UmsciDbprProjectComponent::grabStripWidth)
+        : UmsciDbprProjectComponent::panelMargin;
+
+    juce::Desktop::getInstance().getAnimator().animateComponent(
+        m_dbprProjectComponent.get(),
+        juce::Rectangle<int>(x, panelTopY, panelW, panelH),
+        1.0f, 220, false, 1.0, 1.0);
+}
