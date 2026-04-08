@@ -28,9 +28,9 @@
  * @brief Utilities for reading d&b audiotechnik .dbpr project files (SQLite databases).
  *
  * Entry point: `ProjectData::openAndReadProject(path)` opens a .dbpr file and returns
- * a fully populated `ProjectData` value. All three data categories — coordinate
- * mapping areas, speaker output positions, and matrix input names — are populated
- * in a single call.
+ * a fully populated `ProjectData` value. All four data categories — coordinate
+ * mapping areas, speaker output positions, matrix input names, and function groups —
+ * are populated in a single call.
  *
  * The structs also support round-trip serialisation to/from a compact string
  * representation suitable for embedding in config files or log output.
@@ -136,6 +136,30 @@ typedef std::map<int, MatrixInputData> MatrixInputDataMap;
 
 //==============================================================================
 /**
+ * @struct FunctionGroupData
+ * @brief Data for one DS100 function group from the FunctionGroups table.
+ *
+ * `mode` corresponds to the `FunctionGroup_Mode` OCA parameter (OcaSwitch, UINT16).
+ * Mode 1 = En-Scene, mode 0 = matrix-only (same semantics as MatrixInput InputMode).
+ */
+struct FunctionGroupData
+{
+    std::string name;   ///< Display name of the function group.
+    int         mode = 0; ///< Operating mode (OcaSwitch value).
+
+    /** @brief Serialises to a comma-separated string. */
+    std::string toString() const;
+
+    /**
+     * @brief Deserialises from a string produced by toString().
+     * @note  Expects exactly 2 comma-separated tokens. Asserts on mismatch.
+     */
+    static FunctionGroupData fromString(const std::string& s);
+};
+typedef std::map<int, FunctionGroupData> FunctionGroupDataMap;
+
+//==============================================================================
+/**
  * @struct ProjectData
  * @brief Aggregates all data read from a .dbpr project file.
  *
@@ -151,14 +175,15 @@ struct ProjectData
     CoordinateMappingDataMap coordinateMappingData; ///< Keyed by mapping-area record number.
     SpeakerPositionDataMap   speakerPositionData;   ///< Keyed by matrix-output number.
     MatrixInputDataMap       matrixInputData;        ///< Keyed by matrix-input number (MatrixInput column).
+    FunctionGroupDataMap     functionGroupData;      ///< Keyed by FunctionGroupId.
 
     /** @brief Returns true when both coordinate-mapping and speaker maps are empty. */
     bool isEmpty() const;
 
-    /** @brief Returns a short human-readable summary, e.g. "4 CMP, 24 SPK, 12 SO". */
+    /** @brief Returns a short human-readable summary, e.g. "4 CMP, 24 SPK, 12 SO, 8 FG". */
     std::string getInfoString() const;
 
-    /** @brief Clears all three data maps. */
+    /** @brief Clears all four data maps. */
     void clear();
 
     /** @brief Serialises to a pipe-delimited string (all three data sets). */
@@ -179,6 +204,7 @@ struct ProjectData
      * - `MatrixCoordinateMappingPoints` → virtual-point corners of each mapping area
      * - `MatrixOutputs`  → `speakerPositionData`
      * - `MatrixInputs`   → `matrixInputData` (DeviceId, MatrixInput, Name, InputMode)
+     * - `FunctionGroups` → `functionGroupData` (FunctionGroupId, Name, Mode)
      *
      * @param projectFilePath  Absolute path to the .dbpr SQLite database file.
      * @return Populated ProjectData, or a default-constructed (empty) instance on error.

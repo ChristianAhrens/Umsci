@@ -195,6 +195,31 @@ bool SpeakerPositionData::isNull() const
 }
 
 //==============================================================================
+// FunctionGroupData
+
+std::string FunctionGroupData::toString() const
+{
+    std::ostringstream oss;
+    oss << name << "," << mode;
+    return oss.str();
+}
+
+FunctionGroupData FunctionGroupData::fromString(const std::string& s)
+{
+    const auto tokens = splitString(s, ',');
+    if (tokens.size() != 2)
+    {
+        assert(false);
+        return {};
+    }
+
+    FunctionGroupData retv;
+    retv.name = tokens[0];
+    retv.mode = parseIntValue(tokens[1]);
+    return retv;
+}
+
+//==============================================================================
 // ProjectData
 
 bool ProjectData::isEmpty() const
@@ -216,7 +241,9 @@ std::string ProjectData::getInfoString() const
     for (auto const& kv : matrixInputData)
         if (kv.second.isEnScene())
             soCount++;
-    return std::to_string(cmdCount) + " CMP, " + std::to_string(spdCount) + " SPK, " + std::to_string(soCount) + " SO";
+    auto fgCount = static_cast<int>(functionGroupData.size());
+    return std::to_string(cmdCount) + " CMP, " + std::to_string(spdCount) + " SPK, "
+         + std::to_string(soCount)  + " SO, "  + std::to_string(fgCount)  + " FG";
 }
 
 void ProjectData::clear()
@@ -224,6 +251,7 @@ void ProjectData::clear()
     coordinateMappingData.clear();
     speakerPositionData.clear();
     matrixInputData.clear();
+    functionGroupData.clear();
 }
 
 std::string ProjectData::toString() const
@@ -241,6 +269,9 @@ std::string ProjectData::toString() const
     oss << "|MATRIXINPUTDATA|";
     for (auto const& kv : matrixInputData)
         oss << kv.first << ":" << kv.second.deviceId << "," << kv.second.name << "," << kv.second.inputMode << ";";
+    oss << "|FUNCTIONGROUPDATA|";
+    for (auto const& kv : functionGroupData)
+        oss << kv.first << ":" << kv.second.toString() << ";";
     return oss.str();
 }
 
@@ -250,7 +281,7 @@ ProjectData ProjectData::fromString(const std::string& s)
         return ProjectData();
 
     const auto sa = splitString(s, '|');
-    if (sa.size() != 7)
+    if (sa.size() != 9)
     {
         assert(false);
         return {};
@@ -287,6 +318,13 @@ ProjectData ProjectData::fromString(const std::string& s)
                 retv.matrixInputData[parseIntValue(kv[0])] = mid;
             }
         }
+    }
+
+    for (auto const& entry : splitString(sa[8], ';'))
+    {
+        const auto kv = splitString(entry, ':');
+        if (kv.size() == 2)
+            retv.functionGroupData[parseIntValue(kv[0])] = FunctionGroupData::fromString(kv[1]);
     }
 
     return retv;
@@ -426,6 +464,16 @@ ProjectData ProjectData::openAndReadProject(const std::string& projectFilePath)
             projectData.matrixInputData[inputNumber].deviceId  = queryMI.getColumn("DeviceId").getInt();
             projectData.matrixInputData[inputNumber].name      = queryMI.getColumn("Name").getString();
             projectData.matrixInputData[inputNumber].inputMode = queryMI.getColumn("InputMode").getInt();
+        }
+
+        // Read function group data (FunctionGroupId, Name, Mode)
+        auto queryFG = SQLite::Statement(db, "SELECT * FROM FunctionGroups");
+        while (queryFG.executeStep())
+        {
+            auto groupId = queryFG.getColumn("FunctionGroupId").getInt();
+
+            projectData.functionGroupData[groupId].name = queryFG.getColumn("Name").getString();
+            projectData.functionGroupData[groupId].mode = queryFG.getColumn("Mode").getInt();
         }
 
         return projectData;
