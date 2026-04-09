@@ -161,6 +161,10 @@
               resource="0" file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.cpp"/>
         <FILE id="uwRnVz" name="UmsciDbprProjectComponent.h" compile="0" resource="0"
               file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"/>
+        <FILE id="sn4pSh" name="UmsciSnapshotComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.cpp"/>
+        <FILE id="sn4pSH" name="UmsciSnapshotComponent.h" compile="0" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.h"/>
         <FILE id="eyijqn" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
               resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.cpp"/>
         <FILE id="gc2JqM" name="UmsciLoudspeakersPaintComponent.h" compile="0"

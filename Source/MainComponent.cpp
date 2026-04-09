@@ -190,52 +190,40 @@ MainComponent::MainComponent()
         m_connectionToggleButton->setVisible(false);
     }
 
-    m_upmixSnapshotStoreButton = std::make_unique<juce::DrawableButton>("SnapshotStore", juce::DrawableButton::ButtonStyle::ImageFitted);
-    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotStoreButton->setTooltip("Store upmix indicator state");
-    m_upmixSnapshotStoreButton->onClick = [this] {
-        if (m_controlComponent)
-        {
-            m_upmixSnapshot = UpmixSnapshot{
-                m_controlComponent->getUpmixRot(),
-                m_controlComponent->getUpmixTrans(),
-                m_controlComponent->getUpmixHeightTrans(),
-                m_controlComponent->getUpmixAngleStretch(),
-                m_controlComponent->getUpmixOffsetX(),
-                m_controlComponent->getUpmixOffsetY()
-            };
-            m_upmixSnapshotRecallButton->setEnabled(true);
-            if (m_config)
-                m_config->triggerConfigurationDump();
-        }
-    };
-    m_upmixSnapshotStoreButton->setAlwaysOnTop(true);
-    m_upmixSnapshotStoreButton->setVisible(false);
-    addAndMakeVisible(m_upmixSnapshotStoreButton.get());
+    m_snapshotComponent = std::make_unique<UmsciSnapshotComponent>();
+    m_snapshotComponent->setHighlightColour(m_controlColour);
+    addAndMakeVisible(m_snapshotComponent.get());
+    m_snapshotComponent->setVisible(false);
 
-    m_upmixSnapshotRecallButton = std::make_unique<juce::DrawableButton>("SnapshotRecall", juce::DrawableButton::ButtonStyle::ImageFitted);
-    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotRecallButton->setTooltip("Recall upmix indicator state");
-    m_upmixSnapshotRecallButton->onClick = [this] {
-        if (m_controlComponent && m_upmixSnapshot.has_value())
-        {
-            const auto& s = *m_upmixSnapshot;
-            m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
-            m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
-            if (m_controlComponent->getUpmixLiveMode())
-                m_controlComponent->triggerUpmixTransformApplied();  // sends positions to DS100 immediately
-            else
-                m_controlComponent->triggerUpmixFlashCheck();        // flashes indicator; user sends manually
-            if (m_config)
-                m_config->triggerConfigurationDump();
-        }
+    m_snapshotComponent->onStoreRequested = [this] {
+        if (!m_controlComponent) return;
+        m_snapshotComponent->setSnapshotData({
+            m_controlComponent->getUpmixRot(),
+            m_controlComponent->getUpmixTrans(),
+            m_controlComponent->getUpmixHeightTrans(),
+            m_controlComponent->getUpmixAngleStretch(),
+            m_controlComponent->getUpmixOffsetX(),
+            m_controlComponent->getUpmixOffsetY()
+        });
+        m_snapshotComponent->setRecallEnabled(true);
+        if (m_config)
+            m_config->triggerConfigurationDump();
     };
-    m_upmixSnapshotRecallButton->setAlwaysOnTop(true);
-    m_upmixSnapshotRecallButton->setEnabled(false);
-    m_upmixSnapshotRecallButton->setVisible(false);
-    addAndMakeVisible(m_upmixSnapshotRecallButton.get());
+
+    m_snapshotComponent->onRecallRequested = [this] {
+        if (!m_controlComponent) return;
+        const auto& snapData = m_snapshotComponent->getSnapshotData();
+        if (!snapData.has_value()) return;
+        const auto& s = *snapData;
+        m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
+        m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
+        if (m_controlComponent->getUpmixLiveMode())
+            m_controlComponent->triggerUpmixTransformApplied();
+        else
+            m_controlComponent->triggerUpmixFlashCheck();
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
 
     m_controlComponent->onUpmixTransformChanged = [this]() {
         if (m_config)
@@ -260,10 +248,12 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(true);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
                 if (m_dbprProjectComponent)
+                {
+                    m_dbprProjectComponent->setVisible(false);
                     m_dbprProjectComponent->setMismatchFlashing(false);
+                }
                 break;
             case DeviceController::State::Connecting:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -271,8 +261,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Subscribing:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -280,8 +270,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::GetValues:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -289,8 +279,8 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Reading);
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(false);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Connected:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -299,8 +289,8 @@ MainComponent::MainComponent()
                 m_controlComponent->setVisible(true);
                 if (!noconfigui)
                 {
-                    m_upmixSnapshotStoreButton->setVisible(true);
-                    m_upmixSnapshotRecallButton->setVisible(true);
+                    if (m_snapshotComponent) m_snapshotComponent->setVisible(true);
+                    if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(true);
                 }
                 break;
             default:
@@ -351,6 +341,7 @@ MainComponent::MainComponent()
     m_dbprProjectComponent = std::make_unique<UmsciDbprProjectComponent>();
     m_dbprProjectComponent->setHighlightColour(m_controlColour);
     addAndMakeVisible(m_dbprProjectComponent.get());
+    m_dbprProjectComponent->setVisible(false);
 
     m_dbprController->onProjectLoaded = [this](const dbpr::ProjectData& data) {
         if (m_dbprProjectComponent)
@@ -406,6 +397,10 @@ MainComponent::MainComponent()
 
     m_dbprProjectComponent->onStateChangeRequested = [this](UmsciDbprProjectComponent::PanelState newState) {
         setDbprPanelState(newState);
+    };
+
+    m_snapshotComponent->onStateChangeRequested = [this](UmsciSnapshotComponent::PanelState newState) {
+        setSnapshotPanelState(newState);
     };
 
     m_dbprProjectComponent->onDeleteRequested = [this] {
@@ -473,12 +468,17 @@ void MainComponent::resized()
         m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
         m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
 
-        // Snapshot buttons sit directly above the dbpr panel, aligned to its left edge.
-        constexpr int btnSize = 30;
-        constexpr int btnGap  = 4;
-        const auto    btnLeft = UmsciDbprProjectComponent::s_panelMargin;
-        m_upmixSnapshotStoreButton->setBounds(btnLeft, panelTopY - 2 * (btnGap + btnSize), btnSize, btnSize);
-        m_upmixSnapshotRecallButton->setBounds(btnLeft, panelTopY -     (btnGap + btnSize), btnSize, btnSize);
+        // Snapshot panel sits directly above the dbpr panel.
+        if (m_snapshotComponent)
+        {
+            const auto snapW = UmsciSnapshotComponent::s_panelWidth;
+            const auto snapH = UmsciSnapshotComponent::s_panelHeight;
+            const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+            const auto snapX = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
+                ? -(snapW - UmsciSnapshotComponent::s_grabStripWidth)
+                : UmsciSnapshotComponent::s_panelMargin;
+            m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+        }
     }
 }
 
@@ -505,14 +505,6 @@ void MainComponent::lookAndFeelChanged()
         m_connectionToggleButton->setImages(connectedDrawable.get());
     else
         m_connectionToggleButton->setImages(disconnectedDrawable.get());
-
-    auto snapshotStoreDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_add_24dp_svg).get());
-    snapshotStoreDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    m_upmixSnapshotStoreButton->setImages(snapshotStoreDrawable.get());
-
-    auto snapshotRecallDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_insert_24dp_svg).get());
-    snapshotRecallDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    m_upmixSnapshotRecallButton->setImages(snapshotRecallDrawable.get());
 
     applyControlColour();
 }
@@ -894,6 +886,9 @@ void MainComponent::applyControlColour()
 
     if (m_dbprProjectComponent)
         m_dbprProjectComponent->setHighlightColour(m_controlColour);
+
+    if (m_snapshotComponent)
+        m_snapshotComponent->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -982,7 +977,7 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
-        upmixConfigXmlElement->addTextElement(UpmixSnapshot{
+        upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
             m_controlComponent ? m_controlComponent->getUpmixRot()          : 0.0f,
             m_controlComponent ? m_controlComponent->getUpmixTrans()        : 1.0f,
             m_controlComponent ? m_controlComponent->getUpmixHeightTrans()  : 0.6f,
@@ -995,12 +990,11 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
         // upmix snapshot (optional — only written when a snapshot has been stored)
-        if (m_upmixSnapshot.has_value())
+        if (m_snapshotComponent && m_snapshotComponent->getSnapshotData().has_value())
         {
-            const auto& s = *m_upmixSnapshot;
             auto snapshotXmlElement = std::make_unique<juce::XmlElement>(
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
-            snapshotXmlElement->addTextElement(s.toString());
+            snapshotXmlElement->addTextElement(m_snapshotComponent->getSnapshotData()->toString());
             m_config->setConfigState(std::move(snapshotXmlElement),
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
         }
@@ -1156,7 +1150,7 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
-        auto upmixParams = UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
+        auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
         m_controlComponent->setUpmixTransform(upmixParams.rot, upmixParams.scale,
                                               upmixParams.heightScale, upmixParams.angleStretch);
         m_controlComponent->setUpmixOffset(upmixParams.offsetX, upmixParams.offsetY);
@@ -1165,11 +1159,11 @@ void MainComponent::onConfigUpdated()
     // upmix snapshot (optional — absent in config means no snapshot stored)
     auto upmixSnapshotState = m_config->getConfigState(
         UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
-    if (upmixSnapshotState)
+    if (upmixSnapshotState && m_snapshotComponent)
     {
-        m_upmixSnapshot = UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText());
-        if (m_upmixSnapshotRecallButton)
-            m_upmixSnapshotRecallButton->setEnabled(true);
+        m_snapshotComponent->setSnapshotData(
+            UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText()));
+        m_snapshotComponent->setRecallEnabled(true);
     }
 
     // dbpr project config (optional — absent in config means no project was previously loaded)
@@ -1523,5 +1517,34 @@ void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newS
     juce::Desktop::getInstance().getAnimator().animateComponent(
         m_dbprProjectComponent.get(),
         juce::Rectangle<int>(x, panelTopY, panelW, panelH),
+        1.0f, 220, false, 1.0, 1.0);
+}
+
+void MainComponent::setSnapshotPanelState(UmsciSnapshotComponent::PanelState newState)
+{
+    if (!m_snapshotComponent)
+        return;
+
+    m_snapshotComponent->setPanelState(newState);
+
+    const auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+    auto safeBounds = getLocalBounds();
+    safeBounds.removeFromTop(safety._top);
+    safeBounds.removeFromBottom(safety._bottom);
+    safeBounds.removeFromLeft(safety._left);
+    safeBounds.removeFromRight(safety._right);
+
+    const auto dbprPanelH  = UmsciDbprProjectComponent::s_panelHeight;
+    const auto dbprTopY    = safeBounds.getBottom() - dbprPanelH - UmsciDbprProjectComponent::s_panelMargin;
+    const auto snapW       = UmsciSnapshotComponent::s_panelWidth;
+    const auto snapH       = UmsciSnapshotComponent::s_panelHeight;
+    const auto snapTopY    = dbprTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+    const auto x           = (newState == UmsciSnapshotComponent::PanelState::Tucked)
+        ? -(snapW - UmsciSnapshotComponent::s_grabStripWidth)
+        : UmsciSnapshotComponent::s_panelMargin;
+
+    juce::Desktop::getInstance().getAnimator().animateComponent(
+        m_snapshotComponent.get(),
+        juce::Rectangle<int>(x, snapTopY, snapW, snapH),
         1.0f, 220, false, 1.0, 1.0);
 }

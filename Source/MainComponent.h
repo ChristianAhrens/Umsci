@@ -27,6 +27,7 @@
 #include "OscController.h"
 #include "DbprController.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
+#include "UmsciPaintNControlComponents/UmsciSnapshotComponent.h"
 
 
  /**
@@ -176,6 +177,9 @@ private:
     /** @brief Animates the dbpr panel to the given state and records the new state. */
     void setDbprPanelState(UmsciDbprProjectComponent::PanelState state);
 
+    /** @brief Animates the snapshot panel to the given state and records the new state. */
+    void setSnapshotPanelState(UmsciSnapshotComponent::PanelState state);
+
     //==============================================================================
     /**
      * @brief Compares the loaded dbpr project data against the live device data
@@ -216,44 +220,7 @@ private:
     std::unique_ptr<juce::DrawableButton>           m_aboutButton;
     std::unique_ptr<AboutComponent>                 m_aboutComponent;
 
-    //==============================================================================
-    struct UpmixSnapshot
-    {
-        float rot { 0.0f }, scale { 1.0f }, heightScale { 0.6f },
-              angleStretch { 1.0f }, offsetX { 0.0f }, offsetY { 0.0f };
-
-        juce::String toString() const
-        {
-            return "rot=" + juce::String(rot)
-                + ";scale=" + juce::String(scale)
-                + ";heightScale=" + juce::String(heightScale)
-                + ";angleStretch=" + juce::String(angleStretch)
-                + ";offsetX=" + juce::String(offsetX)
-                + ";offsetY=" + juce::String(offsetY);
-        }
-
-        static UpmixSnapshot fromString(const juce::String& s)
-        {
-            UpmixSnapshot p;
-            for (auto& token : juce::StringArray::fromTokens(s, ";", ""))
-            {
-                auto kv = juce::StringArray::fromTokens(token.trim(), "=", "");
-                if (kv.size() != 2) continue;
-                auto key = kv[0].trim();
-                auto val = kv[1].trim().getFloatValue();
-                if      (key == "rot")         p.rot         = val;
-                else if (key == "scale")       p.scale       = val;
-                else if (key == "heightScale") p.heightScale = val;
-                else if (key == "angleStretch")p.angleStretch= val;
-                else if (key == "offsetX")     p.offsetX     = val;
-                else if (key == "offsetY")     p.offsetY     = val;
-            }
-            return p;
-        }
-    };
-    std::optional<UpmixSnapshot>                    m_upmixSnapshot;
-    std::unique_ptr<juce::DrawableButton>           m_upmixSnapshotStoreButton;
-    std::unique_ptr<juce::DrawableButton>           m_upmixSnapshotRecallButton;
+    std::unique_ptr<UmsciSnapshotComponent>         m_snapshotComponent;
 
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
