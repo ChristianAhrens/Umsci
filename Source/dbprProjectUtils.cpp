@@ -377,7 +377,7 @@ ProjectData ProjectData::openAndReadProject(const std::string& projectFilePath)
 
                 const auto translationMatrix = AffineTransform2D::translation(originX, originY);
                 const auto scalingMatrix     = AffineTransform2D::scale(scaleX, scaleY, originX, originY);
-                const auto rotationMatrix    = AffineTransform2D::rotation(rotationZ * (M_PI / 180.0), originX, originY);
+                const auto rotationMatrix    = AffineTransform2D::rotation(rotationZ * (std::acos(-1.0) / 180.0), originX, originY);
 
                 auto queryVOP = SQLite::Statement(db,
                     "SELECT * FROM VenueObjectPoints WHERE VenueObjectID==" +
