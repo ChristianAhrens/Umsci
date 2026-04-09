@@ -25,6 +25,7 @@ UmsciDbprProjectComponent::UmsciDbprProjectComponent()
     m_syncButton = std::make_unique<juce::DrawableButton>("Sync", juce::DrawableButton::ButtonStyle::ImageFitted);
     m_syncButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
     m_syncButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_syncButton->setTooltip("Sync project data to device");
     m_syncButton->onClick = [this] { if (onSyncRequested) onSyncRequested(); };
     addAndMakeVisible(m_syncButton.get());
 
@@ -38,6 +39,7 @@ UmsciDbprProjectComponent::UmsciDbprProjectComponent()
     m_deleteButton = std::make_unique<juce::DrawableButton>("Delete", juce::DrawableButton::ButtonStyle::ImageFitted);
     m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
     m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_deleteButton->setTooltip("Clear loaded project");
     m_deleteButton->onClick = [this] { if (onDeleteRequested) onDeleteRequested(); };
     addAndMakeVisible(m_deleteButton.get());
 
