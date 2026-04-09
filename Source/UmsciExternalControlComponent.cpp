@@ -77,7 +77,7 @@ public:
 
             m_learners[i] = std::make_unique<JUCEAppBasics::MidiLearnerComponent>(
                 static_cast<std::int16_t>(i),
-                JUCEAppBasics::MidiLearnerComponent::AT_ValueRange | JUCEAppBasics::MidiLearnerComponent::AT_CommandRange);
+                static_cast<JUCEAppBasics::MidiLearnerComponent::AssignmentType>(JUCEAppBasics::MidiLearnerComponent::AT_ValueRange | JUCEAppBasics::MidiLearnerComponent::AT_CommandRange));
 
             m_learners[i]->onMidiAssiSet = [this, i](juce::Component*, const JUCEAppBasics::MidiCommandRangeAssignment& assi) {
                 if (m_owner.onMidiAssiChanged)
