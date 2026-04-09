@@ -170,7 +170,8 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
-    void showDbprProjectLoad(); // called from onLoadRequested on the dbpr panel
+    void showDbprProjectLoad();     // called from onLoadRequested on the dbpr panel
+    void syncProjectToDevice();     // called from onSyncRequested on the dbpr panel
 
     //==============================================================================
     /** @brief Animates the dbpr panel to the given state and records the new state. */

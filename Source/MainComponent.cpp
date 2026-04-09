@@ -403,6 +403,10 @@ MainComponent::MainComponent()
         showDbprProjectLoad();
     };
 
+    m_dbprProjectComponent->onSyncRequested = [this] {
+        syncProjectToDevice();
+    };
+
     m_dbprProjectComponent->onDeleteRequested = [this] {
         if (m_dbprController)
             m_dbprController->clearProjectData();
@@ -1553,4 +1557,97 @@ void MainComponent::setSnapshotPanelState(UmsciSnapshotComponent::PanelState new
         m_snapshotComponent.get(),
         juce::Rectangle<int>(x, snapTopY, snapW, snapH),
         1.0f, 220, false, 1.0, 1.0);
+}
+
+void MainComponent::syncProjectToDevice()
+{
+    if (!m_dbprController || !m_dbprController->hasProjectLoaded())
+        return;
+    if (DeviceController::getInstance()->getState() != DeviceController::State::Connected)
+        return;
+
+    const auto& projectData = m_dbprController->getProjectData();
+    auto* dc = DeviceController::getInstance();
+
+    // MatrixInput channel names — all 128; unused → empty string
+    for (int i = 1; i <= DeviceController::sc_MAX_INPUTS_CHANNELS; ++i)
+    {
+        auto it = projectData.matrixInputData.find(i);
+        const auto name = (it != projectData.matrixInputData.end()) ? it->second.name : std::string{};
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::MatrixInput_ChannelName,
+            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
+            NanoOcp1::Variant(name)));
+    }
+
+    // Speaker positions — all 64; unused → all-zero 6DOF
+    for (int i = 1; i <= DeviceController::sc_MAX_OUTPUT_CHANNELS; ++i)
+    {
+        auto it = projectData.speakerPositionData.find(i);
+        const bool active = (it != projectData.speakerPositionData.end() && !it->second.isNull());
+        const auto& pp = active ? it->second : dbpr::SpeakerPositionData{};
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::Positioning_SpeakerPosition,
+            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
+            NanoOcp1::Variant(
+                NanoOcp1::DataFromAimingAndPosition(
+                    static_cast<std::float_t>(pp.hor), static_cast<std::float_t>(pp.vrt),
+                    static_cast<std::float_t>(pp.rot), static_cast<std::float_t>(pp.x),
+                    static_cast<std::float_t>(pp.y),   static_cast<std::float_t>(pp.z)),
+                NanoOcp1::OCP1DATATYPE_BLOB)));
+    }
+
+    // Function groups — all 32; unused → mode 0, empty name
+    for (int i = 1; i <= DeviceController::sc_MAX_FUNCTION_GROUPS; ++i)
+    {
+        auto it = projectData.functionGroupData.find(i);
+        const auto mode = (it != projectData.functionGroupData.end())
+            ? static_cast<std::uint16_t>(it->second.mode) : std::uint16_t(0);
+        const auto name = (it != projectData.functionGroupData.end()) ? it->second.name : std::string{};
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::FunctionGroup_Mode, addr, NanoOcp1::Variant(mode)));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::FunctionGroup_Name, addr, NanoOcp1::Variant(name)));
+    }
+
+    // Coordinate mapping settings — all 4 areas; unused → zero points, no flip, empty name
+    for (int i = DeviceController::MappingAreaId::First; i <= DeviceController::MappingAreaId::Fourth; ++i)
+    {
+        auto it = projectData.coordinateMappingData.find(i);
+        const bool active = (it != projectData.coordinateMappingData.end() && !it->second.isNull());
+        const auto& cm = active ? it->second : dbpr::CoordinateMappingData{};
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
+
+        auto sendPos = [&](DeviceController::RemoteObject::RemObjIdent roi, double x, double y, double z)
+        {
+            dc->SetObjectValue(DeviceController::RemoteObject(roi, addr,
+                NanoOcp1::Variant(
+                    NanoOcp1::DataFromPosition(
+                        static_cast<std::float_t>(x), static_cast<std::float_t>(y), static_cast<std::float_t>(z)),
+                    NanoOcp1::OCP1DATATYPE_BLOB)));
+        };
+
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1real,    cm.rp1x, cm.rp1y, cm.rp1z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P2real,    cm.rp2x, cm.rp2y, cm.rp2z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3real,    cm.rp3x, cm.rp3y, cm.rp3z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P4real,    cm.rp4x, cm.rp4y, cm.rp4z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1virtual, cm.vp1x, cm.vp1y, cm.vp1z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3virtual, cm.vp3x, cm.vp3y, cm.vp3z);
+
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::CoordinateMappingSettings_Flip, addr,
+            NanoOcp1::Variant(static_cast<std::uint16_t>(active && cm.flip ? 1 : 0))));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::CoordinateMappingSettings_Name, addr,
+            NanoOcp1::Variant(active ? cm.name : std::string{})));
+    }
+
+    // Optimistically stop flashing — the project data was just pushed to the device.
+    // If another controller changes device data afterwards, the incoming notification will
+    // trigger onDeviceDataUpdated → checkDbprDeviceSync() which restarts flashing.
+    if (m_dbprProjectComponent)
+        m_dbprProjectComponent->setMismatchFlashing(false);
 }
