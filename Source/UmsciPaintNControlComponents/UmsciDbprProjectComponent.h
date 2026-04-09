@@ -120,6 +120,10 @@ public:
      */
     std::function<void(PanelState newState)> onStateChangeRequested;
 
+    /** @brief Fired when the user clicks the load button. The parent should
+     *         open a file chooser to select a .dbpr project file. */
+    std::function<void()> onLoadRequested;
+
     /** @brief Fired when the user clicks the delete button. The parent should
      *         clear all project data and reset the app state. */
     std::function<void()> onDeleteRequested;
@@ -141,6 +145,7 @@ private:
     juce::Colour        m_highlightColour { juce::Colours::forestgreen };
 
     std::unique_ptr<juce::DrawableButton> m_syncButton;
+    std::unique_ptr<juce::DrawableButton> m_loadButton;
     std::unique_ptr<juce::DrawableButton> m_deleteButton;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciDbprProjectComponent)

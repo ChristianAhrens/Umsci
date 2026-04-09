@@ -69,6 +69,7 @@
         <GROUP id="{685EBDF9-A066-9110-AD26-50B977D7D27C}" name="Resources">
           <GROUP id="{16C5529F-D9E1-857B-0233-BD27FA4BBC8E}" name="Images">
             <FILE id="kz4ecR" name="delete_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/delete_24dp.svg"/>
+            <FILE id="fl0pNx" name="file_open_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/file_open_24dp.svg"/>
             <FILE id="hAxY3e" name="sync_arrow_up_24dp.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/sync_arrow_up_24dp.svg"/>
             <FILE id="ejhgze" name="clear_black_24dp.svg" compile="0" resource="1"

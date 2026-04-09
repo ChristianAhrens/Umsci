@@ -121,7 +121,6 @@ public:
         ControlSize_M,                     ///< Medium icons.
         ControlSize_L,                     ///< Large icons.
         ControlSize_Last = ControlSize_L,
-        DbprProjectLoad         ///< Opens a file chooser to load a .dbpr project file.
     };
 
 public:
@@ -171,7 +170,7 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
-    void showDbprProjectLoad();
+    void showDbprProjectLoad(); // called from onLoadRequested on the dbpr panel
 
     //==============================================================================
     /** @brief Animates the dbpr panel to the given state and records the new state. */

@@ -110,8 +110,6 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
     // external (MIDI) control settings
     m_settingsItems[UmsciSettingsOption::ExternalControlSettings] = std::make_pair("External control...", 0);
-    // dbpr project import
-    m_settingsItems[UmsciSettingsOption::DbprProjectLoad] = std::make_pair("Load dbpr project...", 0);
     // control size
     m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
     m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
@@ -144,8 +142,6 @@ MainComponent::MainComponent()
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::ExternalControlSettings, m_settingsItems[UmsciSettingsOption::ExternalControlSettings].first, true, false);
-        settingsMenu.addSeparator();
-        settingsMenu.addItem(UmsciSettingsOption::DbprProjectLoad, m_settingsItems[UmsciSettingsOption::DbprProjectLoad].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
@@ -403,6 +399,10 @@ MainComponent::MainComponent()
         setSnapshotPanelState(newState);
     };
 
+    m_dbprProjectComponent->onLoadRequested = [this] {
+        showDbprProjectLoad();
+    };
+
     m_dbprProjectComponent->onDeleteRequested = [this] {
         if (m_dbprController)
             m_dbprController->clearProjectData();
@@ -535,8 +535,6 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         showExternalControlSettings();
     else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
         handleSettingsControlSizeMenuResult(selectedId);
-    else if (UmsciSettingsOption::DbprProjectLoad == selectedId)
-        showDbprProjectLoad();
     else
         jassertfalse; // unhandled menu entry!?
 }

@@ -28,6 +28,13 @@ UmsciDbprProjectComponent::UmsciDbprProjectComponent()
     m_syncButton->onClick = [this] { if (onSyncRequested) onSyncRequested(); };
     addAndMakeVisible(m_syncButton.get());
 
+    m_loadButton = std::make_unique<juce::DrawableButton>("Load", juce::DrawableButton::ButtonStyle::ImageFitted);
+    m_loadButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
+    m_loadButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
+    m_loadButton->setTooltip("Load dbpr project file");
+    m_loadButton->onClick = [this] { if (onLoadRequested) onLoadRequested(); };
+    addAndMakeVisible(m_loadButton.get());
+
     m_deleteButton = std::make_unique<juce::DrawableButton>("Delete", juce::DrawableButton::ButtonStyle::ImageFitted);
     m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
     m_deleteButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
@@ -81,6 +88,10 @@ void UmsciDbprProjectComponent::resized()
     m_deleteButton->setBounds(contentWidth - buttonSize - buttonMargin,
                               getHeight() - buttonSize - buttonMargin,
                               buttonSize, buttonSize);
+
+    m_loadButton->setBounds(contentWidth - buttonSize - buttonMargin,
+                            getHeight() - 2 * (buttonSize + buttonMargin),
+                            buttonSize, buttonSize);
 }
 
 void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds)
@@ -158,6 +169,11 @@ void UmsciDbprProjectComponent::updateButtonImages()
     syncDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_syncButton->setImages(syncDrawable.get());
 
+    auto loadDrawable = juce::Drawable::createFromSVG(
+        *juce::XmlDocument::parse(BinaryData::file_open_24dp_svg).get());
+    loadDrawable->replaceColour(juce::Colours::black, m_highlightColour);
+    m_loadButton->setImages(loadDrawable.get());
+
     auto deleteDrawable = juce::Drawable::createFromSVG(
         *juce::XmlDocument::parse(BinaryData::delete_24dp_svg).get());
     deleteDrawable->replaceColour(juce::Colours::black, m_highlightColour);
@@ -173,6 +189,12 @@ void UmsciDbprProjectComponent::mouseUp(const juce::MouseEvent& e)
     if (m_deleteButton->getBounds().contains(e.getPosition()))
     {
         if (onDeleteRequested) onDeleteRequested();
+        return;
+    }
+
+    if (m_loadButton->getBounds().contains(e.getPosition()))
+    {
+        if (onLoadRequested) onLoadRequested();
         return;
     }
 
