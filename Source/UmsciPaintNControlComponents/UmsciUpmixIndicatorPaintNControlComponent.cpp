@@ -115,7 +115,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
         auto refitBounds = getRefitButtonBounds();
         g.setColour(indicatorColour);
         g.setOpacity(1.0f);
-        g.fillRect(refitBounds);
+        g.fillRoundedRectangle(refitBounds.toFloat(), 4.0f);
         g.setFont(juce::Font(juce::FontOptions(11.0f * std::min(getControlsSizeMultiplier(), 1.5f), juce::Font::plain)));
         g.setColour(labelColour);
         g.drawFittedText("Re-fit to\nbounding cube", refitBounds.reduced(4), juce::Justification::centred, 2);
