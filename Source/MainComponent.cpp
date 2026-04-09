@@ -448,36 +448,35 @@ void MainComponent::resized()
     m_connectingComponent->setBounds(safeBounds);
     m_discoverHintComponent->setBounds(safeBounds);
 
-    const auto panelW    = UmsciDbprProjectComponent::s_panelWidth;
-    const auto panelH    = UmsciDbprProjectComponent::s_panelHeight;
-    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
-
     if (m_dbprProjectComponent)
     {
+        const auto panelW    = m_dbprProjectComponent->getPanelWidth();
+        const auto panelH    = m_dbprProjectComponent->getPanelHeight();
+        const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
         const auto x = (m_dbprProjectComponent->getPanelState() == UmsciDbprProjectComponent::PanelState::Tucked)
-            ? -(panelW - UmsciDbprProjectComponent::s_grabStripWidth)
+            ? -(panelW - m_dbprProjectComponent->getGrabStripWidth())
             : UmsciDbprProjectComponent::s_panelMargin;
         m_dbprProjectComponent->setBounds(x, panelTopY, panelW, panelH);
-    }
 
-    if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
-    {
-        auto leftButtons  = safeBounds.removeFromLeft(36);
-        auto rightButtons = safeBounds.removeFromLeft(36);
-        m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
-        m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
-        m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
-
-        // Snapshot panel sits directly above the dbpr panel.
-        if (m_snapshotComponent)
+        if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
         {
-            const auto snapW = UmsciSnapshotComponent::s_panelWidth;
-            const auto snapH = UmsciSnapshotComponent::s_panelHeight;
-            const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
-            const auto snapX = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
-                ? -(snapW - UmsciSnapshotComponent::s_grabStripWidth)
-                : UmsciSnapshotComponent::s_panelMargin;
-            m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+            auto leftButtons  = safeBounds.removeFromLeft(36);
+            auto rightButtons = safeBounds.removeFromLeft(36);
+            m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
+            m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
+            m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
+
+            // Snapshot panel sits directly above the dbpr panel.
+            if (m_snapshotComponent)
+            {
+                const auto snapW    = m_snapshotComponent->getPanelWidth();
+                const auto snapH    = m_snapshotComponent->getPanelHeight();
+                const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+                const auto snapX    = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
+                    ? -(snapW - m_snapshotComponent->getGrabStripWidth())
+                    : UmsciSnapshotComponent::s_panelMargin;
+                m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+            }
         }
     }
 }
@@ -629,16 +628,25 @@ void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
         setSettingsItemsCheckState(1, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(0);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(0);
+        resized();
         break;
     case UmsciSettingsOption::ControlSize_M:
         setSettingsItemsCheckState(0, 1, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(1);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(1);
+        resized();
         break;
     case UmsciSettingsOption::ControlSize_L:
         setSettingsItemsCheckState(0, 0, 1);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(2);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(2);
+        resized();
         break;
     default:
         jassertfalse;
@@ -1505,11 +1513,11 @@ void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newS
     safeBounds.removeFromLeft(safety._left);
     safeBounds.removeFromRight(safety._right);
 
-    const auto panelW    = UmsciDbprProjectComponent::s_panelWidth;
-    const auto panelH    = UmsciDbprProjectComponent::s_panelHeight;
+    const auto panelW    = m_dbprProjectComponent->getPanelWidth();
+    const auto panelH    = m_dbprProjectComponent->getPanelHeight();
     const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
     const auto x         = (newState == UmsciDbprProjectComponent::PanelState::Tucked)
-        ? -(panelW - UmsciDbprProjectComponent::s_grabStripWidth)
+        ? -(panelW - m_dbprProjectComponent->getGrabStripWidth())
         : UmsciDbprProjectComponent::s_panelMargin;
 
     juce::Desktop::getInstance().getAnimator().animateComponent(
@@ -1532,13 +1540,13 @@ void MainComponent::setSnapshotPanelState(UmsciSnapshotComponent::PanelState new
     safeBounds.removeFromLeft(safety._left);
     safeBounds.removeFromRight(safety._right);
 
-    const auto dbprPanelH  = UmsciDbprProjectComponent::s_panelHeight;
-    const auto dbprTopY    = safeBounds.getBottom() - dbprPanelH - UmsciDbprProjectComponent::s_panelMargin;
-    const auto snapW       = UmsciSnapshotComponent::s_panelWidth;
-    const auto snapH       = UmsciSnapshotComponent::s_panelHeight;
-    const auto snapTopY    = dbprTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
-    const auto x           = (newState == UmsciSnapshotComponent::PanelState::Tucked)
-        ? -(snapW - UmsciSnapshotComponent::s_grabStripWidth)
+    const auto dbprPanelH = m_dbprProjectComponent ? m_dbprProjectComponent->getPanelHeight() : 0;
+    const auto dbprTopY   = safeBounds.getBottom() - dbprPanelH - UmsciDbprProjectComponent::s_panelMargin;
+    const auto snapW      = m_snapshotComponent->getPanelWidth();
+    const auto snapH      = m_snapshotComponent->getPanelHeight();
+    const auto snapTopY   = dbprTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+    const auto x          = (newState == UmsciSnapshotComponent::PanelState::Tucked)
+        ? -(snapW - m_snapshotComponent->getGrabStripWidth())
         : UmsciSnapshotComponent::s_panelMargin;
 
     juce::Desktop::getInstance().getAnimator().animateComponent(

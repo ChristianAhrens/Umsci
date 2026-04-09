@@ -45,10 +45,80 @@ UmsciSnapshotComponent::~UmsciSnapshotComponent() = default;
 
 //==============================================================================
 
+void UmsciSnapshotComponent::setControlSize(int sizeLevel)
+{
+    m_sizeLevel = juce::jlimit(0, 2, sizeLevel);
+    resized();
+    repaint();
+}
+
+int UmsciSnapshotComponent::getPanelWidth() const
+{
+    static constexpr int v[] = { 260, 325, 390 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getPanelHeight() const
+{
+    // 2*getPadding() + getTitleRowHeight() + 4*getContentRowHeight()
+    static constexpr int v[] = { 136, 162, 192 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getGrabStripWidth() const
+{
+    static constexpr int v[] = { 21, 27, 32 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getButtonSize() const
+{
+    static constexpr int v[] = { 24, 30, 36 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getButtonMargin() const
+{
+    static constexpr int v[] = { 6, 8, 10 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getPadding() const
+{
+    static constexpr int v[] = { 12, 14, 16 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getTitleRowHeight() const
+{
+    static constexpr int v[] = { 24, 29, 35 };
+    return v[m_sizeLevel];
+}
+
+int UmsciSnapshotComponent::getContentRowHeight() const
+{
+    static constexpr int v[] = { 22, 26, 31 };
+    return v[m_sizeLevel];
+}
+
+float UmsciSnapshotComponent::getTitleFontSize() const
+{
+    static constexpr float v[] = { 15.0f, 18.0f, 22.0f };
+    return v[m_sizeLevel];
+}
+
+float UmsciSnapshotComponent::getContentFontSize() const
+{
+    static constexpr float v[] = { 14.0f, 17.0f, 21.0f };
+    return v[m_sizeLevel];
+}
+
+//==============================================================================
+
 void UmsciSnapshotComponent::paint(juce::Graphics& g)
 {
     const auto bounds        = getLocalBounds();
-    const int  contentWidth  = s_panelWidth - s_grabStripWidth;
+    const int  contentWidth  = getWidth() - getGrabStripWidth();
     const auto contentBounds = bounds.withWidth(contentWidth);
     const auto stripBounds   = bounds.withLeft(contentWidth);
 
@@ -73,9 +143,9 @@ void UmsciSnapshotComponent::paint(juce::Graphics& g)
 
 void UmsciSnapshotComponent::resized()
 {
-    constexpr int buttonSize   = 24;
-    constexpr int buttonMargin = 6;
-    const int     contentWidth = s_panelWidth - s_grabStripWidth;
+    const int buttonSize   = getButtonSize();
+    const int buttonMargin = getButtonMargin();
+    const int contentWidth = getWidth() - getGrabStripWidth();
 
     m_recallButton->setBounds(contentWidth - buttonSize - buttonMargin,
                               buttonMargin,
@@ -88,27 +158,33 @@ void UmsciSnapshotComponent::resized()
 
 void UmsciSnapshotComponent::paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds)
 {
-    auto inner = contentBounds.reduced(12, 12);
+    const int   pad       = getPadding();
+    const int   titleRowH = getTitleRowHeight();
+    const int   rowH      = getContentRowHeight();
+    const float titleFont = getTitleFontSize();
+    const float bodyFont  = getContentFontSize();
+
+    auto inner = contentBounds.reduced(pad, pad);
 
     g.setColour(findColour(juce::Label::textColourId));
-    g.setFont(juce::Font(juce::FontOptions(15.0f, juce::Font::bold)));
-    g.drawText("Upmix indicator snapshot", inner.removeFromTop(24), juce::Justification::centredLeft, true);
+    g.setFont(juce::Font(juce::FontOptions(titleFont, juce::Font::bold)));
+    g.drawText("Upmix indicator snapshot", inner.removeFromTop(titleRowH), juce::Justification::centredLeft, true);
 
     if (m_snapshotData.has_value())
     {
         const auto& s = *m_snapshotData;
-        g.setFont(juce::Font(juce::FontOptions(14.0f, juce::Font::plain)));
-        g.drawText("Rotation: "    + juce::String(s.rot,          3), inner.removeFromTop(22), juce::Justification::centredLeft, true);
-        g.drawText("Scale: "       + juce::String(s.scale,        3), inner.removeFromTop(22), juce::Justification::centredLeft, true);
+        g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
+        g.drawText("Rotation: "    + juce::String(s.rot,          3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Scale: "       + juce::String(s.scale,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
         g.drawText("H.Scale: "     + juce::String(s.heightScale,  3) +
-                   "  A.Stretch: " + juce::String(s.angleStretch, 3), inner.removeFromTop(22), juce::Justification::centredLeft, true);
+                   "  A.Stretch: " + juce::String(s.angleStretch, 3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
         g.drawText("Offset: "      + juce::String(s.offsetX,      3) +
-                   ", "            + juce::String(s.offsetY,      3), inner.removeFromTop(22), juce::Justification::centredLeft, true);
+                   ", "            + juce::String(s.offsetY,      3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
     }
     else
     {
         g.setColour(findColour(juce::Label::textColourId).withAlpha(0.45f));
-        g.setFont(juce::Font(juce::FontOptions(14.0f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
         g.drawText("No snapshot stored", inner, juce::Justification::centred, true);
     }
 }
@@ -147,7 +223,7 @@ void UmsciSnapshotComponent::mouseUp(const juce::MouseEvent& e)
         return;
     }
 
-    if (e.x >= (s_panelWidth - s_grabStripWidth) && onStateChangeRequested)
+    if (e.x >= (getWidth() - getGrabStripWidth()) && onStateChangeRequested)
     {
         const auto newState = (m_state == PanelState::Tucked) ? PanelState::Visible : PanelState::Tucked;
         onStateChangeRequested(newState);

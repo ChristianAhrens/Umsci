@@ -48,10 +48,80 @@ UmsciDbprProjectComponent::~UmsciDbprProjectComponent() = default;
 
 //==============================================================================
 
+void UmsciDbprProjectComponent::setControlSize(int sizeLevel)
+{
+    m_sizeLevel = juce::jlimit(0, 2, sizeLevel);
+    resized();
+    repaint();
+}
+
+int UmsciDbprProjectComponent::getPanelWidth() const
+{
+    static constexpr int v[] = { 260, 325, 390 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getPanelHeight() const
+{
+    // 2*getPadding() + getTitleRowHeight() + 4*getContentRowHeight()
+    static constexpr int v[] = { 148, 172, 202 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getGrabStripWidth() const
+{
+    static constexpr int v[] = { 21, 27, 32 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getButtonSize() const
+{
+    static constexpr int v[] = { 24, 30, 36 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getButtonMargin() const
+{
+    static constexpr int v[] = { 6, 8, 10 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getPadding() const
+{
+    static constexpr int v[] = { 12, 14, 16 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getTitleRowHeight() const
+{
+    static constexpr int v[] = { 27, 32, 38 };
+    return v[m_sizeLevel];
+}
+
+int UmsciDbprProjectComponent::getContentRowHeight() const
+{
+    static constexpr int v[] = { 24, 28, 33 };
+    return v[m_sizeLevel];
+}
+
+float UmsciDbprProjectComponent::getTitleFontSize() const
+{
+    static constexpr float v[] = { 16.5f, 20.0f, 24.0f };
+    return v[m_sizeLevel];
+}
+
+float UmsciDbprProjectComponent::getContentFontSize() const
+{
+    static constexpr float v[] = { 16.5f, 18.0f, 22.0f };
+    return v[m_sizeLevel];
+}
+
+//==============================================================================
+
 void UmsciDbprProjectComponent::paint(juce::Graphics& g)
 {
     const auto bounds        = getLocalBounds();
-    const int  contentWidth  = s_panelWidth - s_grabStripWidth;
+    const int  contentWidth  = getWidth() - getGrabStripWidth();
     const auto contentBounds = bounds.withWidth(contentWidth);
     const auto stripBounds   = bounds.withLeft(contentWidth);
 
@@ -77,9 +147,9 @@ void UmsciDbprProjectComponent::paint(juce::Graphics& g)
 
 void UmsciDbprProjectComponent::resized()
 {
-    constexpr int buttonSize   = 24;
-    constexpr int buttonMargin = 6;
-    const int     contentWidth = s_panelWidth - s_grabStripWidth;
+    const int buttonSize   = getButtonSize();
+    const int buttonMargin = getButtonMargin();
+    const int contentWidth = getWidth() - getGrabStripWidth();
 
     m_syncButton->setBounds(contentWidth - buttonSize - buttonMargin,
                             buttonMargin,
@@ -96,17 +166,21 @@ void UmsciDbprProjectComponent::resized()
 
 void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<int> contentBounds)
 {
-    auto inner = contentBounds.reduced(12, 12);
+    const int   pad       = getPadding();
+    const int   titleRowH = getTitleRowHeight();
+    const int   rowH      = getContentRowHeight();
+    const float titleFont = getTitleFontSize();
+    const float bodyFont  = getContentFontSize();
+
+    auto inner = contentBounds.reduced(pad, pad);
 
     if (m_hasData)
     {
-        // Title row
         g.setColour(findColour(juce::Label::textColourId));
-        g.setFont(juce::Font(juce::FontOptions(16.5f, juce::Font::bold)));
-        g.drawText("DBPR Project", inner.removeFromTop(27), juce::Justification::centredLeft, true);
+        g.setFont(juce::Font(juce::FontOptions(titleFont, juce::Font::bold)));
+        g.drawText("DBPR Project", inner.removeFromTop(titleRowH), juce::Justification::centredLeft, true);
 
-        // Summary rows
-        g.setFont(juce::Font(juce::FontOptions(16.5f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
 
         auto cmCount  = 0;
         for (auto const& kv : m_projectData.coordinateMappingData)
@@ -116,8 +190,7 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
             if (!kv.second.isNull()) ++spkCount;
         auto soCount = 0;
         for (auto const& kv : m_projectData.matrixInputData)
-            if (kv.second.isEnScene())
-                soCount++;
+            if (kv.second.isEnScene()) ++soCount;
 
         const auto fgCount = static_cast<int>(m_projectData.functionGroupData.size());
 
@@ -126,15 +199,15 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
         const auto soText  = juce::String(soCount)  + " Soundobject"         + (soCount  != 1 ? "s" : "");
         const auto fgText  = juce::String(fgCount)  + " Function group"      + (fgCount  != 1 ? "s" : "");
 
-        g.drawText(cmText,  inner.removeFromTop(24), juce::Justification::centredLeft, true);
-        g.drawText(spkText, inner.removeFromTop(24), juce::Justification::centredLeft, true);
-        g.drawText(soText,  inner.removeFromTop(24), juce::Justification::centredLeft, true);
-        g.drawText(fgText,  inner.removeFromTop(24), juce::Justification::centredLeft, true);
+        g.drawText(cmText,  inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText(spkText, inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText(soText,  inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText(fgText,  inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
     }
     else
     {
         g.setColour(findColour(juce::Label::textColourId).withAlpha(0.45f));
-        g.setFont(juce::Font(juce::FontOptions(16.5f, juce::Font::plain)));
+        g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
         g.drawText("No project loaded", inner, juce::Justification::centred, true);
     }
 }
@@ -204,8 +277,8 @@ void UmsciDbprProjectComponent::mouseUp(const juce::MouseEvent& e)
         return;
     }
 
-    // Only the grab strip (rightmost s_grabStripWidth pixels) triggers a state toggle.
-    if (e.x >= (s_panelWidth - s_grabStripWidth) && onStateChangeRequested)
+    // Only the grab strip (rightmost getGrabStripWidth() pixels) triggers a state toggle.
+    if (e.x >= (getWidth() - getGrabStripWidth()) && onStateChangeRequested)
     {
         const auto newState = (m_state == PanelState::Tucked) ? PanelState::Visible : PanelState::Tucked;
         onStateChangeRequested(newState);

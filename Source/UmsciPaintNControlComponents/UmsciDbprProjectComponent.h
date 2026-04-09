@@ -62,15 +62,21 @@ public:
     /** Panel visibility state. Managed externally by the parent component. */
     enum class PanelState { Tucked, Visible };
 
-    // ── Layout constants (pixels) ────────────────────────────────────────────
-    /** Total component width = contentWidth + grabStripWidth. */
-    static constexpr int s_panelWidth       = 260;
-    /** Fixed component height. */
-    static constexpr int s_panelHeight      = 148;
-    /** Width of the grab-handle strip on the panel's right edge. */
-    static constexpr int s_grabStripWidth   = 21;
-    /** Left-edge margin from the window when the panel is fully visible. */
-    static constexpr int s_panelMargin      = 8;
+    // ── Layout constants (pixels, S size) ───────────────────────────────────
+    /** Left-edge margin from the window when the panel is fully visible (all sizes). */
+    static constexpr int s_panelMargin = 8;
+
+    //==============================================================================
+    /** @brief Sets the panel size level: 0=S (default), 1=M, 2=L.
+     *         Triggers resized() and repaint(). */
+    void setControlSize(int sizeLevel);
+
+    /** @brief Returns the current panel width for the active size level. */
+    int getPanelWidth()     const;
+    /** @brief Returns the current panel height for the active size level. */
+    int getPanelHeight()    const;
+    /** @brief Returns the current grab-strip width for the active size level. */
+    int getGrabStripWidth() const;
 
     UmsciDbprProjectComponent();
     ~UmsciDbprProjectComponent() override;
@@ -138,7 +144,16 @@ private:
     void updateButtonImages();
     void timerCallback() override;
 
-    PanelState          m_state = PanelState::Tucked;
+    int   getButtonSize()      const;
+    int   getButtonMargin()    const;
+    int   getPadding()         const;
+    int   getTitleRowHeight()  const;
+    int   getContentRowHeight() const;
+    float getTitleFontSize()   const;
+    float getContentFontSize() const;
+
+    PanelState          m_state     = PanelState::Tucked;
+    int                 m_sizeLevel = 0;
     dbpr::ProjectData   m_projectData;
     bool                m_hasData    = false;
     bool                m_flashState = false;
