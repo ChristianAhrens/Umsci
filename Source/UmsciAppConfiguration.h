@@ -75,6 +75,7 @@ public:
         MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
         MIDI_UPMIXOFFSETY,      ///< MIDI assignment for upmix Y offset.
         UPMIXSNAPSHOTCONFIG,    ///< Upmix snapshot container (optional; absent = no snapshot stored).
+        DBPRPROJECTCONFIG,      ///< Persisted dbpr project data (optional; absent = no project loaded).
         OSCINPUTPORT,           ///< OSC UDP listen port.
         OSC_UPMIXROT,           ///< OSC address for upmix rotation.
         OSC_UPMIXSCALE,         ///< OSC address for upmix translation (radial scale).
@@ -121,6 +122,8 @@ public:
             return "MIDI_UPMIXOFFSETY";
         case UPMIXSNAPSHOTCONFIG:
             return "UPMIXSNAPSHOTCONFIG";
+        case DBPRPROJECTCONFIG:
+            return "DBPRPROJECTCONFIG";
         case OSCINPUTPORT:
             return "OSCINPUTPORT";
         case OSC_UPMIXROT:

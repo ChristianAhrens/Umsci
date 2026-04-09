@@ -158,6 +158,12 @@ public:
      *       radians, coordinate handedness).
      */
     void setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position);
+    /** @brief Updates the speaker group assignment for a single output channel. */
+    void setSpeakerGroup(std::int16_t speakerId, std::int32_t group);
+    /** @brief Updates the display name for a single function group. */
+    void setFunctionGroupName(std::int16_t groupId, const std::string& name);
+    /** @brief Updates the mode for a single function group. */
+    void setFunctionGroupMode(std::int16_t groupId, std::uint16_t mode);
     /** @} */
 
     //==============================================================================
@@ -259,12 +265,36 @@ public:
     void resetData();
 
     //==============================================================================
+    /** @brief Holds the name and operating mode received from the device for one function group. */
+    struct FunctionGroupState
+    {
+        std::string   name;
+        std::uint16_t mode    = 0;
+        bool          hasName = false; ///< True once a FunctionGroup_Name value has been received.
+        bool          hasMode = false; ///< True once a FunctionGroup_Mode value has been received.
+    };
+
+    //==============================================================================
+    /** @brief Returns the currently cached source names keyed by matrix-input channel number. */
+    const std::map<std::int16_t, std::string>&                  getSourceNames()      const { return m_sourceName; }
+    /** @brief Returns the currently cached speaker positions (X,Y,Z,hor,vrt,rot) keyed by matrix-output number. */
+    const std::map<std::int16_t, std::array<std::float_t, 6>>& getSpeakerPositions() const { return m_speakerPosition; }
+    /** @brief Returns the currently cached function-group state (name + mode) keyed by group ID. */
+    const std::map<std::int16_t, FunctionGroupState>&           getFunctionGroupData() const { return m_functionGroupData; }
+
+    //==============================================================================
     /**
      * @brief Fired on the message thread when all initially subscribed values have
      *        been received from the DS100 (i.e. the "database" is fully populated).
      * Consumers use this to trigger a first full render or to enable UI controls.
      */
     std::function<void()> onDatabaseComplete;
+
+    /**
+     * @brief Fired on the message thread whenever a value relevant to dbpr/device
+     *        synchronisation changes (source name, speaker position, function-group mode).
+     */
+    std::function<void()> onDeviceDataUpdated;
 
     /**
      * @brief Fired on the message thread whenever the user changes any upmix transform
@@ -313,6 +343,8 @@ private:
     std::map<std::int16_t, bool>                        m_speakerMute;
     std::map<std::int16_t, std::float_t>                m_speakerGain;
     std::map<std::int16_t, std::array<std::float_t, 6>> m_speakerPosition;
+    std::map<std::int16_t, std::int32_t>                m_speakerGroup;
+    std::map<std::int16_t, FunctionGroupState>          m_functionGroupData;
 
 #if JUCE_IOS
     void* m_nativePinchViewHandle = nullptr; ///< Handle to the peer UIView that has the pinch recognizer registered.
