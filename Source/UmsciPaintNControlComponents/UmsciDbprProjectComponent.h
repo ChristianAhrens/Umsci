@@ -98,12 +98,13 @@ public:
     void setHighlightColour(const juce::Colour& colour);
 
     /**
-     * @brief Starts or stops the cyclic border-flash animation.
+     * @brief Starts or stops the cyclic mismatch-flash animation.
      *
-     * When @p mismatch is true, the panel's highlight-coloured border flashes
-     * at 500 ms intervals to indicate that the loaded dbpr data differs from
-     * the values reported by the connected device.  Passing false stops the
-     * timer and restores the solid border.
+     * When @p mismatch is true, the panel's highlight-coloured border and a
+     * sync-problem icon beside the title both flash at 500 ms intervals to
+     * indicate that the loaded dbpr data differs from the values reported by
+     * the connected device.  Passing false stops the timer, hides the icon,
+     * and restores the solid border.
      */
     void setMismatchFlashing(bool mismatch);
 
@@ -162,6 +163,8 @@ private:
     std::unique_ptr<juce::DrawableButton> m_syncButton;
     std::unique_ptr<juce::DrawableButton> m_loadButton;
     std::unique_ptr<juce::DrawableButton> m_deleteButton;
+
+    std::unique_ptr<juce::Drawable>       m_syncProblemDrawable;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UmsciDbprProjectComponent)
 };

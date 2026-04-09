@@ -60,8 +60,8 @@ int UmsciSnapshotComponent::getPanelWidth() const
 
 int UmsciSnapshotComponent::getPanelHeight() const
 {
-    // 2*getPadding() + getTitleRowHeight() + 4*getContentRowHeight()
-    static constexpr int v[] = { 136, 162, 192 };
+    // 2*getPadding() + getTitleRowHeight() + 5*getContentRowHeight()
+    static constexpr int v[] = { 171, 200, 235 };
     return v[m_sizeLevel];
 }
 
@@ -91,25 +91,25 @@ int UmsciSnapshotComponent::getPadding() const
 
 int UmsciSnapshotComponent::getTitleRowHeight() const
 {
-    static constexpr int v[] = { 24, 29, 35 };
+    static constexpr int v[] = { 27, 32, 38 };
     return v[m_sizeLevel];
 }
 
 int UmsciSnapshotComponent::getContentRowHeight() const
 {
-    static constexpr int v[] = { 22, 26, 31 };
+    static constexpr int v[] = { 24, 28, 33 };
     return v[m_sizeLevel];
 }
 
 float UmsciSnapshotComponent::getTitleFontSize() const
 {
-    static constexpr float v[] = { 15.0f, 18.0f, 22.0f };
+    static constexpr float v[] = { 16.5f, 20.0f, 24.0f };
     return v[m_sizeLevel];
 }
 
 float UmsciSnapshotComponent::getContentFontSize() const
 {
-    static constexpr float v[] = { 14.0f, 17.0f, 21.0f };
+    static constexpr float v[] = { 16.5f, 18.0f, 22.0f };
     return v[m_sizeLevel];
 }
 
@@ -174,12 +174,12 @@ void UmsciSnapshotComponent::paintContent(juce::Graphics& g, juce::Rectangle<int
     {
         const auto& s = *m_snapshotData;
         g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
-        g.drawText("Rotation: "    + juce::String(s.rot,          3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("Scale: "       + juce::String(s.scale,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("H.Scale: "     + juce::String(s.heightScale,  3) +
-                   "  A.Stretch: " + juce::String(s.angleStretch, 3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("Offset: "      + juce::String(s.offsetX,      3) +
-                   ", "            + juce::String(s.offsetY,      3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Rotation: "   + juce::String(s.rot,          3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Scale: "      + juce::String(s.scale,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("H.Scale: "    + juce::String(s.heightScale,  3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("A.Stretch: "  + juce::String(s.angleStretch, 3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Offset: "     + juce::String(s.offsetX,      3) +
+                   ", "           + juce::String(s.offsetY,      3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
     }
     else
     {

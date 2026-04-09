@@ -203,6 +203,14 @@ void UmsciDbprProjectComponent::paintContent(juce::Graphics& g, juce::Rectangle<
         g.drawText(spkText, inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
         g.drawText(soText,  inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
         g.drawText(fgText,  inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+
+        // Sync-problem icon: centred over content, half the panel height, bright flash phase only
+        if (isTimerRunning() && m_flashState && m_syncProblemDrawable)
+        {
+            const int iconSize = getPanelHeight() / 2;
+            const auto iconBounds = juce::Rectangle<int>(contentBounds).withSizeKeepingCentre(iconSize, iconSize).toFloat();
+            m_syncProblemDrawable->drawWithin(g, iconBounds, juce::RectanglePlacement::centred, 1.0f);
+        }
     }
     else
     {
@@ -251,6 +259,10 @@ void UmsciDbprProjectComponent::updateButtonImages()
         *juce::XmlDocument::parse(BinaryData::delete_24dp_svg).get());
     deleteDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_deleteButton->setImages(deleteDrawable.get());
+
+    m_syncProblemDrawable = juce::Drawable::createFromSVG(
+        *juce::XmlDocument::parse(BinaryData::sync_problem_24dp_svg).get());
+    m_syncProblemDrawable->replaceColour(juce::Colours::black, m_highlightColour);
 }
 
 //==============================================================================

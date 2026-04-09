@@ -72,6 +72,8 @@
             <FILE id="fl0pNx" name="file_open_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/file_open_24dp.svg"/>
             <FILE id="hAxY3e" name="sync_arrow_up_24dp.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/sync_arrow_up_24dp.svg"/>
+            <FILE id="sYnpR3" name="sync_problem_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/sync_problem_24dp.svg"/>
             <FILE id="ejhgze" name="clear_black_24dp.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/clear_black_24dp.svg"/>
             <FILE id="RLedEJ" name="school-24px.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/school-24px.svg"/>
