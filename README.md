@@ -22,6 +22,9 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
     * [Upmix indicator handles](#upmix-indicator-handles)
     * [Zoom and pan](#zoom-and-pan)
     * [Control modes](#control-modes)
+  * [Side panels](#side-panels)
+    * [dbpr project panel](#dbpr-project-panel)
+    * [Snapshot panel](#snapshot-panel)
   * [Umsci settings menu](#Umsci-settings-menu)
   * [Connection settings](#connection-settings)
   * [Upmix control settings](#upmix-control-settings)
@@ -34,6 +37,7 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
   * [iOS native touch handling](#ios-native-touch-handling)
   * [Configuration persistence](#configuration-persistence)
   * [MIDI control internals](#midi-control-internals)
+  * [dbpr project loading internals](#dbpr-project-loading-internals)
 
 
 <a name="overview" />
@@ -236,6 +240,66 @@ The *Control mode* setting (in *Upmix control settings*) governs how soundobject
 | **Manual (double-click to apply)** | Dragging or adjusting handles updates the on-screen geometry locally. The new positions are only sent to the DS100 when the user double-clicks the ring or handle. Use this mode when you want to preview a new layout before committing it. |
 | **Live (apply changes immediately)** | Every position change is sent to the DS100 in real time as the user drags. DS100 echo-backs are automatically absorbed so they do not produce spurious visual feedback. |
 
+<a name="side-panels" />
+
+### Side panels
+
+Two collapsible side panels live at the left edge of the main window and are accessible at all times — no menu required.  Each panel has a **grab strip** (the narrow vertical bar visible at the left edge) that can be clicked to slide the panel in or out.
+
+![Showreel.010.png](Resources/Documentation/Showreel/Showreel.010.png "Side panels — both untucked (grab strips visible)")
+
+<a name="dbpr-project-panel" />
+
+#### dbpr project panel
+
+The dbpr panel (lower of the two) lets you load a **d&b audiotechnik software project file** (`.dbpr`) and use it as a reference for the currently connected DS100.
+
+**Loading a project**
+
+Click the **Load** button (folder icon) to open a file browser and select a `.dbpr` file.  Umsci reads the following tables from the file's internal SQLite database:
+
+| Table | What it provides |
+|:------|:-----------------|
+| `MatrixCoordinateMappings` / `VenueObjects` | Coordinate mapping areas (virtual-point corners, real-point corners). |
+| `MatrixOutputs` | Speaker positions and aiming angles. |
+| `MatrixInputs` | Sound object names and En-Scene flags (`InputMode`). |
+| `FunctionGroups` | Function group names and operating modes. |
+
+A condensed summary is shown in the panel, e.g. *4 CMP · 52 SPK · 48 SO · 8 FG*.
+
+> **Note:** Umsci only supports projects with a single DS100.  Projects that reference multiple device IDs, or that contain no En-Scene matrix inputs, are rejected with an error message.
+
+**Comparing project data to the device**
+
+Once a project is loaded and a DS100 is connected, Umsci continuously compares the project data against the values reported by the device.  If any mismatch is detected, the panel border and a sync-problem icon next to the title begin to **flash** to draw attention.
+
+**Syncing project data to the device**
+
+Click the **Sync** button (upload icon) to push the loaded project data to the connected DS100 in a single step.  After a successful sync the flashing stops and the panel returns to its steady-state appearance.
+
+**Clearing project data**
+
+Click the **Clear** button (trash icon) to discard all loaded project data.  The panel returns to the empty state.  The DS100 is not modified by this action.
+
+**Persistence**
+
+The loaded project data is saved to the XML configuration file so it is automatically restored the next time Umsci starts.
+
+<a name="snapshot-panel" />
+
+#### Snapshot panel
+
+The snapshot panel (upper of the two) stores and recalls a single upmix transform snapshot — a frozen copy of all six transform parameters (rotation, scale, height, angle stretch, offset X/Y).
+
+| Button | Action |
+|:-------|:-------|
+| **Store** | Captures the current upmix transform into the panel.  The six parameter values are displayed as a summary. |
+| **Recall** | Applies the stored snapshot to the upmix indicator.  In *Live* mode the positions are immediately sent to the DS100. |
+
+The snapshot is held in memory for the session; it is not persisted to the config file.
+
+---
+
 <a name="Umsci-settings-menu" />
 
 ### Umsci settings menu
@@ -249,7 +313,7 @@ The gear button (top-left) opens the settings menu.  Available options:
 | **Look & feel** | Follow host / Dark / Light. |
 | **Control colour** | Green / Red / Blue / Anni Pink / Laser. |
 | **Control format** | Stereo, LRS, LCRS, 5.0, 5.1, 5.1.2, 7.0, 7.1, 7.1.4, 9.1.6 — sets the upmix ring channel geometry. |
-| **Control size** | S / M / L — scales the soundobject and speaker icons. |
+| **Control size** | S / M / L — scales the soundobject, speaker icons, and side panels. |
 | **Connection settings…** | OCP.1 IP/port/IO-size configuration (see below). |
 | **Upmix control settings…** | Upmix mode, shape, channel-start and visibility configuration (see below). |
 | **External control…** | MIDI assignment for the six upmix transform parameters (see below). |
@@ -453,3 +517,38 @@ UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
 The `m_inhibitFlashCount` counter absorbs OCP.1 echo-backs (the DS100 reflects each `SetObjectValue` back as a notification).  Without it, each echo would call `updateFlashState()`, which detects a mismatch between rendered and live positions and starts the flash animation — producing visible flicker during MIDI control.
 
 MIDI assignments are stored as `JUCEAppBasics::MidiCommandRangeAssignment` objects and serialised to hex strings in the XML config under the `<ExternalControlConfig>` element.
+
+<a name="dbpr-project-loading-internals" />
+
+### dbpr project loading internals
+
+```
+User clicks Load button
+  │  (message thread)
+  ▼
+DbprController::loadProjectFromFile()
+  │  opens SQLite database via SQLiteCpp
+  │  reads MatrixCoordinateMappings, VenueObjects, VenueObjectPoints
+  │      → CoordinateMappingDataMap
+  │  reads MatrixOutputs
+  │      → SpeakerPositionDataMap
+  │  reads MatrixInputs (DeviceId, Name, InputMode)
+  │      → MatrixInputDataMap  (validates: single DeviceId, ≥1 En-Scene input)
+  │  reads FunctionGroups (FunctionGroupId, Name, Mode)
+  │      → FunctionGroupDataMap
+  │  juce::MessageManager::callAsync → message thread
+  ▼
+DbprController::onProjectLoaded callback
+  │
+  ▼
+MainComponent — stores ProjectData, persists to XML, notifies UI
+  │
+  ▼
+UmsciDbprProjectComponent::setProjectData()  — updates panel summary, triggers repaint
+```
+
+The `dbpr::ProjectData` struct aggregates all four data maps and supports round-trip serialisation to a compact pipe-delimited string, which is written to the XML config under `<DbprProjectData>` so that the data survives restarts without re-reading the original `.dbpr` file.
+
+**Mismatch detection** works by comparing the `SpeakerPositionData` values in the loaded project against the loudspeaker positions continuously subscribed from the DS100 via OCP.1.  A tolerance-checked element-wise comparison is run on the message thread whenever either the project data or the live device data changes.  On mismatch, `UmsciDbprProjectComponent::setMismatchFlashing(true)` is called, which starts a 500 ms `juce::Timer` that toggles the border and icon visibility on each tick.
+
+**Sync** iterates over the loaded `SpeakerPositionDataMap` and `CoordinateMappingDataMap` and sends the corresponding OCP.1 `SetValue` commands to the DS100 via `DeviceController`.  After the last command is enqueued the mismatch comparator re-runs; if all values now match the flashing stops automatically.
