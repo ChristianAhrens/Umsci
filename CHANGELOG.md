@@ -4,12 +4,16 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] 2026-04-12
 ### Added
+- Added dbpr project panel: load a d&b audiotechnik .dbpr project file via a floating side panel, compare its data against the connected DS100, and sync or clear it with dedicated buttons
 
 ### Changed
+- Changed upmix indicator snapshot store/recall to a dedicated floating side panel, consistent with the dbpr panel design and accessible at all times without opening a menu
 
 ### Fixed
+- Fixed connection establishment getting stuck in permanent 'Reading' state: Umsci now retries dropped OCP.1 `getValues` queries so that a connection always reaches the subscribed state
+- Fixed stale loudspeaker icon painting after a device change invalidates previously valid speaker positions
 
 ## [0.2.4] 2026-03-26
 ### Added
