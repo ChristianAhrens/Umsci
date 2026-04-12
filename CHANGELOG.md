@@ -4,6 +4,13 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+
+### Changed
+
+### Fixed
+
 ## [0.3.0] 2026-04-12
 ### Added
 - Added dbpr project panel: load a d&b audiotechnik .dbpr project file via a floating side panel, compare its data against the connected DS100, and sync or clear it with dedicated buttons
