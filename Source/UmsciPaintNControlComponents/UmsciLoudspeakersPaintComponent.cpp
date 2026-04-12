@@ -83,6 +83,12 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakerDrawable(std::int16_t spea
         auto angle2D = -hor * std::cos(verRad) + rot * std::sin(verRad) + 90.0f;
         drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(angle2D), drawableBounds.getCentreX(), drawableBounds.getCentreY()));
     }
+    else
+    {
+        // All-zero position means the speaker is inactive — remove any stale prerendered data.
+        m_speakerDrawables.erase(speakerId);
+        m_speakerDrawableAreas.erase(speakerId);
+    }
 }
 
 void UmsciLoudspeakersPaintComponent::setSpeakerPositions(const std::map<std::int16_t, std::array<std::float_t, 6>>& speakerPositions)
@@ -110,8 +116,11 @@ void UmsciLoudspeakersPaintComponent::setSpeakerPosition(std::int16_t speakerId,
 {
     m_speakerPositions[speakerId] = position;
     PrerenderSpeakerDrawable(speakerId, position);
-    m_speakerDrawableAreas[speakerId] = juce::Rectangle<float>(0.0f, 0.0f, 16.0f * getControlsSizeMultiplier(), 16.0f * getControlsSizeMultiplier())
-                                            .withCentre(GetPointForRealCoordinate({ position.at(3), position.at(4), position.at(5) }));
+    // PrerenderSpeakerDrawable erases both maps for all-zero positions, so only
+    // write the area when the speaker is actually active (drawable was created).
+    if (m_speakerDrawables.count(speakerId))
+        m_speakerDrawableAreas[speakerId] = juce::Rectangle<float>(0.0f, 0.0f, 16.0f * getControlsSizeMultiplier(), 16.0f * getControlsSizeMultiplier())
+                                                .withCentre(GetPointForRealCoordinate({ position.at(3), position.at(4), position.at(5) }));
     repaint();
 }
 
@@ -145,6 +154,11 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakersInBounds()
         {
             auto speakerArea = juce::Rectangle<float>(0.0f, 0.0f, 16.0f * getControlsSizeMultiplier(), 16.0f * getControlsSizeMultiplier()).withCentre(GetPointForRealCoordinate({ x, y, z }));
             m_speakerDrawableAreas[speakerId] = speakerArea;
+        }
+        else
+        {
+            m_speakerDrawables.erase(speakerId);
+            m_speakerDrawableAreas.erase(speakerId);
         }
     }
 }

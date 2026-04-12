@@ -1,12 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.2.5" companyWebsite="https://christianahrens.github.io/Umsci"
-              bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/"
-              defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0"
+              jucerFormatVersion="1" version="0.3.0" companyWebsite="https://christianahrens.github.io/Umsci"
+              bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/&#10;../../submodules/SQLiteCpp/include&#10;../../submodules/SQLiteCpp/sqlite3"
+              defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0,&#10;SQLITE_ENABLE_COLUMN_METADATA=1&#10;USE_DBPR_PROJECT_UTILS=1"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
   <MAINGROUP id="YIs3Nm" name="Umsci">
     <GROUP id="{60526C8C-38C9-8A62-4BE8-08FDFBF21423}" name="submodules">
+      <GROUP id="{34A4379B-16DD-279A-B1C2-96B24116838D}" name="SQLiteCpp">
+        <GROUP id="{CE186853-5C0E-E1E8-2342-99DB72131895}" name="sqlite3">
+          <FILE id="Vw1CIl" name="sqlite3.c" compile="1" resource="0" file="submodules/SQLiteCpp/sqlite3/sqlite3.c"/>
+          <FILE id="Je3dP2" name="sqlite3.h" compile="0" resource="0" file="submodules/SQLiteCpp/sqlite3/sqlite3.h"/>
+        </GROUP>
+        <GROUP id="{5E1879FA-F6D3-7A9D-E383-D7DEB564552D}" name="src">
+          <FILE id="LOfzR0" name="Backup.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Backup.cpp"/>
+          <FILE id="Jsxv10" name="Column.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Column.cpp"/>
+          <FILE id="gvYF3q" name="Database.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Database.cpp"/>
+          <FILE id="Eein66" name="Exception.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Exception.cpp"/>
+          <FILE id="PNttEY" name="Savepoint.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Savepoint.cpp"/>
+          <FILE id="eemIiS" name="Statement.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Statement.cpp"/>
+          <FILE id="oVatpM" name="Transaction.cpp" compile="1" resource="0" file="submodules/SQLiteCpp/src/Transaction.cpp"/>
+        </GROUP>
+        <GROUP id="{AA11A78D-DE8A-7BED-4B7C-93AE6122E647}" name="include">
+          <GROUP id="{F14CD4C4-2177-C222-5660-51F4AAAC1751}" name="SQLiteCpp">
+            <FILE id="chJJbe" name="Assertion.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Assertion.h"/>
+            <FILE id="qld0Qe" name="Backup.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Backup.h"/>
+            <FILE id="V1Sbco" name="Column.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Column.h"/>
+            <FILE id="ZmhGj2" name="Database.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Database.h"/>
+            <FILE id="L1L3JE" name="Exception.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Exception.h"/>
+            <FILE id="nKxPWi" name="ExecuteMany.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/ExecuteMany.h"/>
+            <FILE id="LE4PX5" name="Savepoint.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Savepoint.h"/>
+            <FILE id="SZJ1b2" name="SQLiteCpp.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/SQLiteCpp.h"/>
+            <FILE id="BBo8ly" name="SQLiteCppExport.h" compile="0" resource="0"
+                  file="submodules/SQLiteCpp/include/SQLiteCpp/SQLiteCppExport.h"/>
+            <FILE id="x31wzk" name="Statement.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Statement.h"/>
+            <FILE id="ypY1KB" name="Transaction.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Transaction.h"/>
+            <FILE id="htAjFL" name="Utils.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/Utils.h"/>
+            <FILE id="JRRPrN" name="VariadicBind.h" compile="0" resource="0" file="submodules/SQLiteCpp/include/SQLiteCpp/VariadicBind.h"/>
+          </GROUP>
+        </GROUP>
+      </GROUP>
       <GROUP id="{7653811E-D730-658E-A565-A564209E34FD}" name="NanoOcp">
         <GROUP id="{ED3C7B2D-D3DA-B577-38E0-E342CE2B3A4C}" name="Source">
           <FILE id="naRI53" name="NanoOcp1.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/NanoOcp1.cpp"/>
@@ -35,6 +68,12 @@
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">
         <GROUP id="{685EBDF9-A066-9110-AD26-50B977D7D27C}" name="Resources">
           <GROUP id="{16C5529F-D9E1-857B-0233-BD27FA4BBC8E}" name="Images">
+            <FILE id="kz4ecR" name="delete_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/delete_24dp.svg"/>
+            <FILE id="fl0pNx" name="file_open_24dp.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/file_open_24dp.svg"/>
+            <FILE id="hAxY3e" name="sync_arrow_up_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/sync_arrow_up_24dp.svg"/>
+            <FILE id="sYnpR3" name="sync_problem_24dp.svg" compile="0" resource="1"
+                  file="submodules/JUCE-AppBasics/Resources/Images/sync_problem_24dp.svg"/>
             <FILE id="ejhgze" name="clear_black_24dp.svg" compile="0" resource="1"
                   file="submodules/JUCE-AppBasics/Resources/Images/clear_black_24dp.svg"/>
             <FILE id="RLedEJ" name="school-24px.svg" compile="0" resource="1" file="submodules/JUCE-AppBasics/Resources/Images/school-24px.svg"/>
@@ -121,6 +160,14 @@
     </GROUP>
     <GROUP id="{B4C42B10-6A29-1C3A-435D-5CB7A9DE671E}" name="Source">
       <GROUP id="{D10A2BCF-D236-B6F5-7F5D-FC252EA155F6}" name="UmsciPaintNControlComponents">
+        <FILE id="a24SdB" name="UmsciDbprProjectComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.cpp"/>
+        <FILE id="uwRnVz" name="UmsciDbprProjectComponent.h" compile="0" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"/>
+        <FILE id="sn4pSh" name="UmsciSnapshotComponent.cpp" compile="1"
+              resource="0" file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.cpp"/>
+        <FILE id="sn4pSH" name="UmsciSnapshotComponent.h" compile="0" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.h"/>
         <FILE id="eyijqn" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
               resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.cpp"/>
         <FILE id="gc2JqM" name="UmsciLoudspeakersPaintComponent.h" compile="0"
@@ -138,14 +185,22 @@
         <FILE id="XbpJ1n" name="UmsciUpmixIndicatorPaintNControlComponent.h"
               compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"/>
       </GROUP>
-      <FILE id="IKTqod" name="UmsciZeroconfDiscoverComboComponent.cpp" compile="1"
-            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.cpp"/>
-      <FILE id="vR95jV" name="UmsciZeroconfDiscoverComboComponent.h" compile="0"
-            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.h"/>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="jjkLLp" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="QLc7Xd" name="DbprController.cpp" compile="1" resource="0"
+            file="Source/DbprController.cpp"/>
+      <FILE id="ORbyL1" name="DbprController.h" compile="0" resource="0"
+            file="Source/DbprController.h"/>
+      <FILE id="dBpR01" name="dbprProjectUtils.cpp" compile="1" resource="0"
+            file="Source/dbprProjectUtils.cpp"/>
+      <FILE id="dBpR02" name="dbprProjectUtils.h" compile="0" resource="0"
+            file="Source/dbprProjectUtils.h"/>
+      <FILE id="IKTqod" name="UmsciZeroconfDiscoverComboComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.cpp"/>
+      <FILE id="vR95jV" name="UmsciZeroconfDiscoverComboComponent.h" compile="0"
+            resource="0" file="Source/UmsciZeroconfDiscoverComboComponent.h"/>
       <FILE id="D8bpYt" name="UmsciControlComponent.cpp" compile="1" resource="0"
             file="Source/UmsciControlComponent.cpp"/>
       <FILE id="khKIzT" name="UmsciControlComponent.h" compile="0" resource="0"

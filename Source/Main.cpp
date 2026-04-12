@@ -100,6 +100,7 @@ public:
             juce::Desktop::getInstance().setKioskModeComponent(getTopLevelComponent(), false);
 #else
             setResizable(true, true);
+            setResizeLimits(400, 350, 30000, 30000);
             centreWithSize(getWidth(), getHeight());
 #endif
 

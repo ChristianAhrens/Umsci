@@ -27,6 +27,7 @@
 
 #include "AboutComponent.h"
 #include "UmsciExternalControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 
 #include <CustomLookAndFeel.h>
 #include <WebUpdateDetector.h>
@@ -185,56 +186,52 @@ MainComponent::MainComponent()
         m_connectionToggleButton->setVisible(false);
     }
 
-    m_upmixSnapshotStoreButton = std::make_unique<juce::DrawableButton>("SnapshotStore", juce::DrawableButton::ButtonStyle::ImageFitted);
-    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotStoreButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotStoreButton->setTooltip("Store upmix indicator state");
-    m_upmixSnapshotStoreButton->onClick = [this] {
-        if (m_controlComponent)
-        {
-            m_upmixSnapshot = UpmixSnapshot{
-                m_controlComponent->getUpmixRot(),
-                m_controlComponent->getUpmixTrans(),
-                m_controlComponent->getUpmixHeightTrans(),
-                m_controlComponent->getUpmixAngleStretch(),
-                m_controlComponent->getUpmixOffsetX(),
-                m_controlComponent->getUpmixOffsetY()
-            };
-            m_upmixSnapshotRecallButton->setEnabled(true);
-            if (m_config)
-                m_config->triggerConfigurationDump();
-        }
-    };
-    m_upmixSnapshotStoreButton->setAlwaysOnTop(true);
-    m_upmixSnapshotStoreButton->setVisible(false);
-    addAndMakeVisible(m_upmixSnapshotStoreButton.get());
+    m_snapshotComponent = std::make_unique<UmsciSnapshotComponent>();
+    m_snapshotComponent->setHighlightColour(m_controlColour);
+    addAndMakeVisible(m_snapshotComponent.get());
+    m_snapshotComponent->setVisible(false);
 
-    m_upmixSnapshotRecallButton = std::make_unique<juce::DrawableButton>("SnapshotRecall", juce::DrawableButton::ButtonStyle::ImageFitted);
-    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotRecallButton->setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
-    m_upmixSnapshotRecallButton->setTooltip("Recall upmix indicator state");
-    m_upmixSnapshotRecallButton->onClick = [this] {
-        if (m_controlComponent && m_upmixSnapshot.has_value())
-        {
-            const auto& s = *m_upmixSnapshot;
-            m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
-            m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
-            if (m_controlComponent->getUpmixLiveMode())
-                m_controlComponent->triggerUpmixTransformApplied();  // sends positions to DS100 immediately
-            else
-                m_controlComponent->triggerUpmixFlashCheck();        // flashes indicator; user sends manually
-            if (m_config)
-                m_config->triggerConfigurationDump();
-        }
+    m_snapshotComponent->onStoreRequested = [this] {
+        if (!m_controlComponent) return;
+        m_snapshotComponent->setSnapshotData({
+            m_controlComponent->getUpmixRot(),
+            m_controlComponent->getUpmixTrans(),
+            m_controlComponent->getUpmixHeightTrans(),
+            m_controlComponent->getUpmixAngleStretch(),
+            m_controlComponent->getUpmixOffsetX(),
+            m_controlComponent->getUpmixOffsetY()
+        });
+        m_snapshotComponent->setRecallEnabled(true);
+        if (m_config)
+            m_config->triggerConfigurationDump();
     };
-    m_upmixSnapshotRecallButton->setAlwaysOnTop(true);
-    m_upmixSnapshotRecallButton->setEnabled(false);
-    m_upmixSnapshotRecallButton->setVisible(false);
-    addAndMakeVisible(m_upmixSnapshotRecallButton.get());
+
+    m_snapshotComponent->onRecallRequested = [this] {
+        if (!m_controlComponent) return;
+        const auto& snapData = m_snapshotComponent->getSnapshotData();
+        if (!snapData.has_value()) return;
+        const auto& s = *snapData;
+        m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
+        m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
+        if (m_controlComponent->getUpmixLiveMode())
+            m_controlComponent->triggerUpmixTransformApplied();
+        else
+            m_controlComponent->triggerUpmixFlashCheck();
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
 
     m_controlComponent->onUpmixTransformChanged = [this]() {
         if (m_config)
             m_config->triggerConfigurationDump();
+    };
+
+    m_controlComponent->onDatabaseComplete = [this]() {
+        checkDbprDeviceSync();
+    };
+
+    m_controlComponent->onDeviceDataUpdated = [this]() {
+        checkDbprDeviceSync();
     };
 
     DeviceController::getInstance()->onStateChanged = [=](DeviceController::State s) {
@@ -247,8 +244,12 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(true);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent)
+                {
+                    m_dbprProjectComponent->setVisible(false);
+                    m_dbprProjectComponent->setMismatchFlashing(false);
+                }
                 break;
             case DeviceController::State::Connecting:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -256,8 +257,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Subscribing:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -265,8 +266,8 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::GetValues:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -274,8 +275,8 @@ MainComponent::MainComponent()
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Reading);
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(false);
-                m_upmixSnapshotStoreButton->setVisible(false);
-                m_upmixSnapshotRecallButton->setVisible(false);
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Connected:
                 m_connectionToggleButton->setToggleState(true, juce::dontSendNotification);
@@ -284,8 +285,8 @@ MainComponent::MainComponent()
                 m_controlComponent->setVisible(true);
                 if (!noconfigui)
                 {
-                    m_upmixSnapshotStoreButton->setVisible(true);
-                    m_upmixSnapshotRecallButton->setVisible(true);
+                    if (m_snapshotComponent) m_snapshotComponent->setVisible(true);
+                    if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(true);
                 }
                 break;
             default:
@@ -331,6 +332,91 @@ MainComponent::MainComponent()
         applyUpmixParamValue(param, domainValue);
     };
 
+    // dbpr project controller and floating panel
+    m_dbprController = std::make_unique<DbprController>();
+    m_dbprProjectComponent = std::make_unique<UmsciDbprProjectComponent>();
+    m_dbprProjectComponent->setHighlightColour(m_controlColour);
+    addAndMakeVisible(m_dbprProjectComponent.get());
+    m_dbprProjectComponent->setVisible(false);
+
+    m_dbprController->onProjectLoaded = [this](const dbpr::ProjectData& data) {
+        if (m_dbprProjectComponent)
+        {
+            m_dbprProjectComponent->setProjectData(data);
+            setDbprPanelState(UmsciDbprProjectComponent::PanelState::Visible);
+        }
+
+        checkDbprDeviceSync();
+
+        if (m_config)
+            m_config->triggerConfigurationDump();
+
+        // Warn if the En-Scene inputs don't align with the current upmix configuration
+        if (m_controlComponent)
+        {
+            const auto startId      = m_controlComponent->getUpmixSourceStartId();
+            const auto channelCount = static_cast<int>(m_controlComponent->getUpmixChannelConfiguration().size());
+
+            // Check that every input in the range [startId, startId+channelCount-1] is En-Scene.
+            // Any gap (missing or InputMode=0) means upmix will not work correctly.
+            juce::StringArray missingIds;
+            for (int id = startId; id < startId + channelCount; ++id)
+            {
+                auto it = data.matrixInputData.find(id);
+                if (it == data.matrixInputData.end() || !it->second.isEnScene())
+                    missingIds.add(juce::String(id));
+            }
+
+            if (!missingIds.isEmpty())
+            {
+                juce::String warning = "The loaded project's En-Scene inputs do not cover the full upmix range.\n"
+                    "Upmix expects inputs " + juce::String(startId)
+                    + " to " + juce::String(startId + channelCount - 1)
+                    + " to be set to En-Scene, but the following are not:\n  "
+                    + missingIds.joinIntoString(", ")
+                    + "\nPlease adjust the upmix configuration or the project to avoid mismatches.";
+
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::AlertWindow::WarningIcon,
+                    "Upmix Configuration Mismatch",
+                    warning);
+            }
+        }
+    };
+
+    m_dbprController->onProjectLoadFailed = [](const std::string& errorMsg) {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            "Project Load Failed",
+            juce::String(errorMsg));
+    };
+
+    m_dbprProjectComponent->onStateChangeRequested = [this](UmsciDbprProjectComponent::PanelState newState) {
+        setDbprPanelState(newState);
+    };
+
+    m_snapshotComponent->onStateChangeRequested = [this](UmsciSnapshotComponent::PanelState newState) {
+        setSnapshotPanelState(newState);
+    };
+
+    m_dbprProjectComponent->onLoadRequested = [this] {
+        showDbprProjectLoad();
+    };
+
+    m_dbprProjectComponent->onSyncRequested = [this] {
+        syncProjectToDevice();
+    };
+
+    m_dbprProjectComponent->onDeleteRequested = [this] {
+        if (m_dbprController)
+            m_dbprController->clearProjectData();
+        if (m_dbprProjectComponent)
+            m_dbprProjectComponent->clearProjectData();
+        checkDbprDeviceSync();
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+
     // add this main component to watchers
     m_config->addWatcher(this); // without initial update - that we have to do externally after lambdas were assigned
 
@@ -366,16 +452,36 @@ void MainComponent::resized()
     m_connectingComponent->setBounds(safeBounds);
     m_discoverHintComponent->setBounds(safeBounds);
 
-    if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
+    if (m_dbprProjectComponent)
     {
-        auto leftButtons = safeBounds.removeFromLeft(36);
-        auto rightButtons = safeBounds.removeFromLeft(36);
-        m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
-        m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
-        m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
+        const auto panelW    = m_dbprProjectComponent->getPanelWidth();
+        const auto panelH    = m_dbprProjectComponent->getPanelHeight();
+        const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
+        const auto x = (m_dbprProjectComponent->getPanelState() == UmsciDbprProjectComponent::PanelState::Tucked)
+            ? -(panelW - m_dbprProjectComponent->getGrabStripWidth())
+            : UmsciDbprProjectComponent::s_panelMargin;
+        m_dbprProjectComponent->setBounds(x, panelTopY, panelW, panelH);
 
-        m_upmixSnapshotStoreButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
-        m_upmixSnapshotRecallButton->setBounds(leftButtons.removeFromBottom(35).removeFromRight(30).removeFromTop(30));
+        if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
+        {
+            auto leftButtons  = safeBounds.removeFromLeft(36);
+            auto rightButtons = safeBounds.removeFromLeft(36);
+            m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
+            m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
+            m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
+
+            // Snapshot panel sits directly above the dbpr panel.
+            if (m_snapshotComponent)
+            {
+                const auto snapW    = m_snapshotComponent->getPanelWidth();
+                const auto snapH    = m_snapshotComponent->getPanelHeight();
+                const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+                const auto snapX    = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
+                    ? -(snapW - m_snapshotComponent->getGrabStripWidth())
+                    : UmsciSnapshotComponent::s_panelMargin;
+                m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+            }
+        }
     }
 }
 
@@ -402,14 +508,6 @@ void MainComponent::lookAndFeelChanged()
         m_connectionToggleButton->setImages(connectedDrawable.get());
     else
         m_connectionToggleButton->setImages(disconnectedDrawable.get());
-
-    auto snapshotStoreDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_add_24dp_svg).get());
-    snapshotStoreDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    m_upmixSnapshotStoreButton->setImages(snapshotStoreDrawable.get());
-
-    auto snapshotRecallDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::variable_insert_24dp_svg).get());
-    snapshotRecallDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    m_upmixSnapshotRecallButton->setImages(snapshotRecallDrawable.get());
 
     applyControlColour();
 }
@@ -534,16 +632,25 @@ void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
         setSettingsItemsCheckState(1, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(0);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(0);
+        resized();
         break;
     case UmsciSettingsOption::ControlSize_M:
         setSettingsItemsCheckState(0, 1, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(1);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(1);
+        resized();
         break;
     case UmsciSettingsOption::ControlSize_L:
         setSettingsItemsCheckState(0, 0, 1);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
+        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(2);
+        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(2);
+        resized();
         break;
     default:
         jassertfalse;
@@ -786,6 +893,12 @@ void MainComponent::applyControlColour()
             break;
         }
     }
+
+    if (m_dbprProjectComponent)
+        m_dbprProjectComponent->setHighlightColour(m_controlColour);
+
+    if (m_snapshotComponent)
+        m_snapshotComponent->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -874,7 +987,7 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
-        upmixConfigXmlElement->addTextElement(UpmixSnapshot{
+        upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
             m_controlComponent ? m_controlComponent->getUpmixRot()          : 0.0f,
             m_controlComponent ? m_controlComponent->getUpmixTrans()        : 1.0f,
             m_controlComponent ? m_controlComponent->getUpmixHeightTrans()  : 0.6f,
@@ -887,14 +1000,24 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
 
         // upmix snapshot (optional — only written when a snapshot has been stored)
-        if (m_upmixSnapshot.has_value())
+        if (m_snapshotComponent && m_snapshotComponent->getSnapshotData().has_value())
         {
-            const auto& s = *m_upmixSnapshot;
             auto snapshotXmlElement = std::make_unique<juce::XmlElement>(
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
-            snapshotXmlElement->addTextElement(s.toString());
+            snapshotXmlElement->addTextElement(m_snapshotComponent->getSnapshotData()->toString());
             m_config->setConfigState(std::move(snapshotXmlElement),
                 UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
+        }
+
+        // dbpr project config — always written so clearing removes any previously persisted data
+        if (m_dbprController)
+        {
+            auto dbprXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
+            if (m_dbprController->hasProjectLoaded())
+                dbprXmlElement->addTextElement(juce::String(m_dbprController->getProjectData().toString()));
+            m_config->setConfigState(std::move(dbprXmlElement),
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
         }
 
         // external control (MIDI) config
@@ -1037,7 +1160,7 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
-        auto upmixParams = UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
+        auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
         m_controlComponent->setUpmixTransform(upmixParams.rot, upmixParams.scale,
                                               upmixParams.heightScale, upmixParams.angleStretch);
         m_controlComponent->setUpmixOffset(upmixParams.offsetX, upmixParams.offsetY);
@@ -1046,11 +1169,25 @@ void MainComponent::onConfigUpdated()
     // upmix snapshot (optional — absent in config means no snapshot stored)
     auto upmixSnapshotState = m_config->getConfigState(
         UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXSNAPSHOTCONFIG));
-    if (upmixSnapshotState)
+    if (upmixSnapshotState && m_snapshotComponent)
     {
-        m_upmixSnapshot = UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText());
-        if (m_upmixSnapshotRecallButton)
-            m_upmixSnapshotRecallButton->setEnabled(true);
+        m_snapshotComponent->setSnapshotData(
+            UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixSnapshotState->getAllSubText()));
+        m_snapshotComponent->setRecallEnabled(true);
+    }
+
+    // dbpr project config (optional — absent in config means no project was previously loaded)
+    auto dbprProjectState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::DBPRPROJECTCONFIG));
+    if (dbprProjectState && m_dbprController)
+    {
+        auto projectData = dbpr::ProjectData::fromString(dbprProjectState->getAllSubText().toStdString());
+        if (!projectData.isEmpty())
+        {
+            m_dbprController->setProjectData(projectData);
+            if (m_dbprProjectComponent)
+                m_dbprProjectComponent->setProjectData(projectData);
+        }
     }
 
     // external control (MIDI) config
@@ -1221,3 +1358,296 @@ void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMid
     m_controlComponent->triggerUpmixTransformApplied();
 }
 
+
+void MainComponent::showDbprProjectLoad()
+{
+    m_fileChooser = std::make_unique<juce::FileChooser>(
+        "Open d\u0026b dbpr project file...",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.dbpr");
+
+    m_fileChooser->launchAsync(
+        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this](const juce::FileChooser& chooser)
+        {
+            const auto results = chooser.getResults();
+            if (!results.isEmpty() && m_dbprController)
+                m_dbprController->loadProjectFromFile(results.getFirst().getFullPathName().toStdString());
+
+            m_fileChooser.reset();
+        });
+}
+
+void MainComponent::checkDbprDeviceSync()
+{
+    if (!m_dbprController || !m_dbprProjectComponent || !m_controlComponent)
+        return;
+    if (!m_dbprController->hasProjectLoaded())
+    {
+        m_dbprProjectComponent->setMismatchFlashing(false);
+        return;
+    }
+
+    const auto& projectData      = m_dbprController->getProjectData();
+    const auto& deviceNames      = m_controlComponent->getSourceNames();
+    const auto& devicePositions  = m_controlComponent->getSpeakerPositions();
+    const auto& deviceFgData     = m_controlComponent->getFunctionGroupData();
+
+    bool mismatch = false;
+
+    // ── MatrixInput / Soundobject names ──────────────────────────────────────
+    // Empty names on both sides are skipped; only one-sided or differing
+    // non-empty names count as a mismatch.
+    for (auto const& kv : projectData.matrixInputData)
+    {
+        const auto& projectName = kv.second.name;
+        auto it = deviceNames.find(static_cast<std::int16_t>(kv.first));
+        const auto deviceName = (it != deviceNames.end()) ? it->second : std::string{};
+
+        if (!projectName.empty() || !deviceName.empty())
+            if (projectName != deviceName) { mismatch = true; break; }
+    }
+
+    // ── Loudspeaker count and positions ──────────────────────────────────────
+    // A speaker is considered active only when at least one of its 6DOF values
+    // is non-zero; all-zero means not present.
+    // Device array layout from ToAimingAndPosition(): {hor, vrt, rot, x, y, z}
+    if (!mismatch)
+    {
+        constexpr float eps = 1e-4f;
+
+        auto isDevicePositionNull = [eps](const std::array<std::float_t, 6>& dp) {
+            return std::abs(dp[0]) <= eps && std::abs(dp[1]) <= eps && std::abs(dp[2]) <= eps &&
+                   std::abs(dp[3]) <= eps && std::abs(dp[4]) <= eps && std::abs(dp[5]) <= eps;
+        };
+
+        int projectActiveCount = 0;
+        for (auto const& kv : projectData.speakerPositionData)
+            if (!kv.second.isNull()) ++projectActiveCount;
+        int deviceActiveCount = 0;
+        for (auto const& kv : devicePositions)
+            if (!isDevicePositionNull(kv.second)) ++deviceActiveCount;
+
+        if (projectActiveCount != deviceActiveCount)
+        {
+            mismatch = true;
+        }
+        else
+        {
+            for (auto const& kv : projectData.speakerPositionData)
+            {
+                if (kv.second.isNull())
+                    continue;
+
+                auto it = devicePositions.find(static_cast<std::int16_t>(kv.first));
+                if (it == devicePositions.end() || isDevicePositionNull(it->second))
+                    { mismatch = true; break; }
+
+                const auto& dp = it->second;
+                const auto& pp = kv.second;
+                if (std::abs(dp[0] - static_cast<float>(pp.hor)) > eps ||
+                    std::abs(dp[1] - static_cast<float>(pp.vrt)) > eps ||
+                    std::abs(dp[2] - static_cast<float>(pp.rot)) > eps ||
+                    std::abs(dp[3] - static_cast<float>(pp.x))   > eps ||
+                    std::abs(dp[4] - static_cast<float>(pp.y))   > eps ||
+                    std::abs(dp[5] - static_cast<float>(pp.z))   > eps)
+                {
+                    mismatch = true; break;
+                }
+            }
+        }
+    }
+
+    // ── Function-group count, names, and mode values ─────────────────────────
+    // Mode 0 (None) is equivalent to the FG not being present; only active
+    // (mode != 0) groups are counted and compared.
+    if (!mismatch)
+    {
+        int projectActiveCount = 0;
+        for (auto const& kv : projectData.functionGroupData)
+            if (kv.second.mode != 0) ++projectActiveCount;
+        int deviceActiveCount = 0;
+        for (auto const& kv : deviceFgData)
+            if (kv.second.mode != 0) ++deviceActiveCount;
+
+        if (projectActiveCount != deviceActiveCount)
+        {
+            mismatch = true;
+        }
+        else
+        {
+            for (auto const& kv : projectData.functionGroupData)
+            {
+                if (kv.second.mode == 0)
+                    continue;
+
+                auto it = deviceFgData.find(static_cast<std::int16_t>(kv.first));
+                const auto deviceMode = (it != deviceFgData.end()) ? it->second.mode : std::uint16_t(0);
+
+                if (deviceMode != static_cast<std::uint16_t>(kv.second.mode))
+                {
+                    mismatch = true; break;
+                }
+
+                // Empty names count as not present; only compare when both sides
+                // have a non-empty name.
+                if (!kv.second.name.empty() && !it->second.name.empty()
+                    && it->second.name != kv.second.name)
+                {
+                    mismatch = true; break;
+                }
+            }
+        }
+    }
+
+    m_dbprProjectComponent->setMismatchFlashing(mismatch);
+}
+
+void MainComponent::setDbprPanelState(UmsciDbprProjectComponent::PanelState newState)
+{
+    if (!m_dbprProjectComponent)
+        return;
+
+    m_dbprProjectComponent->setPanelState(newState);
+
+    const auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+    auto safeBounds = getLocalBounds();
+    safeBounds.removeFromTop(safety._top);
+    safeBounds.removeFromBottom(safety._bottom);
+    safeBounds.removeFromLeft(safety._left);
+    safeBounds.removeFromRight(safety._right);
+
+    const auto panelW    = m_dbprProjectComponent->getPanelWidth();
+    const auto panelH    = m_dbprProjectComponent->getPanelHeight();
+    const auto panelTopY = safeBounds.getBottom() - panelH - UmsciDbprProjectComponent::s_panelMargin;
+    const auto x         = (newState == UmsciDbprProjectComponent::PanelState::Tucked)
+        ? -(panelW - m_dbprProjectComponent->getGrabStripWidth())
+        : UmsciDbprProjectComponent::s_panelMargin;
+
+    juce::Desktop::getInstance().getAnimator().animateComponent(
+        m_dbprProjectComponent.get(),
+        juce::Rectangle<int>(x, panelTopY, panelW, panelH),
+        1.0f, 220, false, 1.0, 1.0);
+}
+
+void MainComponent::setSnapshotPanelState(UmsciSnapshotComponent::PanelState newState)
+{
+    if (!m_snapshotComponent)
+        return;
+
+    m_snapshotComponent->setPanelState(newState);
+
+    const auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+    auto safeBounds = getLocalBounds();
+    safeBounds.removeFromTop(safety._top);
+    safeBounds.removeFromBottom(safety._bottom);
+    safeBounds.removeFromLeft(safety._left);
+    safeBounds.removeFromRight(safety._right);
+
+    const auto dbprPanelH = m_dbprProjectComponent ? m_dbprProjectComponent->getPanelHeight() : 0;
+    const auto dbprTopY   = safeBounds.getBottom() - dbprPanelH - UmsciDbprProjectComponent::s_panelMargin;
+    const auto snapW      = m_snapshotComponent->getPanelWidth();
+    const auto snapH      = m_snapshotComponent->getPanelHeight();
+    const auto snapTopY   = dbprTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+    const auto x          = (newState == UmsciSnapshotComponent::PanelState::Tucked)
+        ? -(snapW - m_snapshotComponent->getGrabStripWidth())
+        : UmsciSnapshotComponent::s_panelMargin;
+
+    juce::Desktop::getInstance().getAnimator().animateComponent(
+        m_snapshotComponent.get(),
+        juce::Rectangle<int>(x, snapTopY, snapW, snapH),
+        1.0f, 220, false, 1.0, 1.0);
+}
+
+void MainComponent::syncProjectToDevice()
+{
+    if (!m_dbprController || !m_dbprController->hasProjectLoaded())
+        return;
+    if (DeviceController::getInstance()->getState() != DeviceController::State::Connected)
+        return;
+
+    const auto& projectData = m_dbprController->getProjectData();
+    auto* dc = DeviceController::getInstance();
+
+    // MatrixInput channel names — all 128; unused → empty string
+    for (int i = 1; i <= DeviceController::sc_MAX_INPUTS_CHANNELS; ++i)
+    {
+        auto it = projectData.matrixInputData.find(i);
+        const auto name = (it != projectData.matrixInputData.end()) ? it->second.name : std::string{};
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::MatrixInput_ChannelName,
+            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
+            NanoOcp1::Variant(name)));
+    }
+
+    // Speaker positions — all 64; unused → all-zero 6DOF
+    for (int i = 1; i <= DeviceController::sc_MAX_OUTPUT_CHANNELS; ++i)
+    {
+        auto it = projectData.speakerPositionData.find(i);
+        const bool active = (it != projectData.speakerPositionData.end() && !it->second.isNull());
+        const auto& pp = active ? it->second : dbpr::SpeakerPositionData{};
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::Positioning_SpeakerPosition,
+            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
+            NanoOcp1::Variant(
+                NanoOcp1::DataFromAimingAndPosition(
+                    static_cast<std::float_t>(pp.hor), static_cast<std::float_t>(pp.vrt),
+                    static_cast<std::float_t>(pp.rot), static_cast<std::float_t>(pp.x),
+                    static_cast<std::float_t>(pp.y),   static_cast<std::float_t>(pp.z)),
+                NanoOcp1::OCP1DATATYPE_BLOB)));
+    }
+
+    // Function groups — all 32; unused → mode 0, empty name
+    for (int i = 1; i <= DeviceController::sc_MAX_FUNCTION_GROUPS; ++i)
+    {
+        auto it = projectData.functionGroupData.find(i);
+        const auto mode = (it != projectData.functionGroupData.end())
+            ? static_cast<std::uint16_t>(it->second.mode) : std::uint16_t(0);
+        const auto name = (it != projectData.functionGroupData.end()) ? it->second.name : std::string{};
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::FunctionGroup_Mode, addr, NanoOcp1::Variant(mode)));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::FunctionGroup_Name, addr, NanoOcp1::Variant(name)));
+    }
+
+    // Coordinate mapping settings — all 4 areas; unused → zero points, no flip, empty name
+    for (int i = DeviceController::MappingAreaId::First; i <= DeviceController::MappingAreaId::Fourth; ++i)
+    {
+        auto it = projectData.coordinateMappingData.find(i);
+        const bool active = (it != projectData.coordinateMappingData.end() && !it->second.isNull());
+        const auto& cm = active ? it->second : dbpr::CoordinateMappingData{};
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
+
+        auto sendPos = [&](DeviceController::RemoteObject::RemObjIdent roi, double x, double y, double z)
+        {
+            dc->SetObjectValue(DeviceController::RemoteObject(roi, addr,
+                NanoOcp1::Variant(
+                    NanoOcp1::DataFromPosition(
+                        static_cast<std::float_t>(x), static_cast<std::float_t>(y), static_cast<std::float_t>(z)),
+                    NanoOcp1::OCP1DATATYPE_BLOB)));
+        };
+
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1real,    cm.rp1x, cm.rp1y, cm.rp1z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P2real,    cm.rp2x, cm.rp2y, cm.rp2z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3real,    cm.rp3x, cm.rp3y, cm.rp3z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P4real,    cm.rp4x, cm.rp4y, cm.rp4z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1virtual, cm.vp1x, cm.vp1y, cm.vp1z);
+        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3virtual, cm.vp3x, cm.vp3y, cm.vp3z);
+
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::CoordinateMappingSettings_Flip, addr,
+            NanoOcp1::Variant(static_cast<std::uint16_t>(active && cm.flip ? 1 : 0))));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::CoordinateMappingSettings_Name, addr,
+            NanoOcp1::Variant(active ? cm.name : std::string{})));
+    }
+
+    // Optimistically stop flashing — the project data was just pushed to the device.
+    // If another controller changes device data afterwards, the incoming notification will
+    // trigger onDeviceDataUpdated → checkDbprDeviceSync() which restarts flashing.
+    if (m_dbprProjectComponent)
+        m_dbprProjectComponent->setMismatchFlashing(false);
+}

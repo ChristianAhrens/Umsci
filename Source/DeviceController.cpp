@@ -84,7 +84,7 @@ DeviceController::DeviceController()
         }
     };
 
-    m_ocp1Connection->onDataReceived = [=](const juce::MemoryBlock& data) {
+    m_ocp1Connection->onDataReceived = [=](const NanoOcp1::ByteVector& data) {
         return ocp1MessageReceived(data);
     };
 }
@@ -124,6 +124,11 @@ void DeviceController::setState(const State& s, juce::NotificationType notificat
     {
         DBG(juce::String(__FUNCTION__) << " " << stateToString(s));
         m_currentState = s;
+
+        if (s == State::GetValues)
+            startTimer(m_ocp1Timeout * 20); // (re)start timeout; fires retryPendingGetValues() if device drops a response
+        else if (s == State::Connected)
+            stopTimer();
 
         if (onStateChanged && juce::NotificationType::sendNotification == notificationType)
             onStateChanged(s);
@@ -192,10 +197,38 @@ void DeviceController::timerCallback()
     {
         m_ocp1Connection->connectToSocket(m_ocp1IPAddress.toString(), m_ocp1Port, m_ocp1Timeout);
     }
+    else if (State::GetValues == getState())
+    {
+        retryPendingGetValues();
+    }
     else
     {
         jassertfalse;
         disconnect();
+    }
+}
+
+void DeviceController::retryPendingGetValues()
+{
+    std::vector<std::uint32_t> staleONos;
+    {
+        std::lock_guard<std::mutex> l(m_pendingHandlesMutex);
+        staleONos.reserve(m_pendingGetValueHandlesWithONo.size());
+        for (auto const& [handle, ono] : m_pendingGetValueHandlesWithONo)
+            staleONos.push_back(ono);
+        m_pendingGetValueHandlesWithONo.clear();
+    }
+
+    DBG(juce::String(__FUNCTION__) << " re-querying " << staleONos.size() << " unanswered getvalue ONos");
+
+    for (auto ono : staleONos)
+    {
+        auto it = m_ONoToROIMap.find(ono);
+        if (it != m_ONoToROIMap.end())
+        {
+            auto const& [roi, addr] = it->second;
+            QueryObjectValue(roi, addr);
+        }
     }
 }
 
@@ -294,6 +327,7 @@ void DeviceController::CreateKnownONosMap()
     {
         auto roa = RemObjAddr(first, RemObjAddr::sc_INV);
         m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerPosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first);
+        m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerGroup][roa]    = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Group(first);
         m_ROIsToDefsMap[RemoteObject::MatrixOutput_Mute][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixOutput_Mute(first);
         m_ROIsToDefsMap[RemoteObject::MatrixOutput_Gain][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixOutput_Gain(first);
         m_ROIsToDefsMap[RemoteObject::MatrixOutput_Delay][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixOutput_Delay(first);
@@ -311,6 +345,7 @@ void DeviceController::CreateKnownONosMap()
         auto roa = RemObjAddr(first, RemObjAddr::sc_INV);
         m_ROIsToDefsMap[RemoteObject::FunctionGroup_Name][roa] = NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Name(first);
         m_ROIsToDefsMap[RemoteObject::FunctionGroup_Delay][roa] = NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Delay(first);
+        m_ROIsToDefsMap[RemoteObject::FunctionGroup_Mode][roa] = NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Mode(first);
         m_ROIsToDefsMap[RemoteObject::FunctionGroup_SpreadFactor][roa] = NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_SpreadFactor(first);
     }
 
@@ -443,10 +478,14 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
             return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first));
         else
             return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Speaker_Position(first));
+    case RemoteObject::Positioning_SpeakerGroup:
+        return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Group(first));
     case RemoteObject::FunctionGroup_Name:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Name(first));
     case RemoteObject::FunctionGroup_Delay:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Delay(first));
+    case RemoteObject::FunctionGroup_Mode:
+        return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Mode(first));
     case RemoteObject::FunctionGroup_SpreadFactor:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_SpreadFactor(first));
     case RemoteObject::MatrixInput_Mute:
@@ -536,7 +575,7 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
     }
 }
 
-bool DeviceController::ocp1MessageReceived(const juce::MemoryBlock& data)
+bool DeviceController::ocp1MessageReceived(const NanoOcp1::ByteVector& data)
 {
     std::unique_ptr<NanoOcp1::Ocp1Message> msgObj = NanoOcp1::Ocp1Message::UnmarshalOcp1Message(data);
     if (msgObj)
@@ -676,7 +715,7 @@ bool DeviceController::CreateObjectSubscriptions()
         if (!objDef)
             return false;
 
-        success = success && m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->AddSubscriptionCommand(), handle).GetMemoryBlock());
+        success = success && m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->AddSubscriptionCommand(), handle).GetSerializedData());
         //DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(activeObj.Id) << "("
         //    << (activeObj.Addr.pri >= 0 ? (" pri:" + juce::String(activeObj.Addr.pri)) : "")
         //    << (activeObj.Addr.sec >= 0 ? (" sec:" + juce::String(activeObj.Addr.sec)) : "")
@@ -728,7 +767,7 @@ bool DeviceController::QueryObjectValue(const RemoteObject::RemObjIdent roi, con
         return false;
 
     // Send GetValue command
-    bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->GetValueCommand(), handle).GetMemoryBlock());
+    bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->GetValueCommand(), handle).GetSerializedData());
     AddPendingGetValueHandle(handle, objDef->m_targetOno);
     //DBG(juce::String(__FUNCTION__) + " " + RemoteObject::GetObjectDescription(roi) + "(handle: " + NanoOcp1::HandleToString(handle) + ")");
     return success;
@@ -749,7 +788,7 @@ bool DeviceController::SetObjectValue(const RemoteObject& remObj)
     if (!objDef)
         return false;
 
-    bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->SetValueCommand(remObj.Var), handle).GetMemoryBlock());
+    bool success = m_ocp1Connection->sendData(NanoOcp1::Ocp1CommandResponseRequired(objDef->SetValueCommand(remObj.Var), handle).GetSerializedData());
     AddPendingSetValueHandle(handle, objDef->m_targetOno, remObj.Addr.pri);
 
     DBG(juce::String(__FUNCTION__) << " " << RemoteObject::GetObjectDescription(remObj.Id)
@@ -960,6 +999,7 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     case RemoteObject::MatrixOutput_EqEnable:
     case RemoteObject::Positioning_SourceDelayMode:
     case RemoteObject::MatrixSettings_ReverbRoomId:
+    case RemoteObject::FunctionGroup_Mode:
     case RemoteObject::ReverbInputProcessing_EqEnable:
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16;
         break;
@@ -1010,6 +1050,9 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     case RemoteObject::CoordinateMappingSettings_P1virtual:
     case RemoteObject::CoordinateMappingSettings_P3virtual:
         datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
+        break;
+    case RemoteObject::Positioning_SpeakerGroup:
+        datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32;
         break;
     default:
         DBG(juce::String(__FUNCTION__) << " unknown: " << RemoteObject::GetObjectDescription(roi)
@@ -1073,6 +1116,7 @@ void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
         {
             roa.pri = first;
             m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerPosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first);
+            m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerGroup][roa]    = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Group(first);
         }
     }
     else

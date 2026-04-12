@@ -13,3 +13,6 @@
 [submodule "submodules/doxygen-awesome-css"]
 	path = submodules/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
+[submodule "submodules/SQLiteCpp"]
+	path = submodules/SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp

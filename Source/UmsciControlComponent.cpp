@@ -209,6 +209,12 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Mute, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Gain, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerPosition, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerGroup, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+    }
+    for (std::int16_t g = 1; g <= DeviceController::sc_MAX_FUNCTION_GROUPS; g++)
+    {
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Name, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Mode, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
 
     DeviceController::getInstance()->SetActiveRemoteObjects(ocp1ObjectTree);
@@ -264,6 +270,18 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_BLOB /*OCP1DATATYPE_DB_POSITION ?!*/ == obj.Var.GetDataType());
         setSpeakerPosition(obj.Addr.pri, obj.Var.ToAimingAndPosition());
         break;
+    case DeviceController::RemoteObject::Positioning_SpeakerGroup:
+        jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32 == obj.Var.GetDataType());
+        setSpeakerGroup(obj.Addr.pri, obj.Var.ToInt32());
+        break;
+    case DeviceController::RemoteObject::FunctionGroup_Name:
+        jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
+        setFunctionGroupName(obj.Addr.pri, obj.Var.ToString());
+        break;
+    case DeviceController::RemoteObject::FunctionGroup_Mode:
+        jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16 == obj.Var.GetDataType());
+        setFunctionGroupMode(obj.Addr.pri, obj.Var.ToUInt16());
+        break;
     //all below fallthrough as unhandled
     case DeviceController::RemoteObject::CoordinateMappingSettings_Flip:
     case DeviceController::RemoteObject::MatrixNode_Enable:
@@ -303,7 +321,6 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
     case DeviceController::RemoteObject::Scene_SceneIndex:
     case DeviceController::RemoteObject::Scene_SceneName:
     case DeviceController::RemoteObject::Scene_SceneComment:
-    case DeviceController::RemoteObject::FunctionGroup_Name:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING;
     case DeviceController::RemoteObject::CoordinateMapping_SourcePosition:
     case DeviceController::RemoteObject::CoordinateMappingSettings_P1real:
@@ -349,6 +366,12 @@ bool UmsciControlComponent::checkIsDatabaseComplete()
     complete = complete && m_speakerMute.size() == m_ocp1IOSize.second;
     complete = complete && m_speakerGain.size() == m_ocp1IOSize.second;
     complete = complete && m_speakerPosition.size() == m_ocp1IOSize.second;
+    complete = complete && m_speakerGroup.size() == m_ocp1IOSize.second;
+    if (m_functionGroupData.size() < DeviceController::sc_MAX_FUNCTION_GROUPS)
+        complete = false;
+    else
+        for (auto const& kv : m_functionGroupData)
+            complete = complete && kv.second.hasName && kv.second.hasMode;
 
     return complete;
 }
@@ -406,6 +429,8 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
         m_speakerMute.clear();
         m_speakerGain.clear();
         m_speakerPosition.clear();
+        m_speakerGroup.clear();
+        m_functionGroupData.clear();
     }
 }
 
@@ -484,6 +509,7 @@ void UmsciControlComponent::setDeviceName(const std::string& name)
 void UmsciControlComponent::setSourceName(std::int16_t sourceId, const std::string& name)
 {
     m_sourceName[sourceId] = name;
+    if (onDeviceDataUpdated) onDeviceDataUpdated();
 }
 
 void UmsciControlComponent::setSourceMute(std::int16_t sourceId, const std::uint8_t& ocp1MuteValue)
@@ -554,6 +580,7 @@ void UmsciControlComponent::setSpeakerGain(std::int16_t speakerId, const std::fl
 void UmsciControlComponent::setSpeakerPosition(std::int16_t speakerId, const std::array<std::float_t, 6>& position)
 {
     m_speakerPosition[speakerId] = position;
+    if (onDeviceDataUpdated) onDeviceDataUpdated();
 
     if (m_databaseComplete)
     {
@@ -572,6 +599,25 @@ void UmsciControlComponent::setSpeakerPosition(std::int16_t speakerId, const std
 
         resized(); // re-maps all screen positions in all children via their resized() callbacks
     }
+}
+
+void UmsciControlComponent::setSpeakerGroup(std::int16_t speakerId, std::int32_t group)
+{
+    m_speakerGroup[speakerId] = group;
+}
+
+void UmsciControlComponent::setFunctionGroupName(std::int16_t groupId, const std::string& name)
+{
+    m_functionGroupData[groupId].name    = name;
+    m_functionGroupData[groupId].hasName = true;
+    if (onDeviceDataUpdated) onDeviceDataUpdated();
+}
+
+void UmsciControlComponent::setFunctionGroupMode(std::int16_t groupId, std::uint16_t mode)
+{
+    m_functionGroupData[groupId].mode    = mode;
+    m_functionGroupData[groupId].hasMode = true;
+    if (onDeviceDataUpdated) onDeviceDataUpdated();
 }
 
 void UmsciControlComponent::setUpmixChannelConfiguration(const juce::AudioChannelSet& upmixChannelConfig)
