@@ -1,0 +1,7 @@
+<map id="UmsciControlComponent" name="UmsciControlComponent">
+<area shape="rect" id="Node000001" title="The main visualisation and interaction surface for Umsci." alt="" coords="72,93,257,119"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,13,137,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,45,153,91,149,95,94,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="162,5,354,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="227,56,180,95,177,91,223,52"/>
+</map>
