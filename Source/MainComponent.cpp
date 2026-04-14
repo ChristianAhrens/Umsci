@@ -283,11 +283,8 @@ MainComponent::MainComponent()
                 m_connectingComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(true);
-                if (!noconfigui)
-                {
-                    if (m_snapshotComponent) m_snapshotComponent->setVisible(true);
-                    if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(true);
-                }
+                if (m_snapshotComponent) m_snapshotComponent->setVisible(true);
+                if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(true);
                 break;
             default:
                 break;
@@ -462,6 +459,18 @@ void MainComponent::resized()
             : UmsciDbprProjectComponent::s_panelMargin;
         m_dbprProjectComponent->setBounds(x, panelTopY, panelW, panelH);
 
+        // Snapshot panel sits directly above the dbpr panel.
+        if (m_snapshotComponent)
+        {
+            const auto snapW    = m_snapshotComponent->getPanelWidth();
+            const auto snapH    = m_snapshotComponent->getPanelHeight();
+            const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+            const auto snapX    = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
+                ? -(snapW - m_snapshotComponent->getGrabStripWidth())
+                : UmsciSnapshotComponent::s_panelMargin;
+            m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+        }
+
         if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
         {
             auto leftButtons  = safeBounds.removeFromLeft(36);
@@ -469,18 +478,6 @@ void MainComponent::resized()
             m_aboutButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
             m_settingsButton->setBounds(leftButtons.removeFromTop(35).removeFromBottom(30));
             m_connectionToggleButton->setBounds(rightButtons.removeFromTop(35).removeFromBottom(30));
-
-            // Snapshot panel sits directly above the dbpr panel.
-            if (m_snapshotComponent)
-            {
-                const auto snapW    = m_snapshotComponent->getPanelWidth();
-                const auto snapH    = m_snapshotComponent->getPanelHeight();
-                const auto snapTopY = panelTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
-                const auto snapX    = (m_snapshotComponent->getPanelState() == UmsciSnapshotComponent::PanelState::Tucked)
-                    ? -(snapW - m_snapshotComponent->getGrabStripWidth())
-                    : UmsciSnapshotComponent::s_panelMargin;
-                m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
-            }
         }
     }
 }
