@@ -29,8 +29,8 @@
  *        SVG icon at each loudspeaker's reported real-world position.
  *
  * ## Rendering pipeline
- * 1. `setSpeakerPosition()` stores the incoming 6-component position {X, Y, Z,
- *    horizontal angle, vertical angle, rotation} and calls `PrerenderSpeakerDrawable()`
+ * 1. `setSpeakerPosition()` stores the incoming 6-component position {horizontal angle,
+ *    vertical angle, dispersion-axis roll, X, Y, Z} and calls `PrerenderSpeakerDrawable()`
  *    to create a rotated `juce::Drawable` scaled to the current pixel bounds.
  * 2. `PrerenderSpeakersInBounds()` converts all world positions to pixel coordinates
  *    (via `GetPointForRealCoordinate()`) and stores the target `Rectangle<float>` for
