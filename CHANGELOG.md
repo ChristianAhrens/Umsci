@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.3.1] 2026-04-26
+### Added
+
+### Changed
+
+### Fixed
+- Fixed snapshot and dbpr panels to not be affected by --noconfigui cmdln parameter
+- Fixed loudspeaker 2d position rendering regarding 6DOF hor/vert angles
+
 ## [0.3.0] 2026-04-12
 ### Added
 - Added dbpr project panel: load a d&b audiotechnik .dbpr project file via a floating side panel, compare its data against the connected DS100, and sync or clear it with dedicated buttons
