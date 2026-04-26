@@ -1,0 +1,15 @@
+<map id="Source/MidiController.cpp" name="Source/MidiController.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="135,5,323,31"/>
+<area shape="rect" id="Node000002" href="$MidiController_8h.html" title=" " alt="" coords="167,79,292,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,31,232,65,227,65,227,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,225,112,251"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="180,106,135,125,113,138,94,154,76,182,66,213,60,211,71,180,90,150,110,133,132,120,178,102"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="347,225,594,251"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="264,102,314,122,368,150,413,182,450,214,447,218,410,186,365,154,312,127,262,107"/>
+<area shape="rect" id="Node000005" href="$UmsciExternalControlComponent_8h.html" title=" " alt="" coords="104,152,355,177"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="232,104,232,138,227,138,227,104"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="203,180,100,222,98,218,201,175"/>
+<area shape="poly" id="edge6_Node000005_Node000004" title=" " alt="" coords="269,175,419,219,417,224,267,180"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="136,225,323,251"/>
+<area shape="poly" id="edge7_Node000005_Node000006" title=" " alt="" coords="232,178,232,212,227,212,227,178"/>
+</map>

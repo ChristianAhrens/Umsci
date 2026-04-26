@@ -1,0 +1,8 @@
+<map id="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.h" name="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,276,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="87,196,194,221"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,62,105,84,94,109,90,128,94,147,105,167,119,185,115,188,100,170,89,149,84,128,89,107,100,81,116,59"/>
+<area shape="rect" id="Node000003" href="$UmsciPaintNControlComponentBase_8h.html" title=" " alt="" coords="103,108,330,148"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="164,59,195,96,191,99,160,62"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="200,150,164,188,160,184,196,146"/>
+</map>

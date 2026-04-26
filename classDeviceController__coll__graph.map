@@ -1,0 +1,7 @@
+<map id="DeviceController" name="DeviceController">
+<area shape="rect" id="Node000001" title="Singleton that owns the OCP.1 (AES70) TCP connection to a d&amp;b audiotechnik DS100 device and exposes a..." alt="" coords="65,79,195,104"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,100,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,38,119,76,116,80,73,42"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="124,5,291,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="187,42,144,80,141,76,183,38"/>
+</map>
