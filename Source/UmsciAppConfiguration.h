@@ -75,6 +75,7 @@ public:
         MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
         MIDI_UPMIXOFFSETY,      ///< MIDI assignment for upmix Y offset.
         UPMIXSNAPSHOTCONFIG,    ///< Upmix snapshot container (optional; absent = no snapshot stored).
+        UPMIXPARAMSCONFIG,      ///< Upmix params panel aggregate values (spread, delay mode).
         DBPRPROJECTCONFIG,      ///< Persisted dbpr project data (optional; absent = no project loaded).
         OSCINPUTPORT,           ///< OSC UDP listen port.
         OSC_UPMIXROT,           ///< OSC address for upmix rotation.
@@ -122,6 +123,8 @@ public:
             return "MIDI_UPMIXOFFSETY";
         case UPMIXSNAPSHOTCONFIG:
             return "UPMIXSNAPSHOTCONFIG";
+        case UPMIXPARAMSCONFIG:
+            return "UPMIXPARAMSCONFIG";
         case DBPRPROJECTCONFIG:
             return "DBPRPROJECTCONFIG";
         case OSCINPUTPORT:
@@ -153,7 +156,9 @@ public:
         UPMIXSOURCESTARTID,  ///< Integer: 1-based first DS100 channel for upmix inputs.
         UPMIXLIVEMODE,       ///< Boolean: follow live DS100 source positions.
         UPMIXSHAPE,          ///< String: "Circle" or "Rectangle".
-        UPMIXSHOWALLSOURCES  ///< Boolean: render all sources or only upmix group.
+        UPMIXSHOWALLSOURCES, ///< Boolean: render all sources or only upmix group.
+        UPMIXSPREAD,         ///< Float: aggregate Positioning_SourceSpread value (0–1).
+        UPMIXDELAYMODE       ///< Integer: aggregate Positioning_SourceDelayMode (0=Off, 1=Tight, 2=Full).
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -175,6 +180,10 @@ public:
             return "UPMIXSHAPE";
         case UPMIXSHOWALLSOURCES:
             return "UPMIXSHOWALLSOURCES";
+        case UPMIXSPREAD:
+            return "UPMIXSPREAD";
+        case UPMIXDELAYMODE:
+            return "UPMIXDELAYMODE";
         default:
             return "-";
         }

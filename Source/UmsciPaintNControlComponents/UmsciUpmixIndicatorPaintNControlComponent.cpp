@@ -1007,6 +1007,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::setUpmixOffset(float x, float y)
 float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetX() const { return m_upmixOffsetX; }
 float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetY() const { return m_upmixOffsetY; }
 
+std::vector<std::int16_t> UmsciUpmixIndicatorPaintNControlComponent::getUpmixSourceIds() const
+{
+    std::vector<std::int16_t> ids;
+    ids.reserve(m_renderedFloorPositions.size() + m_renderedHeightPositions.size());
+    for (const auto& rcp : m_renderedFloorPositions)
+        ids.push_back(rcp.sourceId);
+    for (const auto& rcp : m_renderedHeightPositions)
+        ids.push_back(rcp.sourceId);
+    return ids;
+}
+
 void UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
 {
     if (m_liveMode)

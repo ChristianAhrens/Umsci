@@ -546,11 +546,13 @@ void UmsciControlComponent::setSourcePosition(std::int16_t sourceId, const std::
 void UmsciControlComponent::setSourceDelayMode(std::int16_t sourceId, const std::uint16_t& delayMode)
 {
     m_sourceDelayMode[sourceId] = delayMode;
+    if (onSourceDelayModeReceived) onSourceDelayModeReceived(sourceId, delayMode);
 }
 
 void UmsciControlComponent::setSourceSpread(std::int16_t sourceId, const std::float_t& spread)
 {
     m_sourceSpread[sourceId] = spread;
+    if (onSourceSpreadReceived) onSourceSpreadReceived(sourceId, spread);
 }
 
 void UmsciControlComponent::setSpeakerName(std::int16_t speakerId, const std::string& name)
@@ -770,6 +772,13 @@ float UmsciControlComponent::getUpmixOffsetY() const
     if (m_upmixIndicatorPaintAndControlComponent)
         return m_upmixIndicatorPaintAndControlComponent->getUpmixOffsetY();
     return 0.0f;
+}
+
+std::vector<std::int16_t> UmsciControlComponent::getUpmixSourceIds() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixSourceIds();
+    return {};
 }
 
 void UmsciControlComponent::setShowAllSources(bool showAll)

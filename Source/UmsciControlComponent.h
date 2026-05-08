@@ -304,6 +304,14 @@ public:
      */
     std::function<void()> onUpmixTransformChanged;
 
+    /** @brief Returns DS100 source IDs for all currently rendered upmix channels (floor + height). */
+    std::vector<std::int16_t> getUpmixSourceIds() const;
+
+    /** @brief Fired when a Positioning_SourceSpread echo arrives for any subscribed source. */
+    std::function<void(std::int16_t, float)>         onSourceSpreadReceived;
+    /** @brief Fired when a Positioning_SourceDelayMode echo arrives for any subscribed source. */
+    std::function<void(std::int16_t, std::uint16_t)> onSourceDelayModeReceived;
+
 private:
     //==============================================================================
     void rebuildOcp1ObjectTree();

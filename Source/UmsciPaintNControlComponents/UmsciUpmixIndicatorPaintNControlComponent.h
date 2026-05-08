@@ -205,6 +205,15 @@ public:
 
     //==============================================================================
     /**
+     * @brief Returns the DS100 source IDs for all currently rendered upmix channels
+     *        (floor ring + height ring), in render order.
+     *
+     * Used by the upmix-params panel to know which channels' Spread and DelayMode
+     * values to monitor and batch-control.
+     */
+    std::vector<std::int16_t> getUpmixSourceIds() const;
+
+    /**
      * @brief Fires live-mode position callbacks and `onTransformChanged` after a
      *        programmatic transform change (e.g. from MIDI control).
      *
