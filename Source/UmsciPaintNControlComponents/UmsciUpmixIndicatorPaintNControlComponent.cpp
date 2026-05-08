@@ -245,11 +245,37 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
     if (getRefitButtonBounds().contains(e.getPosition()))
     {
         m_upmixRot          = 0.0f;
-        m_upmixTrans        = 1.0f;
-        m_upmixHeightTrans  = 0.6f;
         m_upmixAngleStretch = 1.0f;
         m_upmixOffsetX      = 0.0f;
         m_upmixOffsetY      = 0.0f;
+        // Circle: reset to uniform 1.0 — m_baseRadius already equals the larger room dimension,
+        // which matches the pre-H/V-split original behaviour.
+        // Rectangle: compute separate H/V scales from the bounding-box aspect ratio.
+        if (m_shape == IndicatorShape::Circle)
+        {
+            m_upmixTransH = m_upmixTransV = 1.0f;
+        }
+        else
+        {
+            auto tl = std::array<float, 3>{ m_speakersRealBoundingCube[0], m_speakersRealBoundingCube[1], m_speakersRealBoundingCube[2] };
+            auto br = std::array<float, 3>{ m_speakersRealBoundingCube[3], m_speakersRealBoundingCube[4], m_speakersRealBoundingCube[5] };
+            auto screenRect = juce::Rectangle<float>(GetPointForRealCoordinate(tl), GetPointForRealCoordinate(br));
+            auto fitBounds = screenRect.getAspectRatio() <= 1
+                ? screenRect.expanded(screenRect.getWidth()  * m_boundingFitFactor)
+                : screenRect.expanded(screenRect.getHeight() * m_boundingFitFactor);
+            auto maxDim = std::max(fitBounds.getWidth(), fitBounds.getHeight());
+            if (maxDim > 0.0f)
+            {
+                m_upmixTransH = fitBounds.getWidth()  * 0.5f / (maxDim * 0.5f);
+                m_upmixTransV = fitBounds.getHeight() * 0.5f / (maxDim * 0.5f);
+            }
+            else
+            {
+                m_upmixTransH = m_upmixTransV = 1.0f;
+            }
+        }
+        m_upmixHeightTransH = m_upmixTransH * 0.6f;
+        m_upmixHeightTransV = m_upmixTransV * 0.6f;
         PrerenderUpmixIndicatorInBounds();
         if (m_liveMode)
         {
@@ -277,17 +303,24 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
     auto dy = e.position.y - m_upmixCenter.y;
 
     // atan2(dx, -dy): 0 = 12 o'clock, clockwise positive — matches JUCE arc angle convention
-    m_dragStartAngle      = std::atan2(dx, -dy);
-    m_dragStartDist       = std::sqrt(dx * dx + dy * dy);
-    m_dragStartRot        = m_upmixRot;
-    m_dragStartTrans      = m_upmixTrans;
-    m_dragStartHeightTrans = m_upmixHeightTrans;
+    m_dragStartAngle        = std::atan2(dx, -dy);
+    m_dragStartDX           = dx;
+    m_dragStartDY           = dy;
+    m_dragStartRot          = m_upmixRot;
+    m_dragStartTransH       = m_upmixTransH;
+    m_dragStartTransV       = m_upmixTransV;
+    m_dragStartHeightTransH = m_upmixHeightTransH;
+    m_dragStartHeightTransV = m_upmixHeightTransV;
+    m_dragStartMousePos     = e.position;
+    m_dragModeLocked        = false;
+    m_draggingRotation      = false;
 
     // determine whether the drag targets the height ring or the floor ring
     m_draggingHeightRing = m_upmixHeightIndicator.contains(e.position.x, e.position.y);
 
     DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot
-        << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans
+        << " transH:" << m_upmixTransH << " transV:" << m_upmixTransV
+        << " heightTransH:" << m_upmixHeightTransH << " heightTransV:" << m_upmixHeightTransV
         << " heightRing:" << (int)m_draggingHeightRing);
 }
 
@@ -375,21 +408,82 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
     auto dx = e.position.x - m_upmixCenter.x;
     auto dy = e.position.y - m_upmixCenter.y;
 
-    // tangential component: angle delta drives rotation — shared by both rings
-    m_upmixRot = m_dragStartRot + std::atan2(dx, -dy) - m_dragStartAngle;
-
-    // radial component: distance ratio drives the scale of whichever ring was grabbed
-    if (m_dragStartDist > 0.0f)
+    // On the first few pixels of movement, commit to exactly one mode — rotation or H/V scale —
+    // to prevent them from interfering with each other.  A 2:1 bias in favour of scale ensures
+    // that an ambiguous grab (e.g. upper-right corner dragged horizontally) resolves to scale.
+    if (!m_dragModeLocked)
     {
-        auto scaleFactor = std::sqrt(dx * dx + dy * dy) / m_dragStartDist;
-        if (m_draggingHeightRing)
-            m_upmixHeightTrans = juce::jlimit(0.1f, 10.0f, m_dragStartHeightTrans * scaleFactor);
+        float startDist = std::sqrt(m_dragStartDX * m_dragStartDX + m_dragStartDY * m_dragStartDY);
+        float ddx = e.position.x - m_dragStartMousePos.x;
+        float ddy = e.position.y - m_dragStartMousePos.y;
+        if (startDist > 0.0f && (ddx * ddx + ddy * ddy) > 16.0f)  // lock after ~4 px of movement
+        {
+            float ux = m_dragStartDX / startDist;   // radial unit (away from centre)
+            float uy = m_dragStartDY / startDist;
+            float tangComp = std::abs(ddx * (-uy) + ddy * ux);  // |projection onto tangent|
+            float radComp  = std::abs(ddx * ux    + ddy * uy);  // |projection onto radius|
+            m_draggingRotation = tangComp > radComp * 2.0f;      // 2:1 bias: default to scale
+            m_dragModeLocked = true;
+        }
         else
-            m_upmixTrans = juce::jlimit(0.1f, 10.0f, m_dragStartTrans * scaleFactor);
+        {
+            return; // not enough movement yet to commit to a mode
+        }
+    }
+
+    if (m_draggingRotation)
+    {
+        // Tangential drag — rotate both rings together using the atan2 angle delta.
+        m_upmixRot = m_dragStartRot + std::atan2(dx, -dy) - m_dragStartAngle;
+    }
+    else if (m_shape == IndicatorShape::Circle)
+    {
+        // Circle: uniform radial scale — H and V are always kept equal.
+        float startDist = std::sqrt(m_dragStartDX * m_dragStartDX + m_dragStartDY * m_dragStartDY);
+        float curDist   = std::sqrt(dx * dx + dy * dy);
+        if (startDist > std::max(10.0f, m_baseRadius * 0.2f))
+        {
+            float newVal = juce::jlimit(0.1f, 10.0f, m_dragStartTransH * (curDist / startDist));
+            if (m_draggingHeightRing)
+            {
+                float newHeightVal = juce::jlimit(0.1f, 10.0f, m_dragStartHeightTransH * (curDist / startDist));
+                m_upmixHeightTransH = m_upmixHeightTransV = newHeightVal;
+            }
+            else
+            {
+                m_upmixTransH = m_upmixTransV = newVal;
+            }
+        }
+    }
+    else
+    {
+        // Rectangle: scale H and V independently.
+        // Only update a dimension when the grab point had significant extent in that direction
+        // (avoids hypersensitivity when grabbing near a cardinal axis of the ring).
+        float threshold = std::max(10.0f, m_baseRadius * 0.2f);
+
+        if (std::abs(m_dragStartDX) > threshold)
+        {
+            auto scaleH = dx / m_dragStartDX;
+            if (m_draggingHeightRing)
+                m_upmixHeightTransH = juce::jlimit(0.1f, 10.0f, m_dragStartHeightTransH * scaleH);
+            else
+                m_upmixTransH = juce::jlimit(0.1f, 10.0f, m_dragStartTransH * scaleH);
+        }
+
+        if (std::abs(m_dragStartDY) > threshold)
+        {
+            auto scaleV = dy / m_dragStartDY;
+            if (m_draggingHeightRing)
+                m_upmixHeightTransV = juce::jlimit(0.1f, 10.0f, m_dragStartHeightTransV * scaleV);
+            else
+                m_upmixTransV = juce::jlimit(0.1f, 10.0f, m_dragStartTransV * scaleV);
+        }
     }
 
     DBG(juce::String(__FUNCTION__) << " rot:" << m_upmixRot
-        << " trans:" << m_upmixTrans << " heightTrans:" << m_upmixHeightTrans);
+        << " transH:" << m_upmixTransH << " transV:" << m_upmixTransV
+        << " heightTransH:" << m_upmixHeightTransH << " heightTransV:" << m_upmixHeightTransV);
 
     PrerenderUpmixIndicatorInBounds();
 
@@ -515,21 +609,26 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto cx = m_upmixCenter.x;
     auto cy = m_upmixCenter.y;
     auto baseRadius = m_baseRadius;
-    auto radius = baseRadius * m_upmixTrans;
+    auto radiusH = baseRadius * m_upmixTransH;  // floor ring horizontal half-extent
+    auto radiusV = baseRadius * m_upmixTransV;  // floor ring vertical half-extent
     m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
     auto arcStrokeWidth = m_subCircleRadius * 0.5f;
     auto cosRot = std::cos(m_upmixRot);
     auto sinRot = std::sin(m_upmixRot);
 
-    // builds an open rectangle path from minDeg to maxDeg (clockwise), rotated by m_upmixRot
-    auto buildOpenRectPath = [&](float r, float minDeg, float maxDeg) -> juce::Path
+    // builds an open rectangle path from minDeg to maxDeg (clockwise), rotated by m_upmixRot,
+    // with independent horizontal (rH) and vertical (rV) half-extents.
+    auto buildOpenRectPath = [&](float rH, float rV, float minDeg, float maxDeg) -> juce::Path
     {
+        // Corner angles for a rectangle of half-width rH and half-height rV.
+        // The top-right corner is at the angle where sin(θ)/rH == cos(θ)/rV.
+        float cornerAngleDeg = juce::radiansToDegrees(std::atan2(rH, rV));
         struct Corner { float angleDeg, lx, ly; };
         const Corner corners[4] = {
-            {  45.0f,  r, -r },
-            { 135.0f,  r,  r },
-            { 225.0f, -r,  r },
-            { 315.0f, -r, -r },
+            { cornerAngleDeg,              rH, -rV },  // top-right
+            { 180.0f - cornerAngleDeg,     rH,  rV },  // bottom-right
+            { 180.0f + cornerAngleDeg,    -rH,  rV },  // bottom-left
+            { 360.0f - cornerAngleDeg,    -rH, -rV },  // top-left
         };
 
         // clockwise angular distance from a normalised origin to an arbitrary angle
@@ -540,13 +639,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             return d <= 0.0f ? d + 360.0f : d;
         };
 
-        // project an angle onto the axis-aligned square perimeter (Chebyshev)
+        // project an angle onto the axis-aligned rectangle perimeter (generalised Chebyshev)
         auto toLocal = [&](float angleDeg) -> juce::Point<float> {
             auto rad = juce::degreesToRadians(angleDeg);
-            auto dx = std::sin(rad);
-            auto dy = -std::cos(rad);
-            auto t  = r / std::max(std::abs(dx), std::abs(dy));
-            return { t * dx, t * dy };
+            auto ux = std::sin(rad);
+            auto uy = -std::cos(rad);
+            float t = 1.0f / std::max(std::abs(ux) / rH, std::abs(uy) / rV);
+            return { t * ux, t * uy };
         };
 
         // rotate a local offset by m_upmixRot and translate to screen space
@@ -591,14 +690,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         if (m_shape == IndicatorShape::Rectangle)
         {
             juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator,
-                buildOpenRectPath(radius, minAngleDeg, maxAngleDeg));
+                buildOpenRectPath(radiusH, radiusV, minAngleDeg, maxAngleDeg));
         }
         else
         {
-            // build the arc segment and stroke it into a filled band in m_upmixIndicator
-            // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth
+            // build the ellipse arc — radiusH and radiusV give separate horizontal and vertical extents.
+            // angles follow JUCE convention: 0 = 12 o'clock, clockwise positive — matching standard audio azimuth.
             juce::Path arcPath;
-            arcPath.addCentredArc(cx, cy, radius, radius, m_upmixRot,
+            arcPath.addCentredArc(cx, cy, radiusH, radiusV, m_upmixRot,
                                   juce::degreesToRadians(minAngleDeg),
                                   juce::degreesToRadians(maxAngleDeg),
                                   true);
@@ -611,20 +710,22 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             float px, py;
             if (m_shape == IndicatorShape::Rectangle)
             {
-                // project base angle (no rotation) onto axis-aligned square, then rotate the result
+                // generalised Chebyshev projection onto the rectangle, then rotate into screen space
                 auto baseAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]);
-                auto dx = std::sin(baseAngleRad);
-                auto dy = -std::cos(baseAngleRad);
-                auto t = radius / std::max(std::abs(dx), std::abs(dy));
-                px = cx + (t * dx) * cosRot - (t * dy) * sinRot;
-                py = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+                auto ux = std::sin(baseAngleRad);
+                auto uy = -std::cos(baseAngleRad);
+                float t = 1.0f / std::max(std::abs(ux) / radiusH, std::abs(uy) / radiusV);
+                px = cx + (t * ux) * cosRot - (t * uy) * sinRot;
+                py = cy + (t * ux) * sinRot + (t * uy) * cosRot;
             }
             else
             {
-                // screen coords for arc angle θ with rotation R: x = cx + r·sin(θ+R), y = cy - r·cos(θ+R)
-                auto effectiveAngleRad = juce::degreesToRadians(upmixPositionAnglesDeg[i]) + m_upmixRot;
-                px = cx + radius * std::sin(effectiveAngleRad);
-                py = cy - radius * std::cos(effectiveAngleRad);
+                // rotated ellipse: local point = (rH·sin(θ), −rV·cos(θ)), then apply m_upmixRot
+                auto θ = juce::degreesToRadians(upmixPositionAnglesDeg[i]);
+                float local_x = radiusH * std::sin(θ);
+                float local_y = -radiusV * std::cos(θ);
+                px = cx + local_x * cosRot - local_y * sinRot;
+                py = cy + local_x * sinRot + local_y * cosRot;
             }
 
             m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
@@ -653,25 +754,29 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         if (m_shape == IndicatorShape::Rectangle)
         {
             auto baseAngleRad = juce::degreesToRadians(maxStretchedAngleDeg);
-            auto dx = std::sin(baseAngleRad);
-            auto dy = -std::cos(baseAngleRad);
-            auto t = radius / std::max(std::abs(dx), std::abs(dy));
-            anchorX = cx + (t * dx) * cosRot - (t * dy) * sinRot;
-            anchorY = cy + (t * dx) * sinRot + (t * dy) * cosRot;
-            // Tangent along the rectangle edge in the unrotated frame:
-            //   |dx| >= |dy|  →  left/right (vertical) edge  →  unrotated tangent (0, 1)
-            //   |dy| >  |dx|  →  top/bottom (horizontal) edge →  unrotated tangent (1, 0)
-            // Then rotate by m_upmixRot into screen space.
-            float utx = (std::abs(dx) >= std::abs(dy)) ? 0.0f : 1.0f;
-            float uty = (std::abs(dx) >= std::abs(dy)) ? 1.0f : 0.0f;
+            auto ux = std::sin(baseAngleRad);
+            auto uy = -std::cos(baseAngleRad);
+            float t = 1.0f / std::max(std::abs(ux) / radiusH, std::abs(uy) / radiusV);
+            anchorX = cx + (t * ux) * cosRot - (t * uy) * sinRot;
+            anchorY = cy + (t * ux) * sinRot + (t * uy) * cosRot;
+            // Determine which edge the max-angle point sits on, then assign the edge tangent.
+            // For a rectangle of half-width rH and half-height rV:
+            //   |ux|/rH >= |uy|/rV  →  left/right (vertical) edge  →  unrotated tangent (0, 1)
+            //   |uy|/rV >  |ux|/rH  →  top/bottom (horizontal) edge →  unrotated tangent (1, 0)
+            bool onVerticalEdge = (std::abs(ux) / radiusH >= std::abs(uy) / radiusV);
+            float utx = onVerticalEdge ? 0.0f : 1.0f;
+            float uty = onVerticalEdge ? 1.0f : 0.0f;
             rectEdgeTangentX = utx * cosRot - uty * sinRot;
             rectEdgeTangentY = utx * sinRot + uty * cosRot;
         }
         else
         {
-            auto effectiveAngleRad = juce::degreesToRadians(maxStretchedAngleDeg) + m_upmixRot;
-            anchorX = cx + radius * std::sin(effectiveAngleRad);
-            anchorY = cy - radius * std::cos(effectiveAngleRad);
+            // Rotated ellipse point at max-angle
+            auto θ_max = juce::degreesToRadians(maxStretchedAngleDeg);
+            float local_x = radiusH * std::sin(θ_max);
+            float local_y = -radiusV * std::cos(θ_max);
+            anchorX = cx + local_x * cosRot - local_y * sinRot;
+            anchorY = cy + local_x * sinRot + local_y * cosRot;
         }
         float dirX = anchorX - cx;
         float dirY = anchorY - cy;
@@ -691,10 +796,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         }
     }
 
-    // build the height channel ring — same rotation, independent scale
+    // build the height channel ring — same rotation and stretch, independent H/V scale
     if (!upmixHeightPositionAnglesDeg.empty())
     {
-        auto heightRadius = baseRadius * m_upmixHeightTrans;
+        auto heightRadiusH = baseRadius * m_upmixHeightTransH;  // height ring horizontal half-extent
+        auto heightRadiusV = baseRadius * m_upmixHeightTransV;  // height ring vertical half-extent
         auto heightArcStrokeWidth = arcStrokeWidth;
 
         auto minHeightAngleDeg = *std::min_element(upmixHeightPositionAnglesDeg.begin(), upmixHeightPositionAnglesDeg.end());
@@ -703,12 +809,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         if (m_shape == IndicatorShape::Rectangle)
         {
             juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator,
-                buildOpenRectPath(heightRadius, minHeightAngleDeg, maxHeightAngleDeg));
+                buildOpenRectPath(heightRadiusH, heightRadiusV, minHeightAngleDeg, maxHeightAngleDeg));
         }
         else
         {
             juce::Path heightArcPath;
-            heightArcPath.addCentredArc(cx, cy, heightRadius, heightRadius, m_upmixRot,
+            heightArcPath.addCentredArc(cx, cy, heightRadiusH, heightRadiusV, m_upmixRot,
                                         juce::degreesToRadians(minHeightAngleDeg),
                                         juce::degreesToRadians(maxHeightAngleDeg),
                                         true);
@@ -721,17 +827,19 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             if (m_shape == IndicatorShape::Rectangle)
             {
                 auto baseAngleRad = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]);
-                auto dx = std::sin(baseAngleRad);
-                auto dy = -std::cos(baseAngleRad);
-                auto t = heightRadius / std::max(std::abs(dx), std::abs(dy));
-                px = cx + (t * dx) * cosRot - (t * dy) * sinRot;
-                py = cy + (t * dx) * sinRot + (t * dy) * cosRot;
+                auto ux = std::sin(baseAngleRad);
+                auto uy = -std::cos(baseAngleRad);
+                float t = 1.0f / std::max(std::abs(ux) / heightRadiusH, std::abs(uy) / heightRadiusV);
+                px = cx + (t * ux) * cosRot - (t * uy) * sinRot;
+                py = cy + (t * ux) * sinRot + (t * uy) * cosRot;
             }
             else
             {
-                auto effectiveAngleRad = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]) + m_upmixRot;
-                px = cx + heightRadius * std::sin(effectiveAngleRad);
-                py = cy - heightRadius * std::cos(effectiveAngleRad);
+                auto θ = juce::degreesToRadians(upmixHeightPositionAnglesDeg[i]);
+                float local_x = heightRadiusH * std::sin(θ);
+                float local_y = -heightRadiusV * std::cos(θ);
+                px = cx + local_x * cosRot - local_y * sinRot;
+                py = cy + local_x * sinRot + local_y * cosRot;
             }
 
             m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
@@ -844,6 +952,20 @@ void UmsciUpmixIndicatorPaintNControlComponent::setControlsSize(ControlsSize siz
 void UmsciUpmixIndicatorPaintNControlComponent::setShape(IndicatorShape shape)
 {
     m_shape = shape;
+    if (m_shape == IndicatorShape::Circle)
+    {
+        // Circle enforces 1:1 aspect ratio — snap to average of current H and V so
+        // the transition from rectangle doesn't produce a jarring size jump.
+        // Do NOT fire onTransformChanged here: setShape() is called from onConfigUpdated()
+        // via setUpmixShape(), so firing onTransformChanged would trigger triggerConfigurationDump(),
+        // which re-enters onConfigUpdated() → setShape() → infinite loop.
+        // The caller (settings dialog) already calls triggerConfigurationDump() explicitly, which
+        // will persist the snapped values because the snap happens synchronously before that call.
+        float uniform = (m_upmixTransH + m_upmixTransV) * 0.5f;
+        m_upmixTransH = m_upmixTransV = uniform;
+        float uniformH = (m_upmixHeightTransH + m_upmixHeightTransV) * 0.5f;
+        m_upmixHeightTransH = m_upmixHeightTransV = uniformH;
+    }
     PrerenderUpmixIndicatorInBounds();
     repaint();
 }
@@ -853,11 +975,13 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPai
     return m_shape;
 }
 
-void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch)
+void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch)
 {
     m_upmixRot          = rot;
-    m_upmixTrans        = trans;
-    m_upmixHeightTrans  = heightTrans;
+    m_upmixTransH       = transH;
+    m_upmixTransV       = transV;
+    m_upmixHeightTransH = heightTransH;
+    m_upmixHeightTransV = heightTransV;
     m_upmixAngleStretch = m_naturalFloorMaxAngleDeg > 0.0f
                               ? juce::jlimit(0.05f, 180.0f / m_naturalFloorMaxAngleDeg, angleStretch)
                               : angleStretch;
@@ -865,10 +989,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, flo
     repaint();
 }
 
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixRot() const         { return m_upmixRot; }
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTrans() const       { return m_upmixTrans; }
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTrans() const  { return m_upmixHeightTrans; }
-float UmsciUpmixIndicatorPaintNControlComponent::getUpmixAngleStretch() const { return m_upmixAngleStretch; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixRot() const          { return m_upmixRot; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTransH() const       { return m_upmixTransH; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixTransV() const       { return m_upmixTransV; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTransH() const  { return m_upmixHeightTransH; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixHeightTransV() const  { return m_upmixHeightTransV; }
+float UmsciUpmixIndicatorPaintNControlComponent::getUpmixAngleStretch() const  { return m_upmixAngleStretch; }
 
 void UmsciUpmixIndicatorPaintNControlComponent::setUpmixOffset(float x, float y)
 {

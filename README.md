@@ -160,7 +160,7 @@ Once the ring is aligned and positions are committed, Umsci will hold the subscr
 
 ### Upmix monitoring and alignment
 
-The primary use case: an external upmix renderer outputs N channels (e.g. 16 channels for a 7.1.4 Atmos bed) into DS100 sound objects starting at a configurable channel index.  Umsci shows the idealised ring geometry for the chosen channel format (Stereo through 9.1.6) superimposed over the physical loudspeaker layout.  The operator can interactively adjust rotation, scale, height and front/rear stretch to align the virtual ring with the available speakers, and in *Live* mode the DS100 positions are updated in real time as the handles are dragged.
+The primary use case: an external upmix renderer outputs N channels (e.g. 16 channels for a 7.1.4 Atmos bed) into DS100 sound objects starting at a configurable channel index.  Umsci shows the idealised ring geometry for the chosen channel format (Stereo through 9.1.6) superimposed over the physical loudspeaker layout.  The operator can interactively adjust rotation, horizontal and vertical scale (independently for the floor and height rings), front/rear angular stretch and centre offset to align the virtual ring with the available speakers, and in *Live* mode the DS100 positions are updated in real time as the handles are dragged.
 
 ### General soundobject position monitoring and editing
 
@@ -204,11 +204,16 @@ The top layer renders a ring (circle or rectangle path) representing the ideal s
 
 | Handle | Gesture | Effect |
 |:-------|:--------|:-------|
-| Ring arc (floor) | Drag tangentially | Rotates the ring (±180°). |
-| Ring arc (height, inner) | Drag radially | Scales the height ring relative to the floor ring. |
-| Centre cross | Drag | Shifts the ring centre in XY. |
-| Stretch arrow | Drag along arrow | Compresses or expands the front/rear angular spread. |
-| Refit button (top-right) | Click | Snaps the transform so the ring fits inside the loudspeaker bounding box. |
+| Ring arc (floor or height) | Drag primarily tangentially | Rotates both rings together (shared rotation). |
+| Ring arc (floor) | Drag primarily horizontally | Scales the floor ring width (H scale). |
+| Ring arc (floor) | Drag primarily vertically | Scales the floor ring height (V scale). |
+| Ring arc (height, inner) | Drag primarily horizontally | Scales the height ring width independently. |
+| Ring arc (height, inner) | Drag primarily vertically | Scales the height ring height independently. |
+| Centre cross | Drag | Shifts the ring centre in XY (shared translation). |
+| Stretch arrow | Drag along arrow | Compresses or expands the front/rear angular spread (shared). |
+| Refit button (top-right) | Click | Snaps the transform so the ring fits the loudspeaker bounding box, with H and V scale fitted separately to match the room's aspect ratio. |
+
+Each ring drag commits to a single mode (rotate **or** scale) on the first few pixels of movement: a drag that is primarily tangential rotates, a drag that is primarily radial scales.  A 2:1 bias towards scale resolves ambiguous diagonal grabs (e.g. upper-right corner dragged horizontally) as a scale operation.
 
 Double-clicking a handle resets that parameter to its default value.
 
@@ -289,7 +294,7 @@ The loaded project data is saved to the XML configuration file so it is automati
 
 #### Snapshot panel
 
-The snapshot panel (upper of the two) stores and recalls a single upmix transform snapshot — a frozen copy of all six transform parameters (rotation, scale, height, angle stretch, offset X/Y).
+The snapshot panel (upper of the two) stores and recalls a single upmix transform snapshot — a frozen copy of all eight transform parameters (rotation, floor H scale, floor V scale, height H scale, height V scale, angle stretch, offset X/Y).
 
 | Button | Action |
 |:-------|:-------|
@@ -355,7 +360,7 @@ See e.g.
 
 ### External control (MIDI)
 
-Opens the *External control* dialog.  Allows each of the six upmix transform parameters to be driven by a MIDI continuous controller, enabling control from a hardware surface, DAW automation, or any other MIDI source.
+Opens the *External control* dialog.  Allows each of the eight upmix transform parameters to be driven by a MIDI continuous controller, enabling control from a hardware surface, DAW automation, or any other MIDI source.
 
 #### MIDI input device
 
@@ -367,12 +372,14 @@ Each parameter has a **MidiLearner** row that supports both value-range and comm
 
 | Parameter | Default range | Description |
 |:----------|:-------------|:------------|
-| **Rotation** | −180° … +180° | Rotates the entire ring. CC mid-point = 0° (front). |
-| **Translation (scale)** | 0 … 3 | Radial scale of the floor ring. 1.0 = nominal radius. |
-| **Height translation** | 0 … 2 | Height ring radius as a fraction of the floor ring. 0.6 = default (40 % smaller). |
+| **Rotation** | −180° … +180° | Rotates both rings together. CC mid-point = 0° (front). |
+| **Scale horizontal** | 0 … 3 | Horizontal (width) scale of the floor ring. 1.0 = nominal. |
+| **Height scale horizontal** | 0 … 2 | Horizontal scale of the height ring (independent of floor ring). |
 | **Angle stretch** | 0 … 2 | Compresses/expands front–rear angular spread. 1.0 = uniform. |
 | **Offset X** | −2 … +2 | Shifts the ring centre left/right in units of base radius. |
 | **Offset Y** | −2 … +2 | Shifts the ring centre front/back in units of base radius. |
+| **Scale vertical** | 0 … 3 | Vertical (height/depth) scale of the floor ring. 1.0 = nominal. |
+| **Height scale vertical** | 0 … 2 | Vertical scale of the height ring (independent of floor ring). |
 
 Click **Learn** on a row and move a MIDI controller to capture its CC number and value range automatically.  The assignment maps the learned CC range linearly to the full parameter range.
 
@@ -446,15 +453,21 @@ All three inherit `UmsciPaintNControlComponentBase` which provides:
 
 ### Upmix indicator geometry
 
-The ring geometry is prerendered into `juce::Path` objects by `PrerenderUpmixIndicatorInBounds()` whenever the bounds, zoom, or any transform parameter changes.  The five transform parameters are:
+The ring geometry is prerendered into `juce::Path` objects by `PrerenderUpmixIndicatorInBounds()` whenever the bounds, zoom, or any transform parameter changes.  The seven transform parameters are:
 
 | Member | Default | Meaning |
 |:-------|:--------|:--------|
-| `m_upmixRot` | `0.0` | Ring rotation around Z.  0 = front, positive = clockwise (normalised 0–1 = 0–360°). |
-| `m_upmixTrans` | `1.0` | Floor ring radial scale factor. |
-| `m_upmixHeightTrans` | `0.6` | Height ring radius as a fraction of floor ring radius. |
-| `m_upmixAngleStretch` | `1.0` | Front/rear angular spread compression (1.0 = uniform). |
-| `m_upmixOffsetX/Y` | `0.0` | Ring centre offset in units of base radius. |
+| `m_upmixRot` | `0.0` | Ring rotation around Z.  0 = front, positive = clockwise (normalised 0–1 = 0–360°). Shared by both rings. |
+| `m_upmixTransH` | `1.0` | Floor ring horizontal scale factor (fraction of base radius). |
+| `m_upmixTransV` | `1.0` | Floor ring vertical scale factor (fraction of base radius). |
+| `m_upmixHeightTransH` | `0.6` | Height ring horizontal scale (fraction of base radius). Independent of floor ring. |
+| `m_upmixHeightTransV` | `0.6` | Height ring vertical scale (fraction of base radius). Independent of floor ring. |
+| `m_upmixAngleStretch` | `1.0` | Front/rear angular spread compression (1.0 = uniform). Shared by both rings. |
+| `m_upmixOffsetX/Y` | `0.0` | Ring centre offset in units of base radius. Shared by both rings. |
+
+The floor ring is rendered as an ellipse (circle shape) or non-square rectangle (rectangle shape) when `m_upmixTransH ≠ m_upmixTransV`.  The refit button computes `m_upmixTransH` and `m_upmixTransV` separately from the bounding box's width and height, so that rectangular rooms get a correctly proportioned ellipse rather than a circle.
+
+Each ring drag locks to one mode — rotation (tangential first movement) or H/V scale (radial first movement) — at 2:1 bias towards scale.
 
 <a name="zoom-and-pan-internals" />
 
@@ -487,7 +500,7 @@ Safe-area insets (status bar, home indicator, Dynamic Island, Stage Manager) are
 
 Calling `m_config->triggerConfigurationDump()` serialises the current state; any change on disk automatically calls `onConfigUpdated()` on all registered Watchers.
 
-Persisted settings include: OCP.1 connection parameters, look-and-feel, control colour, control format, control size, upmix transform (rotation, translation, height, stretch, offset X/Y), upmix shape, upmix source start ID, upmix live mode, show-all-sources flag, and MIDI assignments.
+Persisted settings include: OCP.1 connection parameters, look-and-feel, control colour, control format, control size, upmix transform (rotation, floor H/V scale, height H/V scale, angle stretch, offset X/Y), upmix shape, upmix source start ID, upmix live mode, show-all-sources flag, and MIDI assignments.
 
 <a name="midi-control-internals" />
 

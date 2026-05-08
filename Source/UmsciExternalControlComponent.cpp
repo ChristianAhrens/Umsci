@@ -23,30 +23,36 @@
 
 const juce::String UmsciExternalControlComponent::s_paramLabels[UmsciExternalControlComponent::UpmixMidiParam_COUNT] = {
     "Rotation",
-    "Translation (scale)",
-    "Height translation",
+    "Scale horizontal",
+    "Height scale horizontal",
     "Angle stretch",
     "Offset X",
-    "Offset Y"
+    "Offset Y",
+    "Scale vertical",
+    "Height scale vertical"
 };
 
 const std::array<std::pair<float, float>, UmsciExternalControlComponent::UpmixMidiParam_COUNT>
     UmsciExternalControlComponent::s_paramRanges = {{
         { -juce::MathConstants<float>::pi, juce::MathConstants<float>::pi },  // Rotation: −π – +π rad
-        { 0.0f,  3.0f },  // Translation:       radial scale factor
-        { 0.0f,  2.0f },  // HeightTranslation: height ring fraction
-        { 0.0f,  2.0f },  // AngleStretch:      front/rear angular spread
-        { -2.0f, 2.0f },  // OffsetX:           ring centre X (base-radius units)
-        { -2.0f, 2.0f },  // OffsetY:           ring centre Y (base-radius units)
+        { 0.0f,  3.0f },  // TranslationH:        floor ring horizontal scale
+        { 0.0f,  2.0f },  // HeightTranslationH:  height ring horizontal scale
+        { 0.0f,  2.0f },  // AngleStretch:        front/rear angular spread
+        { -2.0f, 2.0f },  // OffsetX:             ring centre X (base-radius units)
+        { -2.0f, 2.0f },  // OffsetY:             ring centre Y (base-radius units)
+        { 0.0f,  3.0f },  // TranslationV:        floor ring vertical scale
+        { 0.0f,  2.0f },  // HeightTranslationV:  height ring vertical scale
     }};
 
 const juce::String UmsciExternalControlComponent::s_oscDefaultAddresses[UmsciExternalControlComponent::UpmixMidiParam_COUNT] = {
     "/umsci/indicator/rot",
-    "/umsci/indicator/trans",
-    "/umsci/indicator/heighttrans",
+    "/umsci/indicator/transh",
+    "/umsci/indicator/heighttransh",
     "/umsci/indicator/anglestretch",
     "/umsci/indicator/offsetx",
-    "/umsci/indicator/offsety"
+    "/umsci/indicator/offsety",
+    "/umsci/indicator/transv",
+    "/umsci/indicator/heighttransv"
 };
 
 

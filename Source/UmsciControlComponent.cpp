@@ -692,10 +692,10 @@ UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControls
     return UmsciPaintNControlComponentBase::ControlsSize::S;
 }
 
-void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch)
+void UmsciControlComponent::setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans, angleStretch);
+        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, transH, transV, heightTransH, heightTransV, angleStretch);
 }
 
 float UmsciControlComponent::getUpmixRot() const
@@ -705,17 +705,31 @@ float UmsciControlComponent::getUpmixRot() const
     return 0.0f;
 }
 
-float UmsciControlComponent::getUpmixTrans() const
+float UmsciControlComponent::getUpmixTransH() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        return m_upmixIndicatorPaintAndControlComponent->getUpmixTrans();
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTransH();
     return 1.0f;
 }
 
-float UmsciControlComponent::getUpmixHeightTrans() const
+float UmsciControlComponent::getUpmixTransV() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTransV();
+    return 1.0f;
+}
+
+float UmsciControlComponent::getUpmixHeightTransH() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTransH();
+    return 0.6f;
+}
+
+float UmsciControlComponent::getUpmixHeightTransV() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTransV();
     return 0.6f;
 }
 

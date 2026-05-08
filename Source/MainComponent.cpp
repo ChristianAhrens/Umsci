@@ -195,8 +195,10 @@ MainComponent::MainComponent()
         if (!m_controlComponent) return;
         m_snapshotComponent->setSnapshotData({
             m_controlComponent->getUpmixRot(),
-            m_controlComponent->getUpmixTrans(),
-            m_controlComponent->getUpmixHeightTrans(),
+            m_controlComponent->getUpmixTransH(),
+            m_controlComponent->getUpmixTransV(),
+            m_controlComponent->getUpmixHeightTransH(),
+            m_controlComponent->getUpmixHeightTransV(),
             m_controlComponent->getUpmixAngleStretch(),
             m_controlComponent->getUpmixOffsetX(),
             m_controlComponent->getUpmixOffsetY()
@@ -211,7 +213,7 @@ MainComponent::MainComponent()
         const auto& snapData = m_snapshotComponent->getSnapshotData();
         if (!snapData.has_value()) return;
         const auto& s = *snapData;
-        m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
+        m_controlComponent->setUpmixTransform(s.rot, s.scaleH, s.scaleV, s.heightScaleH, s.heightScaleV, s.angleStretch);
         m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
         if (m_controlComponent->getUpmixLiveMode())
             m_controlComponent->triggerUpmixTransformApplied();
@@ -985,12 +987,14 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
         upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
-            m_controlComponent ? m_controlComponent->getUpmixRot()          : 0.0f,
-            m_controlComponent ? m_controlComponent->getUpmixTrans()        : 1.0f,
-            m_controlComponent ? m_controlComponent->getUpmixHeightTrans()  : 0.6f,
-            m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f,
-            m_controlComponent ? m_controlComponent->getUpmixOffsetX()      : 0.0f,
-            m_controlComponent ? m_controlComponent->getUpmixOffsetY()      : 0.0f
+            m_controlComponent ? m_controlComponent->getUpmixRot()           : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixTransH()        : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixTransV()        : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixHeightTransH()  : 0.6f,
+            m_controlComponent ? m_controlComponent->getUpmixHeightTransV()  : 0.6f,
+            m_controlComponent ? m_controlComponent->getUpmixAngleStretch()  : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetX()       : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetY()       : 0.0f
         }.toString());
 
         m_config->setConfigState(std::move(upmixConfigXmlElement),
@@ -1158,8 +1162,10 @@ void MainComponent::onConfigUpdated()
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
         auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
-        m_controlComponent->setUpmixTransform(upmixParams.rot, upmixParams.scale,
-                                              upmixParams.heightScale, upmixParams.angleStretch);
+        m_controlComponent->setUpmixTransform(upmixParams.rot,
+                                              upmixParams.scaleH, upmixParams.scaleV,
+                                              upmixParams.heightScaleH, upmixParams.heightScaleV,
+                                              upmixParams.angleStretch);
         m_controlComponent->setUpmixOffset(upmixParams.offsetX, upmixParams.offsetY);
     }
 
@@ -1317,26 +1323,50 @@ void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMid
     {
     case UmsciExternalControlComponent::UpmixMidiParam_Rotation:
         m_controlComponent->setUpmixTransform(domainValue,
-                                              m_controlComponent->getUpmixTrans(),
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
-    case UmsciExternalControlComponent::UpmixMidiParam_Translation:
+    case UmsciExternalControlComponent::UpmixMidiParam_TranslationH:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
                                               domainValue,
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
-    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslation:
+    case UmsciExternalControlComponent::UpmixMidiParam_TranslationV:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
-                                              m_controlComponent->getUpmixTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              domainValue,
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslationH:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              domainValue,
+                                              m_controlComponent->getUpmixHeightTransV(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslationV:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
                                               domainValue,
                                               m_controlComponent->getUpmixAngleStretch());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_AngleStretch:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
-                                              m_controlComponent->getUpmixTrans(),
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               domainValue);
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_OffsetX:

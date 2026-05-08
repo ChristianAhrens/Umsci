@@ -208,11 +208,13 @@ public:
      * the `onUpmixTransformChanged` callback so that the values can be persisted.
      * @{
      */
-    void setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch = 1.0f);
-    float getUpmixRot() const;          ///< Ring rotation in normalised units (0–1 → 0–360°).
-    float getUpmixTrans() const;        ///< Radial scale factor.
-    float getUpmixHeightTrans() const;  ///< Height (Z) translation.
-    float getUpmixAngleStretch() const; ///< Per-angle stretch factor (1.0 = uniform).
+    void setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch = 1.0f);
+    float getUpmixRot() const;           ///< Ring rotation in normalised units (0–1 → 0–360°).
+    float getUpmixTransH() const;        ///< Floor ring horizontal scale factor.
+    float getUpmixTransV() const;        ///< Floor ring vertical scale factor.
+    float getUpmixHeightTransH() const;  ///< Height ring horizontal scale (fraction of base radius).
+    float getUpmixHeightTransV() const;  ///< Height ring vertical scale (fraction of base radius).
+    float getUpmixAngleStretch() const;  ///< Per-angle stretch factor (1.0 = uniform).
     /** @} */
 
     //==============================================================================
