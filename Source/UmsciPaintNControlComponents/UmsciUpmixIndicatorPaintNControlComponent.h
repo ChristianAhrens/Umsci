@@ -53,17 +53,25 @@
  *   cube of the connected loudspeaker system.
  *
  * ## Transform parameters
- * | Parameter        | Meaning |
+ * | Parameter             | Meaning |
  * |---|---|
- * | `m_upmixRot`     | Rotation of the ring around the Z axis (normalised 0–1 = 0–360°). |
- * | `m_upmixTrans`   | Radial scale — 1.0 means the ring radius equals the base radius. |
- * | `m_upmixHeightTrans` | Ratio of height ring to floor ring radius (0.6 default). |
+ * | `m_upmixRot`          | Rotation of the ring around the Z axis (normalised 0–1 = 0–360°). |
+ * | `m_upmixTransH`       | Horizontal scale — 1.0 means the ring half-width equals the base radius. |
+ * | `m_upmixTransV`       | Vertical scale — 1.0 means the ring half-height equals the base radius. |
+ * | `m_upmixHeightTransH` | Height ring horizontal scale (fraction of base radius, 0.6 default). |
+ * | `m_upmixHeightTransV` | Height ring vertical scale (fraction of base radius, 0.6 default). |
  * | `m_upmixAngleStretch` | Compresses front/rear angular spread (1.0 = uniform). |
  * | `m_upmixOffsetX/Y`   | XY offset of the ring centre in units of base radius. |
  *
  * ## Drag gestures
- * - Dragging the floor ring arc → rotation (`m_upmixRot`).
- * - Dragging the height ring arc → height scale (`m_upmixHeightTrans`).
+ * Ring drags commit to exactly one mode on the first few pixels of movement:
+ * - Primarily tangential drag  → rotation (`m_upmixRot`), shared by both rings.
+ * - **Circle shape**: radial drag → uniform scale (H = V always kept equal).
+ * - **Rectangle shape**: primarily horizontal drag → floor H scale (`m_upmixTransH`) or height H scale
+ *   (`m_upmixHeightTransH`); primarily vertical drag → floor V scale (`m_upmixTransV`) or height V scale
+ *   (`m_upmixHeightTransV`).
+ * A 2:1 bias towards scale ensures that ambiguous diagonal grabs (e.g. upper-right corner
+ * dragged right) resolve to scale rather than rotation.
  * - Dragging the stretch handle → angular stretch (`m_upmixAngleStretch`).
  * - Dragging the centre handle → XY offset (`m_upmixOffsetX/Y`).
  * Any transform change fires `onTransformChanged` so the caller can persist the values.
@@ -180,12 +188,20 @@ public:
     IndicatorShape getShape() const;
 
     //==============================================================================
-    /** @brief Applies all four transform parameters and triggers a prerender + repaint. */
-    void setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch = 1.0f);
-    float getUpmixRot() const;          ///< Ring rotation (normalised 0–1 = 0–360°).
-    float getUpmixTrans() const;        ///< Radial scale factor.
-    float getUpmixHeightTrans() const;  ///< Height ring radius as a fraction of floor radius.
-    float getUpmixAngleStretch() const; ///< Front/rear angular compression factor.
+    /** @brief When true, renders the LFE (directionless) channel as a circle positioned
+     *         inward along the centre-channel axis, with its label on top. */
+    void setShowDirectionlessChannel(bool show);
+    bool getShowDirectionlessChannel() const;
+
+    //==============================================================================
+    /** @brief Applies all transform parameters and triggers a prerender + repaint. */
+    void setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch = 1.0f);
+    float getUpmixRot() const;           ///< Ring rotation (normalised 0–1 = 0–360°).
+    float getUpmixTransH() const;        ///< Floor ring horizontal scale factor.
+    float getUpmixTransV() const;        ///< Floor ring vertical scale factor.
+    float getUpmixHeightTransH() const;  ///< Height ring horizontal scale (fraction of base radius).
+    float getUpmixHeightTransV() const;  ///< Height ring vertical scale (fraction of base radius).
+    float getUpmixAngleStretch() const;  ///< Front/rear angular compression factor.
 
     //==============================================================================
     /** @brief Sets the ring centre offset in units of base radius. */
@@ -194,6 +210,49 @@ public:
     float getUpmixOffsetY() const;
 
     //==============================================================================
+    /**
+     * @brief Returns the DS100 source IDs for all currently rendered upmix channels
+     *        (floor ring + height ring), in render order.
+     *
+     * Used by the upmix-params panel to know which channels' Spread and DelayMode
+     * values to monitor and batch-control.
+     */
+    std::vector<std::int16_t> getUpmixSourceIds() const;
+
+    //==============================================================================
+    /**
+     * @brief Holds the prerendered position of a single upmix output channel.
+     *
+     * Produced by `PrerenderUpmixIndicatorInBounds()` for each channel in the
+     * selected `AudioChannelSet` and delivered via `onRingPositionsChanged`.
+     * Contains the pixel position (for painting / overlay consumers) as well as
+     * the real-world position used for live-mode DS100 comparison.
+     */
+    struct RenderedChannelPosition
+    {
+        std::int16_t         sourceId = 0;                   ///< DS100 source channel (1-based).
+        juce::Point<float>   screenPos;                      ///< Pixel position of the dot, component-local.
+        std::array<float, 3> realPos  = { 0.0f, 0.0f, 0.0f }; ///< Ideal world position from the transform.
+        juce::String         label;                          ///< Abbreviated channel name (e.g. "L", "Ltf").
+    };
+
+    /**
+     * @brief Fired after every `PrerenderUpmixIndicatorInBounds()` with the current ring state.
+     *
+     * Delivers the ring centre, the sub-circle radius, and the prerendered per-channel
+     * positions for the floor and height rings (empty vector when the format has no
+     * height channels).  All pixel coordinates are in the component's own local space,
+     * which is shared with all sibling overlay layers.
+     *
+     * `UmsciControlComponent` bridges this to overlay consumers (e.g. the level meter)
+     * that need to know the current ring geometry but must remain decoupled from this
+     * component's internals.
+     */
+    std::function<void(juce::Point<float>                         /*centre*/,
+                       float                                       /*subCircleRadius*/,
+                       const std::vector<RenderedChannelPosition>& /*floor*/,
+                       const std::vector<RenderedChannelPosition>& /*height*/)> onRingPositionsChanged;
+
     /**
      * @brief Fires live-mode position callbacks and `onTransformChanged` after a
      *        programmatic transform change (e.g. from MIDI control).
@@ -234,22 +293,6 @@ private:
 
     //==============================================================================
     /**
-     * @brief Holds the prerendered position of a single upmix output channel.
-     *
-     * Populated by `PrerenderUpmixIndicatorInBounds()` for each channel in the
-     * selected `AudioChannelSet`.  Contains both the pixel position (for painting)
-     * and the real-world position (for live-mode overlay comparison).
-     */
-    struct RenderedChannelPosition
-    {
-        std::int16_t            sourceId  = 0;       ///< DS100 source channel assigned to this speaker slot.
-        juce::Point<float>      screenPos;            ///< Prerendered pixel position of the speaker dot.
-        std::array<float, 3>    realPos   = { 0.0f, 0.0f, 0.0f }; ///< Ideal world position from the transform.
-        juce::String            label;                ///< Channel label (e.g. "L", "C", "Ltf").
-    };
-
-    //==============================================================================
-    /**
      * @brief Recomputes all ring geometry from the current transform parameters and
      *        stores the result in `m_renderedFloorPositions` and `m_renderedHeightPositions`.
      * Called by `onZoomChanged()`, `resized()`, and any setter that changes the transform.
@@ -270,19 +313,23 @@ private:
     float m_boundingFitFactor = 0.15f; ///< Inset fraction when fitting ring to speaker bounding cube.
 
     // Prerendered juce::Path objects updated by PrerenderUpmixIndicatorInBounds().
-    juce::Path m_upmixIndicator;        ///< Floor ring (circle or rectangle).
-    juce::Path m_upmixHeightIndicator;  ///< Height ring (scaled version of floor ring).
-    juce::Path m_centerHandlePath;      ///< Draggable XY offset handle at ring centre.
-    juce::Path m_stretchHandlePath;     ///< Draggable angular-stretch arrow handle.
+    juce::Path m_upmixIndicator;               ///< Floor ring (circle or rectangle).
+    juce::Path m_upmixHeightIndicator;         ///< Height ring (scaled version of floor ring).
+    juce::Path m_upmixDirectionlessIndicator;  ///< Directionless (LFE) channel dot(s).
+    juce::Path m_centerHandlePath;             ///< Draggable XY offset handle at ring centre.
+    juce::Path m_stretchHandlePath;            ///< Draggable angular-stretch arrow handle.
 
-    float m_upmixRot         = 0.0f;  ///< Ring rotation (normalised 0–1 = 0–360°).
-    float m_upmixTrans       = 1.0f;  ///< Floor ring radial scale.
-    float m_upmixHeightTrans = 0.6f;  ///< Height ring radius as fraction of floor (0.6 = 40% smaller).
+    float m_upmixRot          = 0.0f;  ///< Ring rotation (normalised 0–1 = 0–360°).
+    float m_upmixTransH       = 1.0f;  ///< Floor ring horizontal scale (fraction of base radius).
+    float m_upmixTransV       = 1.0f;  ///< Floor ring vertical scale (fraction of base radius).
+    float m_upmixHeightTransH = 0.6f;  ///< Height ring horizontal scale (fraction of base radius).
+    float m_upmixHeightTransV = 0.6f;  ///< Height ring vertical scale (fraction of base radius).
 
     juce::Point<float>               m_upmixCenter;          ///< Pixel centre of the ring (computed during prerender).
     float                            m_subCircleRadius = 15.0f; ///< Radius of each channel dot in pixels.
-    std::vector<RenderedChannelPosition> m_renderedFloorPositions;  ///< Prerendered floor channel positions.
-    std::vector<RenderedChannelPosition> m_renderedHeightPositions; ///< Prerendered height channel positions.
+    std::vector<RenderedChannelPosition> m_renderedFloorPositions;          ///< Prerendered floor channel positions.
+    std::vector<RenderedChannelPosition> m_renderedHeightPositions;         ///< Prerendered height channel positions.
+    std::vector<RenderedChannelPosition> m_renderedDirectionlessPositions;  ///< Prerendered directionless (LFE) channel positions.
 
     float             m_upmixAngleStretch       = 1.0f;   ///< Angular stretch of front/rear channels.
     float             m_naturalFloorMaxAngleDeg = 110.0f; ///< Half-angle used as reference for stretch normalisation.
@@ -294,21 +341,27 @@ private:
     float m_baseRadius   = 100.0f; ///< Current base radius in pixels (updated during prerender; used for drag conversion).
 
     // Drag state — values captured at mouseDown to allow incremental dragging.
-    bool              m_draggingHeightRing    = false;
-    bool              m_draggingStretchHandle = false;
-    bool              m_draggingCenterHandle  = false;
-    float             m_dragStartAngle        = 0.0f;
-    float             m_dragStartDist         = 0.0f;
-    float             m_dragStartRot          = 0.0f;
-    float             m_dragStartTrans        = 0.0f;
-    float             m_dragStartHeightTrans  = 0.6f;
-    float             m_dragStartStretch      = 1.0f;
-    float             m_dragStartOffsetX      = 0.0f;
-    float             m_dragStartOffsetY      = 0.0f;
+    bool              m_draggingHeightRing     = false;
+    bool              m_draggingStretchHandle  = false;
+    bool              m_draggingCenterHandle   = false;
+    bool              m_dragModeLocked         = false; ///< True once the ring-drag mode (rotate vs scale) has been committed.
+    bool              m_draggingRotation       = false; ///< True when the ring drag committed to rotation; false when committed to H/V scale.
+    float             m_dragStartAngle         = 0.0f;
+    float             m_dragStartDX            = 0.0f; ///< X displacement from ring centre at mouseDown (for H-scale drag).
+    float             m_dragStartDY            = 0.0f; ///< Y displacement from ring centre at mouseDown (for V-scale drag).
+    float             m_dragStartRot           = 0.0f;
+    float             m_dragStartTransH        = 1.0f;
+    float             m_dragStartTransV        = 1.0f;
+    float             m_dragStartHeightTransH  = 0.6f;
+    float             m_dragStartHeightTransV  = 0.6f;
+    float             m_dragStartStretch       = 1.0f;
+    float             m_dragStartOffsetX       = 0.0f;
+    float             m_dragStartOffsetY       = 0.0f;
     juce::Point<float> m_dragStartMousePos;
 
     bool           m_flashState = false;                 ///< Toggled by timer for live-mode dot animation.
     bool           m_liveMode   = false;                 ///< When true, overlays real DS100 source positions.
+    bool           m_showDirectionlessChannel = false;   ///< When true, renders LFE inward at centre-channel angle.
     /** @brief Number of `setSourcePosition` echo-backs to absorb without calling
      *         `updateFlashState`.  Incremented by `notifyTransformChanged` for every
      *         position sent to DS100 so that the expected OCP.1 echoes do not

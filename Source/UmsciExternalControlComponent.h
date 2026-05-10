@@ -48,13 +48,15 @@ public:
     /** @brief Identifies each controllable upmix transform parameter. */
     enum UpmixMidiParam
     {
-        UpmixMidiParam_Rotation         = 0,  ///< m_upmixRot    — ring rotation (−π – +π rad).
-        UpmixMidiParam_Translation      = 1,  ///< m_upmixTrans  — radial scale factor.
-        UpmixMidiParam_HeightTranslation= 2,  ///< m_upmixHeightTrans — height ring fraction.
-        UpmixMidiParam_AngleStretch     = 3,  ///< m_upmixAngleStretch — angular spread.
-        UpmixMidiParam_OffsetX          = 4,  ///< m_upmixOffsetX — ring centre X offset.
-        UpmixMidiParam_OffsetY          = 5,  ///< m_upmixOffsetY — ring centre Y offset.
-        UpmixMidiParam_COUNT            = 6
+        UpmixMidiParam_Rotation          = 0,  ///< m_upmixRot        — ring rotation (−π – +π rad).
+        UpmixMidiParam_TranslationH      = 1,  ///< m_upmixTransH     — floor ring horizontal scale.
+        UpmixMidiParam_HeightTranslationH= 2,  ///< m_upmixHeightTransH — height ring horizontal scale.
+        UpmixMidiParam_AngleStretch      = 3,  ///< m_upmixAngleStretch — angular spread.
+        UpmixMidiParam_OffsetX           = 4,  ///< m_upmixOffsetX    — ring centre X offset.
+        UpmixMidiParam_OffsetY           = 5,  ///< m_upmixOffsetY    — ring centre Y offset.
+        UpmixMidiParam_TranslationV      = 6,  ///< m_upmixTransV     — floor ring vertical scale.
+        UpmixMidiParam_HeightTranslationV= 7,  ///< m_upmixHeightTransV — height ring vertical scale.
+        UpmixMidiParam_COUNT             = 8
     };
 
     /** @brief Natural parameter ranges for normalised MIDI→domain mapping. Indexed by `UpmixMidiParam`. */

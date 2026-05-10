@@ -97,6 +97,7 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::ControlFormat_7point0] = std::make_pair(juce::AudioChannelSet::create7point0().getDescription().toStdString(), 0);
     m_settingsItems[UmsciSettingsOption::ControlFormat_7point1] = std::make_pair(juce::AudioChannelSet::create7point1().getDescription().toStdString(), 0);
     m_settingsItems[UmsciSettingsOption::ControlFormat_7point1point4] = std::make_pair(juce::AudioChannelSet::create7point1point4().getDescription().toStdString(), 0);
+    m_settingsItems[UmsciSettingsOption::ControlFormat_9point1] = std::make_pair(std::string("9.1 Surround"), 0);
     m_settingsItems[UmsciSettingsOption::ControlFormat_9point1point6] = std::make_pair(juce::AudioChannelSet::create9point1point6().getDescription().toStdString(), 0);
     // default panning colour is green
     m_settingsItems[UmsciSettingsOption::ControlColour_Green] = std::make_pair("Green", 1);
@@ -195,8 +196,10 @@ MainComponent::MainComponent()
         if (!m_controlComponent) return;
         m_snapshotComponent->setSnapshotData({
             m_controlComponent->getUpmixRot(),
-            m_controlComponent->getUpmixTrans(),
-            m_controlComponent->getUpmixHeightTrans(),
+            m_controlComponent->getUpmixTransH(),
+            m_controlComponent->getUpmixTransV(),
+            m_controlComponent->getUpmixHeightTransH(),
+            m_controlComponent->getUpmixHeightTransV(),
             m_controlComponent->getUpmixAngleStretch(),
             m_controlComponent->getUpmixOffsetX(),
             m_controlComponent->getUpmixOffsetY()
@@ -211,7 +214,7 @@ MainComponent::MainComponent()
         const auto& snapData = m_snapshotComponent->getSnapshotData();
         if (!snapData.has_value()) return;
         const auto& s = *snapData;
-        m_controlComponent->setUpmixTransform(s.rot, s.scale, s.heightScale, s.angleStretch);
+        m_controlComponent->setUpmixTransform(s.rot, s.scaleH, s.scaleV, s.heightScaleH, s.heightScaleV, s.angleStretch);
         m_controlComponent->setUpmixOffset(s.offsetX, s.offsetY);
         if (m_controlComponent->getUpmixLiveMode())
             m_controlComponent->triggerUpmixTransformApplied();
@@ -222,12 +225,27 @@ MainComponent::MainComponent()
     };
 
     m_controlComponent->onUpmixTransformChanged = [this]() {
+        if (m_upmixParamsComponent)
+            m_upmixParamsComponent->setMonitoredSourceIds(m_controlComponent->getUpmixSourceIds());
         if (m_config)
             m_config->triggerConfigurationDump();
     };
 
+    m_controlComponent->onSourceSpreadReceived = [this](std::int16_t sourceId, float spread) {
+        if (m_upmixParamsComponent)
+            m_upmixParamsComponent->setSourceSpreadDeviceValue(sourceId, spread);
+    };
+
+    m_controlComponent->onSourceDelayModeReceived = [this](std::int16_t sourceId, std::uint16_t mode) {
+        if (m_upmixParamsComponent)
+            m_upmixParamsComponent->setSourceDelayModeDeviceValue(sourceId, mode);
+    };
+
     m_controlComponent->onDatabaseComplete = [this]() {
         checkDbprDeviceSync();
+        // Indicator has now pre-rendered — source IDs are valid; update and re-check mismatch.
+        if (m_upmixParamsComponent)
+            m_upmixParamsComponent->setMonitoredSourceIds(m_controlComponent->getUpmixSourceIds());
     };
 
     m_controlComponent->onDeviceDataUpdated = [this]() {
@@ -245,6 +263,11 @@ MainComponent::MainComponent()
                 m_controlComponent->setVisible(false);
                 m_discoverHintComponent->setVisible(true);
                 if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_upmixParamsComponent)
+                {
+                    m_upmixParamsComponent->setVisible(false);
+                    m_upmixParamsComponent->clearDeviceValues();
+                }
                 if (m_dbprProjectComponent)
                 {
                     m_dbprProjectComponent->setVisible(false);
@@ -258,6 +281,7 @@ MainComponent::MainComponent()
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Connecting);
                 if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_upmixParamsComponent) m_upmixParamsComponent->setVisible(false);
                 if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Subscribing:
@@ -267,6 +291,7 @@ MainComponent::MainComponent()
                 m_connectingComponent->setVisible(true);
                 m_connectingComponent->setConnectionStatus(UmsciConnectingComponent::Status::Subscribing);
                 if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_upmixParamsComponent) m_upmixParamsComponent->setVisible(false);
                 if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::GetValues:
@@ -276,6 +301,7 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(false);
                 if (m_snapshotComponent) m_snapshotComponent->setVisible(false);
+                if (m_upmixParamsComponent) m_upmixParamsComponent->setVisible(false);
                 if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(false);
                 break;
             case DeviceController::State::Connected:
@@ -284,6 +310,12 @@ MainComponent::MainComponent()
                 m_discoverHintComponent->setVisible(false);
                 m_controlComponent->setVisible(true);
                 if (m_snapshotComponent) m_snapshotComponent->setVisible(true);
+                if (m_upmixParamsComponent)
+                {
+                    m_upmixParamsComponent->setVisible(true);
+                    if (m_controlComponent)
+                        m_upmixParamsComponent->setMonitoredSourceIds(m_controlComponent->getUpmixSourceIds());
+                }
                 if (m_dbprProjectComponent) m_dbprProjectComponent->setVisible(true);
                 break;
             default:
@@ -396,6 +428,44 @@ MainComponent::MainComponent()
         setSnapshotPanelState(newState);
     };
 
+    m_upmixParamsComponent = std::make_unique<UmsciUpmixParamsComponent>();
+    m_upmixParamsComponent->setHighlightColour(m_controlColour);
+    addAndMakeVisible(m_upmixParamsComponent.get());
+    m_upmixParamsComponent->setVisible(false);
+
+    m_upmixParamsComponent->onStateChangeRequested = [this](UmsciUpmixParamsComponent::PanelState newState) {
+        setUpmixParamsPanelState(newState);
+    };
+
+    m_upmixParamsComponent->onSpreadChanged = [this](float spread) {
+        if (!m_controlComponent) return;
+        for (auto id : m_controlComponent->getUpmixSourceIds())
+        {
+            DeviceController::getInstance()->SetObjectValue(
+                DeviceController::RemoteObject(
+                    DeviceController::RemoteObject::Positioning_SourceSpread,
+                    DeviceController::RemObjAddr(id, DeviceController::RemObjAddr::sc_INV),
+                    NanoOcp1::Variant(spread)));
+        }
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+
+    m_upmixParamsComponent->onDelayModeChanged = [this](int mode) {
+        if (!m_controlComponent) return;
+        auto modeUint16 = static_cast<std::uint16_t>(mode);
+        for (auto id : m_controlComponent->getUpmixSourceIds())
+        {
+            DeviceController::getInstance()->SetObjectValue(
+                DeviceController::RemoteObject(
+                    DeviceController::RemoteObject::Positioning_SourceDelayMode,
+                    DeviceController::RemObjAddr(id, DeviceController::RemObjAddr::sc_INV),
+                    NanoOcp1::Variant(modeUint16)));
+        }
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+
     m_dbprProjectComponent->onLoadRequested = [this] {
         showDbprProjectLoad();
     };
@@ -469,6 +539,18 @@ void MainComponent::resized()
                 ? -(snapW - m_snapshotComponent->getGrabStripWidth())
                 : UmsciSnapshotComponent::s_panelMargin;
             m_snapshotComponent->setBounds(snapX, snapTopY, snapW, snapH);
+
+            // Upmix params panel sits directly above the snapshot panel.
+            if (m_upmixParamsComponent)
+            {
+                const auto upmixW    = m_upmixParamsComponent->getPanelWidth();
+                const auto upmixH    = m_upmixParamsComponent->getPanelHeight();
+                const auto upmixTopY = snapTopY - UmsciUpmixParamsComponent::s_panelMargin - upmixH;
+                const auto upmixX    = (m_upmixParamsComponent->getPanelState() == UmsciUpmixParamsComponent::PanelState::Tucked)
+                    ? -(upmixW - m_upmixParamsComponent->getGrabStripWidth())
+                    : UmsciUpmixParamsComponent::s_panelMargin;
+                m_upmixParamsComponent->setBounds(upmixX, upmixTopY, upmixW, upmixH);
+            }
         }
 
         if (!juce::JUCEApplication::getInstance()->getCommandLineParameters().contains("--noconfigui"))
@@ -542,7 +624,7 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
 void MainComponent::handleSettingsControlFormatMenuResult(int selectedId)
 {
     // helper internal function to avoid code clones
-    std::function<void(int, int, int, int, int, int, int, int, int, int)> setSettingsItemsCheckState = [=](int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
+    std::function<void(int, int, int, int, int, int, int, int, int, int, int)> setSettingsItemsCheckState = [=](int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k) {
         m_settingsItems[UmsciSettingsOption::ControlFormat_Stereo].second = a;
         m_settingsItems[UmsciSettingsOption::ControlFormat_LRS].second = b;
         m_settingsItems[UmsciSettingsOption::ControlFormat_LCRS].second = c;
@@ -552,58 +634,64 @@ void MainComponent::handleSettingsControlFormatMenuResult(int selectedId)
         m_settingsItems[UmsciSettingsOption::ControlFormat_7point0].second = g;
         m_settingsItems[UmsciSettingsOption::ControlFormat_7point1].second = h;
         m_settingsItems[UmsciSettingsOption::ControlFormat_7point1point4].second = i;
-        m_settingsItems[UmsciSettingsOption::ControlFormat_9point1point6].second = j;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_9point1].second = j;
+        m_settingsItems[UmsciSettingsOption::ControlFormat_9point1point6].second = k;
         };
 
     switch (selectedId)
     {
     case UmsciSettingsOption::ControlFormat_Stereo:
-        setSettingsItemsCheckState(1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        setSettingsItemsCheckState(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::stereo());
         break;
     case UmsciSettingsOption::ControlFormat_LRS:
-        setSettingsItemsCheckState(0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+        setSettingsItemsCheckState(0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::createLRS());
         break;
     case UmsciSettingsOption::ControlFormat_LCRS:
-        setSettingsItemsCheckState(0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
+        setSettingsItemsCheckState(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::createLCRS());
         break;
     case UmsciSettingsOption::ControlFormat_5point0:
-        setSettingsItemsCheckState(0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+        setSettingsItemsCheckState(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point0());
         break;
     case UmsciSettingsOption::ControlFormat_5point1:
-        setSettingsItemsCheckState(0, 0, 0, 0, 1, 0, 0, 0, 0, 0);
+        setSettingsItemsCheckState(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point1());
         break;
     case UmsciSettingsOption::ControlFormat_5point1point2:
-        setSettingsItemsCheckState(0, 0, 0, 0, 0, 1, 0, 0, 0, 0);
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create5point1point2());
         break;
     case UmsciSettingsOption::ControlFormat_7point0:
-        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point0());
         break;
     case UmsciSettingsOption::ControlFormat_7point1:
-        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 1, 0, 0);
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point1());
         break;
     case UmsciSettingsOption::ControlFormat_7point1point4:
-        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 1, 0);
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create7point1point4());
         break;
+    case UmsciSettingsOption::ControlFormat_9point1:
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0);
+        if (m_controlComponent)
+            m_controlComponent->setUpmixChannelConfiguration(JUCEAppBasics::TwoDFieldBase::create9point1());
+        break;
     case UmsciSettingsOption::ControlFormat_9point1point6:
-        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+        setSettingsItemsCheckState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
         if (m_controlComponent)
             m_controlComponent->setUpmixChannelConfiguration(juce::AudioChannelSet::create9point1point6());
         break;
@@ -629,24 +717,27 @@ void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
         setSettingsItemsCheckState(1, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
-        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(0);
-        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(0);
+        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(0);
+        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(0);
+        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(0);
         resized();
         break;
     case UmsciSettingsOption::ControlSize_M:
         setSettingsItemsCheckState(0, 1, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
-        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(1);
-        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(1);
+        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(1);
+        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(1);
+        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(1);
         resized();
         break;
     case UmsciSettingsOption::ControlSize_L:
         setSettingsItemsCheckState(0, 0, 1);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
-        if (m_dbprProjectComponent) m_dbprProjectComponent->setControlSize(2);
-        if (m_snapshotComponent)    m_snapshotComponent->setControlSize(2);
+        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(2);
+        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(2);
+        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(2);
         resized();
         break;
     default:
@@ -838,6 +929,22 @@ void MainComponent::showUpmixSettings()
         combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
                                     juce::dontSendNotification);
 
+    juce::StringArray lfeItems;
+    lfeItems.add("Disregard");
+    lfeItems.add("Position with bed");
+    m_messageBox->addComboBox("LFE channel", lfeItems, "LFE / positionless channel");
+    if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowDirectionlessChannel() ? 1 : 0,
+                                    juce::dontSendNotification);
+
+    juce::StringArray levelMeterItems;
+    levelMeterItems.add("Off");
+    levelMeterItems.add("On");
+    m_messageBox->addComboBox("Level metering", levelMeterItems, "Level metering");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowLevelMeter() ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
@@ -855,6 +962,10 @@ void MainComponent::showUpmixSettings()
             m_controlComponent->setUpmixSourceStartId(startId);
             if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
                 m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
+            if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
+                m_controlComponent->setShowDirectionlessChannel(combo->getSelectedItemIndex() == 1);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
+                m_controlComponent->setShowLevelMeter(combo->getSelectedItemIndex() == 1);
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -896,6 +1007,9 @@ void MainComponent::applyControlColour()
 
     if (m_snapshotComponent)
         m_snapshotComponent->setHighlightColour(m_controlColour);
+
+    if (m_upmixParamsComponent)
+        m_upmixParamsComponent->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -984,17 +1098,40 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL),
+            (m_controlComponent ? (m_controlComponent->getShowDirectionlessChannel() ? 1 : 0) : 0));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER),
+            (m_controlComponent ? (m_controlComponent->getShowLevelMeter() ? 1 : 0) : 1));
         upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
-            m_controlComponent ? m_controlComponent->getUpmixRot()          : 0.0f,
-            m_controlComponent ? m_controlComponent->getUpmixTrans()        : 1.0f,
-            m_controlComponent ? m_controlComponent->getUpmixHeightTrans()  : 0.6f,
-            m_controlComponent ? m_controlComponent->getUpmixAngleStretch() : 1.0f,
-            m_controlComponent ? m_controlComponent->getUpmixOffsetX()      : 0.0f,
-            m_controlComponent ? m_controlComponent->getUpmixOffsetY()      : 0.0f
+            m_controlComponent ? m_controlComponent->getUpmixRot()           : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixTransH()        : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixTransV()        : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixHeightTransH()  : 0.6f,
+            m_controlComponent ? m_controlComponent->getUpmixHeightTransV()  : 0.6f,
+            m_controlComponent ? m_controlComponent->getUpmixAngleStretch()  : 1.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetX()       : 0.0f,
+            m_controlComponent ? m_controlComponent->getUpmixOffsetY()       : 0.0f
         }.toString());
 
         m_config->setConfigState(std::move(upmixConfigXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXCONFIG));
+
+        // upmix params panel aggregate values
+        if (m_upmixParamsComponent)
+        {
+            auto upmixParamsXmlElement = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXPARAMSCONFIG));
+            upmixParamsXmlElement->setAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSPREAD),
+                m_upmixParamsComponent->getSpread());
+            upmixParamsXmlElement->setAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXDELAYMODE),
+                m_upmixParamsComponent->getDelayMode());
+            m_config->setConfigState(std::move(upmixParamsXmlElement),
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXPARAMSCONFIG));
+        }
 
         // upmix snapshot (optional — only written when a snapshot has been stored)
         if (m_snapshotComponent && m_snapshotComponent->getSnapshotData().has_value())
@@ -1150,6 +1287,12 @@ void MainComponent::onConfigUpdated()
         auto showAllSources = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES), 1) == 1;
         m_controlComponent->setShowAllSources(showAllSources);
+        auto showLfe = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL), 0) == 1;
+        m_controlComponent->setShowDirectionlessChannel(showLfe);
+        auto showLevelMeter = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER), 1) == 1;
+        m_controlComponent->setShowLevelMeter(showLevelMeter);
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);
@@ -1158,10 +1301,29 @@ void MainComponent::onConfigUpdated()
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
         auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
-        m_controlComponent->setUpmixTransform(upmixParams.rot, upmixParams.scale,
-                                              upmixParams.heightScale, upmixParams.angleStretch);
+        m_controlComponent->setUpmixTransform(upmixParams.rot,
+                                              upmixParams.scaleH, upmixParams.scaleV,
+                                              upmixParams.heightScaleH, upmixParams.heightScaleV,
+                                              upmixParams.angleStretch);
         m_controlComponent->setUpmixOffset(upmixParams.offsetX, upmixParams.offsetY);
     }
+
+    // upmix params panel aggregate values
+    auto upmixParamsState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::UPMIXPARAMSCONFIG));
+    if (upmixParamsState && m_upmixParamsComponent)
+    {
+        auto spread = static_cast<float>(upmixParamsState->getDoubleAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSPREAD), 0.5));
+        m_upmixParamsComponent->setSpread(spread);
+        auto delayMode = upmixParamsState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXDELAYMODE), 0);
+        m_upmixParamsComponent->setDelayMode(delayMode);
+    }
+
+    // update monitored source IDs so mismatch detection works after reconnect
+    if (m_upmixParamsComponent && m_controlComponent)
+        m_upmixParamsComponent->setMonitoredSourceIds(m_controlComponent->getUpmixSourceIds());
 
     // upmix snapshot (optional — absent in config means no snapshot stored)
     auto upmixSnapshotState = m_config->getConfigState(
@@ -1317,26 +1479,50 @@ void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMid
     {
     case UmsciExternalControlComponent::UpmixMidiParam_Rotation:
         m_controlComponent->setUpmixTransform(domainValue,
-                                              m_controlComponent->getUpmixTrans(),
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
-    case UmsciExternalControlComponent::UpmixMidiParam_Translation:
+    case UmsciExternalControlComponent::UpmixMidiParam_TranslationH:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
                                               domainValue,
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               m_controlComponent->getUpmixAngleStretch());
         break;
-    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslation:
+    case UmsciExternalControlComponent::UpmixMidiParam_TranslationV:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
-                                              m_controlComponent->getUpmixTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              domainValue,
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslationH:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              domainValue,
+                                              m_controlComponent->getUpmixHeightTransV(),
+                                              m_controlComponent->getUpmixAngleStretch());
+        break;
+    case UmsciExternalControlComponent::UpmixMidiParam_HeightTranslationV:
+        m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
                                               domainValue,
                                               m_controlComponent->getUpmixAngleStretch());
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_AngleStretch:
         m_controlComponent->setUpmixTransform(m_controlComponent->getUpmixRot(),
-                                              m_controlComponent->getUpmixTrans(),
-                                              m_controlComponent->getUpmixHeightTrans(),
+                                              m_controlComponent->getUpmixTransH(),
+                                              m_controlComponent->getUpmixTransV(),
+                                              m_controlComponent->getUpmixHeightTransH(),
+                                              m_controlComponent->getUpmixHeightTransV(),
                                               domainValue);
         break;
     case UmsciExternalControlComponent::UpmixMidiParam_OffsetX:
@@ -1553,6 +1739,38 @@ void MainComponent::setSnapshotPanelState(UmsciSnapshotComponent::PanelState new
     juce::Desktop::getInstance().getAnimator().animateComponent(
         m_snapshotComponent.get(),
         juce::Rectangle<int>(x, snapTopY, snapW, snapH),
+        1.0f, 220, false, 1.0, 1.0);
+}
+
+void MainComponent::setUpmixParamsPanelState(UmsciUpmixParamsComponent::PanelState newState)
+{
+    if (!m_upmixParamsComponent || !m_snapshotComponent || !m_dbprProjectComponent)
+        return;
+
+    m_upmixParamsComponent->setPanelState(newState);
+
+    const auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+    auto safeBounds = getLocalBounds();
+    safeBounds.removeFromTop(safety._top);
+    safeBounds.removeFromBottom(safety._bottom);
+    safeBounds.removeFromLeft(safety._left);
+    safeBounds.removeFromRight(safety._right);
+
+    const auto dbprH   = m_dbprProjectComponent->getPanelHeight();
+    const auto dbprTopY = safeBounds.getBottom() - dbprH - UmsciDbprProjectComponent::s_panelMargin;
+    const auto snapH   = m_snapshotComponent->getPanelHeight();
+    const auto snapTopY = dbprTopY - UmsciSnapshotComponent::s_panelMargin - snapH;
+
+    const auto upmixW    = m_upmixParamsComponent->getPanelWidth();
+    const auto upmixH    = m_upmixParamsComponent->getPanelHeight();
+    const auto upmixTopY = snapTopY - UmsciUpmixParamsComponent::s_panelMargin - upmixH;
+    const auto x         = (newState == UmsciUpmixParamsComponent::PanelState::Tucked)
+        ? -(upmixW - m_upmixParamsComponent->getGrabStripWidth())
+        : UmsciUpmixParamsComponent::s_panelMargin;
+
+    juce::Desktop::getInstance().getAnimator().animateComponent(
+        m_upmixParamsComponent.get(),
+        juce::Rectangle<int>(x, upmixTopY, upmixW, upmixH),
         1.0f, 220, false, 1.0, 1.0);
 }
 

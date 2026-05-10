@@ -169,6 +169,10 @@
               file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.cpp"/>
         <FILE id="sn4pSH" name="UmsciSnapshotComponent.h" compile="0" resource="0"
               file="Source/UmsciPaintNControlComponents/UmsciSnapshotComponent.h"/>
+        <FILE id="upmxPC" name="UmsciUpmixParamsComponent.cpp" compile="1" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciUpmixParamsComponent.cpp"/>
+        <FILE id="upmxPH" name="UmsciUpmixParamsComponent.h" compile="0" resource="0"
+              file="Source/UmsciPaintNControlComponents/UmsciUpmixParamsComponent.h"/>
         <FILE id="eyijqn" name="UmsciLoudspeakersPaintComponent.cpp" compile="1"
               resource="0" file="Source/UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.cpp"/>
         <FILE id="gc2JqM" name="UmsciLoudspeakersPaintComponent.h" compile="0"
@@ -185,6 +189,10 @@
               compile="1" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.cpp"/>
         <FILE id="XbpJ1n" name="UmsciUpmixIndicatorPaintNControlComponent.h"
               compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"/>
+        <FILE id="Lm3pQr" name="UmsciLevelMeterPaintComponent.cpp"
+              compile="1" resource="0" file="Source/UmsciPaintNControlComponents/UmsciLevelMeterPaintComponent.cpp"/>
+        <FILE id="Nk7tXs" name="UmsciLevelMeterPaintComponent.h"
+              compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciLevelMeterPaintComponent.h"/>
       </GROUP>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"

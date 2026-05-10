@@ -28,6 +28,7 @@
 #include "DbprController.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 #include "UmsciPaintNControlComponents/UmsciSnapshotComponent.h"
+#include "UmsciPaintNControlComponents/UmsciUpmixParamsComponent.h"
 
 
  /**
@@ -112,6 +113,7 @@ public:
         ControlFormat_7point0,
         ControlFormat_7point1,
         ControlFormat_7point1point4,
+        ControlFormat_9point1,
         ControlFormat_9point1point6,
         ControlFormat_Last = ControlFormat_9point1point6,
         UpmixSettings,          ///< Opens the upmix settings dialog.
@@ -180,6 +182,9 @@ private:
     /** @brief Animates the snapshot panel to the given state and records the new state. */
     void setSnapshotPanelState(UmsciSnapshotComponent::PanelState state);
 
+    /** @brief Animates the upmix params panel to the given state and records the new state. */
+    void setUpmixParamsPanelState(UmsciUpmixParamsComponent::PanelState state);
+
     //==============================================================================
     /**
      * @brief Compares the loaded dbpr project data against the live device data
@@ -221,6 +226,7 @@ private:
     std::unique_ptr<AboutComponent>                 m_aboutComponent;
 
     std::unique_ptr<UmsciSnapshotComponent>         m_snapshotComponent;
+    std::unique_ptr<UmsciUpmixParamsComponent>      m_upmixParamsComponent;
 
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;

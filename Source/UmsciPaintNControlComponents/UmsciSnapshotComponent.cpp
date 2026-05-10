@@ -174,12 +174,14 @@ void UmsciSnapshotComponent::paintContent(juce::Graphics& g, juce::Rectangle<int
     {
         const auto& s = *m_snapshotData;
         g.setFont(juce::Font(juce::FontOptions(bodyFont, juce::Font::plain)));
-        g.drawText("Rotation: "   + juce::String(s.rot,          3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("Scale: "      + juce::String(s.scale,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("H.Scale: "    + juce::String(s.heightScale,  3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("A.Stretch: "  + juce::String(s.angleStretch, 3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
-        g.drawText("Offset: "     + juce::String(s.offsetX,      3) +
-                   ", "           + juce::String(s.offsetY,      3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Rotation: "    + juce::String(s.rot,          3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Scale H/V: "  + juce::String(s.scaleH,       3) +
+                   " / "          + juce::String(s.scaleV,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("H.Scale H/V: "+ juce::String(s.heightScaleH, 3) +
+                   " / "          + juce::String(s.heightScaleV,  3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("A.Stretch: "  + juce::String(s.angleStretch,  3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
+        g.drawText("Offset: "     + juce::String(s.offsetX,       3) +
+                   ", "           + juce::String(s.offsetY,        3), inner.removeFromTop(rowH), juce::Justification::centredLeft, true);
     }
     else
     {

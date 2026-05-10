@@ -21,6 +21,7 @@
 #include "UmsciPaintNControlComponents/UmsciLoudspeakersPaintComponent.h"
 #include "UmsciPaintNControlComponents/UmsciSoundobjectsPaintComponent.h"
 #include "UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"
+#include "UmsciPaintNControlComponents/UmsciLevelMeterPaintComponent.h"
 
 #if JUCE_IOS
 #include <iOS_utils.h>
@@ -52,6 +53,9 @@ UmsciControlComponent::UmsciControlComponent()
             )
         );
     };
+    // Level meter is added BEFORE the indicator so the indicator ring and handles paint on top.
+    m_levelMeterPaintComponent = std::make_unique<UmsciLevelMeterPaintComponent>();
+    addAndMakeVisible(m_levelMeterPaintComponent.get());
     m_upmixIndicatorPaintAndControlComponent = std::make_unique<UmsciUpmixIndicatorPaintNControlComponent>();
     addAndMakeVisible(m_upmixIndicatorPaintAndControlComponent.get());
     m_upmixIndicatorPaintAndControlComponent->onTransformChanged = [this]() {
@@ -68,6 +72,24 @@ UmsciControlComponent::UmsciControlComponent()
                 NanoOcp1::Variant(position.at(0), position.at(1), position.at(2))
             )
         );
+    };
+    m_upmixIndicatorPaintAndControlComponent->onRingPositionsChanged = [this](
+        juce::Point<float> centre, float subCircleRadius,
+        const std::vector<UmsciUpmixIndicatorPaintNControlComponent::RenderedChannelPosition>& floor,
+        const std::vector<UmsciUpmixIndicatorPaintNControlComponent::RenderedChannelPosition>& height)
+    {
+        auto toChannelPositions = [](
+            const std::vector<UmsciUpmixIndicatorPaintNControlComponent::RenderedChannelPosition>& src)
+        {
+            std::vector<UmsciLevelMeterPaintComponent::ChannelPosition> dst;
+            dst.reserve(src.size());
+            for (auto const& rcp : src)
+                dst.push_back({ rcp.sourceId, rcp.screenPos });
+            return dst;
+        };
+        m_levelMeterPaintComponent->setRingPositions(
+            centre, subCircleRadius,
+            toChannelPositions(floor), toChannelPositions(height));
     };
 
     // Synchronise viewport zoom across all three overlaid paint components:
@@ -110,6 +132,8 @@ void UmsciControlComponent::resized()
         m_loudspeakersInAreaPaintComponent->setBounds(bounds);
     if (m_soundobjectsInAreaPaintComponent && m_soundobjectsInAreaPaintComponent->isVisible())
         m_soundobjectsInAreaPaintComponent->setBounds(bounds);
+    if (m_levelMeterPaintComponent && m_levelMeterPaintComponent->isVisible())
+        m_levelMeterPaintComponent->setBounds(bounds);
     if (m_upmixIndicatorPaintAndControlComponent && m_upmixIndicatorPaintAndControlComponent->isVisible())
         m_upmixIndicatorPaintAndControlComponent->setBounds(bounds);
 }
@@ -202,6 +226,7 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceSpread, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceDelayMode, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourcePosition, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_LevelMeterPostMute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
     for (std::int16_t o = 1; o <= m_ocp1IOSize.second; o++)
     {
@@ -222,7 +247,8 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
 
 void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject& obj)
 {
-    DBG(juce::String(__FUNCTION__) << " " << DeviceController::RemoteObject::GetObjectDescription(obj.Id) << " " << obj.Addr.toNiceString());
+    if (!DeviceController::RemoteObject::IsFlickering(obj.Id))
+        DBG(juce::String(__FUNCTION__) << " " << DeviceController::RemoteObject::GetObjectDescription(obj.Id) << " " << obj.Addr.toNiceString());
 
     switch (obj.Id)
     {
@@ -302,8 +328,11 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
     case DeviceController::RemoteObject::FunctionGroup_Delay:
     case DeviceController::RemoteObject::MatrixNode_Gain:
     case DeviceController::RemoteObject::MatrixInput_ReverbSendGain:
-    case DeviceController::RemoteObject::MatrixInput_LevelMeterPreMute:
     case DeviceController::RemoteObject::MatrixInput_LevelMeterPostMute:
+        if (NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType())
+            setUpmixLevelValue(obj.Addr.pri, obj.Var.ToFloat());
+        break;
+    case DeviceController::RemoteObject::MatrixInput_LevelMeterPreMute:
     case DeviceController::RemoteObject::MatrixOutput_LevelMeterPreMute:
     case DeviceController::RemoteObject::MatrixOutput_LevelMeterPostMute:
     case DeviceController::RemoteObject::MatrixSettings_ReverbPredelayFactor:
@@ -546,11 +575,13 @@ void UmsciControlComponent::setSourcePosition(std::int16_t sourceId, const std::
 void UmsciControlComponent::setSourceDelayMode(std::int16_t sourceId, const std::uint16_t& delayMode)
 {
     m_sourceDelayMode[sourceId] = delayMode;
+    if (onSourceDelayModeReceived) onSourceDelayModeReceived(sourceId, delayMode);
 }
 
 void UmsciControlComponent::setSourceSpread(std::int16_t sourceId, const std::float_t& spread)
 {
     m_sourceSpread[sourceId] = spread;
+    if (onSourceSpreadReceived) onSourceSpreadReceived(sourceId, spread);
 }
 
 void UmsciControlComponent::setSpeakerName(std::int16_t speakerId, const std::string& name)
@@ -675,6 +706,33 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent:
     return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
 }
 
+void UmsciControlComponent::setShowDirectionlessChannel(bool show)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShowDirectionlessChannel(show);
+    updateSourceIdFilter();
+}
+
+bool UmsciControlComponent::getShowDirectionlessChannel() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShowDirectionlessChannel();
+    return false;
+}
+
+void UmsciControlComponent::setShowLevelMeter(bool show)
+{
+    if (m_levelMeterPaintComponent)
+        m_levelMeterPaintComponent->setVisible(show);
+}
+
+bool UmsciControlComponent::getShowLevelMeter() const
+{
+    if (m_levelMeterPaintComponent)
+        return m_levelMeterPaintComponent->isVisible();
+    return true;
+}
+
 void UmsciControlComponent::setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size)
 {
     if (m_loudspeakersInAreaPaintComponent)
@@ -692,10 +750,10 @@ UmsciPaintNControlComponentBase::ControlsSize UmsciControlComponent::getControls
     return UmsciPaintNControlComponentBase::ControlsSize::S;
 }
 
-void UmsciControlComponent::setUpmixTransform(float rot, float trans, float heightTrans, float angleStretch)
+void UmsciControlComponent::setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, trans, heightTrans, angleStretch);
+        m_upmixIndicatorPaintAndControlComponent->setUpmixTransform(rot, transH, transV, heightTransH, heightTransV, angleStretch);
 }
 
 float UmsciControlComponent::getUpmixRot() const
@@ -705,17 +763,31 @@ float UmsciControlComponent::getUpmixRot() const
     return 0.0f;
 }
 
-float UmsciControlComponent::getUpmixTrans() const
+float UmsciControlComponent::getUpmixTransH() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        return m_upmixIndicatorPaintAndControlComponent->getUpmixTrans();
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTransH();
     return 1.0f;
 }
 
-float UmsciControlComponent::getUpmixHeightTrans() const
+float UmsciControlComponent::getUpmixTransV() const
 {
     if (m_upmixIndicatorPaintAndControlComponent)
-        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTrans();
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixTransV();
+    return 1.0f;
+}
+
+float UmsciControlComponent::getUpmixHeightTransH() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTransH();
+    return 0.6f;
+}
+
+float UmsciControlComponent::getUpmixHeightTransV() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixHeightTransV();
     return 0.6f;
 }
 
@@ -758,6 +830,13 @@ float UmsciControlComponent::getUpmixOffsetY() const
     return 0.0f;
 }
 
+std::vector<std::int16_t> UmsciControlComponent::getUpmixSourceIds() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getUpmixSourceIds();
+    return {};
+}
+
 void UmsciControlComponent::setShowAllSources(bool showAll)
 {
     m_showAllSources = showAll;
@@ -780,12 +859,19 @@ void UmsciControlComponent::updateSourceIdFilter()
     }
     else
     {
-        auto startId = getUpmixSourceStartId();
-        auto channelCount = getUpmixChannelConfiguration().size();
-        std::set<std::int16_t> allowedIds;
-        for (int i = 0; i < channelCount; ++i)
-            allowedIds.insert(static_cast<std::int16_t>(startId + i));
-        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(allowedIds);
+        auto sourceIds = getUpmixSourceIds();
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(
+            std::set<std::int16_t>(sourceIds.begin(), sourceIds.end()));
     }
+}
+
+void UmsciControlComponent::setUpmixLevelValue(std::int16_t sourceId, float dBLevel)
+{
+    // MatrixInput_LevelMeterPostMute delivers dB values in the range [-120, 0].
+    // Normalize to [0, 1] for the level meter component.
+    static constexpr float kMindB = -120.0f;
+    float normalized = juce::jlimit(0.0f, 1.0f, (dBLevel - kMindB) / (-kMindB));
+    if (m_levelMeterPaintComponent)
+        m_levelMeterPaintComponent->setLevelValue(sourceId, normalized);
 }
 

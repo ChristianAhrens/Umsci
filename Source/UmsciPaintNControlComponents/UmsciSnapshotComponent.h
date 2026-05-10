@@ -60,17 +60,21 @@ public:
     int getGrabStripWidth() const;
 
     // ── Snapshot data ────────────────────────────────────────────────────────
-    /** Six-parameter upmix transform snapshot. Serialises to/from a semicolon-delimited string. */
+    /** Eight-parameter upmix transform snapshot. Serialises to/from a semicolon-delimited string.
+     *  Legacy files with a single "scale"/"heightScale" key are up-converted on load. */
     struct UpmixSnapshot
     {
-        float rot { 0.0f }, scale { 1.0f }, heightScale { 0.6f },
+        float rot { 0.0f }, scaleH { 1.0f }, scaleV { 1.0f },
+              heightScaleH { 0.6f }, heightScaleV { 0.6f },
               angleStretch { 1.0f }, offsetX { 0.0f }, offsetY { 0.0f };
 
         juce::String toString() const
         {
             return "rot=" + juce::String(rot)
-                + ";scale=" + juce::String(scale)
-                + ";heightScale=" + juce::String(heightScale)
+                + ";scaleH=" + juce::String(scaleH)
+                + ";scaleV=" + juce::String(scaleV)
+                + ";heightScaleH=" + juce::String(heightScaleH)
+                + ";heightScaleV=" + juce::String(heightScaleV)
                 + ";angleStretch=" + juce::String(angleStretch)
                 + ";offsetX=" + juce::String(offsetX)
                 + ";offsetY=" + juce::String(offsetY);
@@ -86,11 +90,16 @@ public:
                 auto key = kv[0].trim();
                 auto val = kv[1].trim().getFloatValue();
                 if      (key == "rot")          p.rot          = val;
-                else if (key == "scale")        p.scale        = val;
-                else if (key == "heightScale")  p.heightScale  = val;
+                else if (key == "scaleH")       p.scaleH       = val;
+                else if (key == "scaleV")       p.scaleV       = val;
+                else if (key == "heightScaleH") p.heightScaleH = val;
+                else if (key == "heightScaleV") p.heightScaleV = val;
                 else if (key == "angleStretch") p.angleStretch = val;
                 else if (key == "offsetX")      p.offsetX      = val;
                 else if (key == "offsetY")      p.offsetY      = val;
+                // Legacy single-scale keys: up-convert to both H and V
+                else if (key == "scale")        { p.scaleH = val; p.scaleV = val; }
+                else if (key == "heightScale")  { p.heightScaleH = val; p.heightScaleV = val; }
             }
             return p;
         }
