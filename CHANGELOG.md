@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.3.2] 2026-05-10
+### Added
+- Added dedicated overlay panel for upmix spread and delay-mode control/monitoring
+- Added optional LFE channel positioning as a sound object alongside the centre channel
+- Added optional radial level metering overlay for all supported upmix bed formats, including configurable visibility, 2-second peak hold, and a timer-throttled repaint path that avoids flooding the UI with OCP.1 meter updates
+- Added support for 9.1 surround as a selectable upmix channel format
+
+### Changed
+- Changed upmix indicator rectangle mode to support independent horizontal and vertical scaling
+
+### Fixed
+
 ## [0.3.1] 2026-04-26
 ### Added
 
