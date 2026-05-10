@@ -188,6 +188,12 @@ public:
     IndicatorShape getShape() const;
 
     //==============================================================================
+    /** @brief When true, renders the LFE (directionless) channel as a circle positioned
+     *         inward along the centre-channel axis, with its label on top. */
+    void setShowDirectionlessChannel(bool show);
+    bool getShowDirectionlessChannel() const;
+
+    //==============================================================================
     /** @brief Applies all transform parameters and triggers a prerender + repaint. */
     void setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch = 1.0f);
     float getUpmixRot() const;           ///< Ring rotation (normalised 0–1 = 0–360°).
@@ -289,10 +295,11 @@ private:
     float m_boundingFitFactor = 0.15f; ///< Inset fraction when fitting ring to speaker bounding cube.
 
     // Prerendered juce::Path objects updated by PrerenderUpmixIndicatorInBounds().
-    juce::Path m_upmixIndicator;        ///< Floor ring (circle or rectangle).
-    juce::Path m_upmixHeightIndicator;  ///< Height ring (scaled version of floor ring).
-    juce::Path m_centerHandlePath;      ///< Draggable XY offset handle at ring centre.
-    juce::Path m_stretchHandlePath;     ///< Draggable angular-stretch arrow handle.
+    juce::Path m_upmixIndicator;               ///< Floor ring (circle or rectangle).
+    juce::Path m_upmixHeightIndicator;         ///< Height ring (scaled version of floor ring).
+    juce::Path m_upmixDirectionlessIndicator;  ///< Directionless (LFE) channel dot(s).
+    juce::Path m_centerHandlePath;             ///< Draggable XY offset handle at ring centre.
+    juce::Path m_stretchHandlePath;            ///< Draggable angular-stretch arrow handle.
 
     float m_upmixRot          = 0.0f;  ///< Ring rotation (normalised 0–1 = 0–360°).
     float m_upmixTransH       = 1.0f;  ///< Floor ring horizontal scale (fraction of base radius).
@@ -302,8 +309,9 @@ private:
 
     juce::Point<float>               m_upmixCenter;          ///< Pixel centre of the ring (computed during prerender).
     float                            m_subCircleRadius = 15.0f; ///< Radius of each channel dot in pixels.
-    std::vector<RenderedChannelPosition> m_renderedFloorPositions;  ///< Prerendered floor channel positions.
-    std::vector<RenderedChannelPosition> m_renderedHeightPositions; ///< Prerendered height channel positions.
+    std::vector<RenderedChannelPosition> m_renderedFloorPositions;          ///< Prerendered floor channel positions.
+    std::vector<RenderedChannelPosition> m_renderedHeightPositions;         ///< Prerendered height channel positions.
+    std::vector<RenderedChannelPosition> m_renderedDirectionlessPositions;  ///< Prerendered directionless (LFE) channel positions.
 
     float             m_upmixAngleStretch       = 1.0f;   ///< Angular stretch of front/rear channels.
     float             m_naturalFloorMaxAngleDeg = 110.0f; ///< Half-angle used as reference for stretch normalisation.
@@ -335,6 +343,7 @@ private:
 
     bool           m_flashState = false;                 ///< Toggled by timer for live-mode dot animation.
     bool           m_liveMode   = false;                 ///< When true, overlays real DS100 source positions.
+    bool           m_showDirectionlessChannel = false;   ///< When true, renders LFE inward at centre-channel angle.
     /** @brief Number of `setSourcePosition` echo-backs to absorb without calling
      *         `updateFlashState`.  Incremented by `notifyTransformChanged` for every
      *         position sent to DS100 so that the expected OCP.1 echoes do not

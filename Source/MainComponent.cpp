@@ -922,6 +922,14 @@ void MainComponent::showUpmixSettings()
         combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
                                     juce::dontSendNotification);
 
+    juce::StringArray lfeItems;
+    lfeItems.add("Disregard");
+    lfeItems.add("Position with bed");
+    m_messageBox->addComboBox("LFE channel", lfeItems, "LFE / positionless channel");
+    if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowDirectionlessChannel() ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
@@ -939,6 +947,8 @@ void MainComponent::showUpmixSettings()
             m_controlComponent->setUpmixSourceStartId(startId);
             if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
                 m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
+            if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
+                m_controlComponent->setShowDirectionlessChannel(combo->getSelectedItemIndex() == 1);
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -1071,6 +1081,9 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL),
+            (m_controlComponent ? (m_controlComponent->getShowDirectionlessChannel() ? 1 : 0) : 0));
         upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
             m_controlComponent ? m_controlComponent->getUpmixRot()           : 0.0f,
             m_controlComponent ? m_controlComponent->getUpmixTransH()        : 1.0f,
@@ -1254,6 +1267,9 @@ void MainComponent::onConfigUpdated()
         auto showAllSources = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES), 1) == 1;
         m_controlComponent->setShowAllSources(showAllSources);
+        auto showLfe = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL), 0) == 1;
+        m_controlComponent->setShowDirectionlessChannel(showLfe);
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);

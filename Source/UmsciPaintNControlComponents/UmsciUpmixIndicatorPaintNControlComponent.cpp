@@ -40,11 +40,14 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
 
     auto opacity = (isTimerRunning() && !m_flashState) ? 0.25f : 1.0f;
 
-    // draw floor channel ring
+    // draw all ring fills first so no fill can paint over a label
     g.setColour(indicatorColour);
     g.setOpacity(opacity);
     g.fillPath(m_upmixIndicator);
+    g.fillPath(m_upmixHeightIndicator);
+    g.fillPath(m_upmixDirectionlessIndicator);
 
+    // draw all labels on top of the fills
     g.setColour(labelColour);
     g.setOpacity(opacity);
     for (const auto& rcp : m_renderedFloorPositions)
@@ -53,15 +56,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
                                .withCentre(rcp.screenPos);
         g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
     }
-
-    // draw height channel ring
-    g.setColour(indicatorColour);
-    g.setOpacity(opacity);
-    g.fillPath(m_upmixHeightIndicator);
-
-    g.setColour(labelColour);
-    g.setOpacity(opacity);
     for (const auto& rcp : m_renderedHeightPositions)
+    {
+        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                               .withCentre(rcp.screenPos);
+        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+    }
+    for (const auto& rcp : m_renderedDirectionlessPositions)
     {
         auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
                                .withCentre(rcp.screenPos);
@@ -196,7 +197,8 @@ bool UmsciUpmixIndicatorPaintNControlComponent::hitTest(int x, int y)
 
     return getRefitButtonBounds().contains(x, y)
         || m_upmixIndicator.contains(float(x), float(y))
-        || m_upmixHeightIndicator.contains(float(x), float(y));
+        || m_upmixHeightIndicator.contains(float(x), float(y))
+        || m_upmixDirectionlessIndicator.contains(float(x), float(y));
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent& e)
@@ -291,6 +293,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDown(const juce::MouseEvent
                 if (onSourcePositionChanged)
                     onSourcePositionChanged(rcp.sourceId, rcp.realPos);
             }
+            for (auto const& rcp : m_renderedDirectionlessPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
             updateFlashState();
         }
         repaint();
@@ -360,6 +368,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
                 if (onSourcePositionChanged)
                     onSourcePositionChanged(rcp.sourceId, rcp.realPos);
             }
+            for (auto const& rcp : m_renderedDirectionlessPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
             updateFlashState();
         }
 
@@ -388,6 +402,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
                     onSourcePositionChanged(rcp.sourceId, rcp.realPos);
             }
             for (auto const& rcp : m_renderedHeightPositions)
+            {
+                m_sourcePositions[rcp.sourceId] = rcp.realPos;
+                if (onSourcePositionChanged)
+                    onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+            }
+            for (auto const& rcp : m_renderedDirectionlessPositions)
             {
                 m_sourcePositions[rcp.sourceId] = rcp.realPos;
                 if (onSourcePositionChanged)
@@ -501,6 +521,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDrag(const juce::MouseEvent
             if (onSourcePositionChanged)
                 onSourcePositionChanged(rcp.sourceId, rcp.realPos);
         }
+        for (auto const& rcp : m_renderedDirectionlessPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
         updateFlashState(); // re-sync: stops any flash that PrerenderUpmixIndicatorInBounds may have started
     }
 
@@ -533,6 +559,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::mouseDoubleClick(const juce::Mou
             if (onSourcePositionChanged)
                 onSourcePositionChanged(rcp.sourceId, rcp.realPos);
         }
+        for (auto const& rcp : m_renderedDirectionlessPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
         updateFlashState();
     }
     else
@@ -559,8 +591,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 {
     m_upmixIndicator.clear();
     m_upmixHeightIndicator.clear();
+    m_upmixDirectionlessIndicator.clear();
     m_renderedFloorPositions.clear();
     m_renderedHeightPositions.clear();
+    m_renderedDirectionlessPositions.clear();
 
     auto speakersRealBoundingTopLeft = std::array<float, 3>{ m_speakersRealBoundingCube.at(0), m_speakersRealBoundingCube.at(1), m_speakersRealBoundingCube.at(2) };
     auto speakersRealBoundingBottomRight = std::array<float, 3>{ m_speakersRealBoundingCube.at(3), m_speakersRealBoundingCube.at(4), m_speakersRealBoundingCube.at(5) };
@@ -860,6 +894,51 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         }
     }
 
+    // draw directionless (LFE) channels as a second circle overlapping C inward by one radius,
+    // forming a joined two-circle shape — each circle keeps its own short label.
+    if (m_showDirectionlessChannel && !m_directionLessChannelTypes.isEmpty())
+    {
+        auto const centreLabel = juce::AudioChannelSet::getAbbreviatedChannelTypeName(
+            juce::AudioChannelSet::ChannelType::centre);
+
+        for (auto const& channelType : m_directionLessChannelTypes)
+        {
+            // locate the centre channel circle; offset LFE one radius toward the ring centre
+            juce::Point<float> centreScreenPos = m_upmixCenter;
+            for (const auto& floorPos : m_renderedFloorPositions)
+            {
+                if (floorPos.label == centreLabel)
+                {
+                    centreScreenPos = floorPos.screenPos;
+                    break;
+                }
+            }
+
+            // unit vector from C toward ring centre
+            float dirX = cx - centreScreenPos.x;
+            float dirY = cy - centreScreenPos.y;
+            float dirLen = std::sqrt(dirX * dirX + dirY * dirY);
+            if (dirLen > 0.0f) { dirX /= dirLen; dirY /= dirLen; }
+
+            auto lfeScreenPos = juce::Point<float>(
+                centreScreenPos.x + dirX * m_subCircleRadius * 2.0f,
+                centreScreenPos.y + dirY * m_subCircleRadius * 2.0f);
+
+            m_upmixDirectionlessIndicator.addEllipse(
+                lfeScreenPos.x - m_subCircleRadius, lfeScreenPos.y - m_subCircleRadius,
+                m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+
+            RenderedChannelPosition rcp;
+            rcp.sourceId  = static_cast<std::int16_t>(
+                m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(channelType) - 1);
+            rcp.screenPos = lfeScreenPos;
+            rcp.realPos   = GetRealCoordinateForPoint(lfeScreenPos);
+            rcp.realPos[2] = 1.2f;
+            rcp.label     = juce::AudioChannelSet::getAbbreviatedChannelTypeName(channelType);
+            m_renderedDirectionlessPositions.push_back(rcp);
+        }
+    }
+
     // prerender handle paths — shared builder for a single bidirectional arrow
     auto buildBiArrowPath = [](float hcx, float hcy, float axX, float axY,
                                float halfLen, float headLen, float headWidth, float lineWidth) -> juce::Path
@@ -1010,10 +1089,12 @@ float UmsciUpmixIndicatorPaintNControlComponent::getUpmixOffsetY() const { retur
 std::vector<std::int16_t> UmsciUpmixIndicatorPaintNControlComponent::getUpmixSourceIds() const
 {
     std::vector<std::int16_t> ids;
-    ids.reserve(m_renderedFloorPositions.size() + m_renderedHeightPositions.size());
+    ids.reserve(m_renderedFloorPositions.size() + m_renderedHeightPositions.size() + m_renderedDirectionlessPositions.size());
     for (const auto& rcp : m_renderedFloorPositions)
         ids.push_back(rcp.sourceId);
     for (const auto& rcp : m_renderedHeightPositions)
+        ids.push_back(rcp.sourceId);
+    for (const auto& rcp : m_renderedDirectionlessPositions)
         ids.push_back(rcp.sourceId);
     return ids;
 }
@@ -1022,7 +1103,7 @@ void UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
 {
     if (m_liveMode)
     {
-        m_inhibitFlashCount += static_cast<int>(m_renderedFloorPositions.size() + m_renderedHeightPositions.size());
+        m_inhibitFlashCount += static_cast<int>(m_renderedFloorPositions.size() + m_renderedHeightPositions.size() + m_renderedDirectionlessPositions.size());
         stopTimer();
         m_flashState = false;
         repaint();
@@ -1034,6 +1115,12 @@ void UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
                 onSourcePositionChanged(rcp.sourceId, rcp.realPos);
         }
         for (auto const& rcp : m_renderedHeightPositions)
+        {
+            m_sourcePositions[rcp.sourceId] = rcp.realPos;
+            if (onSourcePositionChanged)
+                onSourcePositionChanged(rcp.sourceId, rcp.realPos);
+        }
+        for (auto const& rcp : m_renderedDirectionlessPositions)
         {
             m_sourcePositions[rcp.sourceId] = rcp.realPos;
             if (onSourcePositionChanged)
@@ -1069,6 +1156,18 @@ juce::Rectangle<int> UmsciUpmixIndicatorPaintNControlComponent::getRefitButtonBo
     return juce::Rectangle<int>(getWidth() - buttonWidth - margin, margin, buttonWidth, buttonHeight);
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::setShowDirectionlessChannel(bool show)
+{
+    m_showDirectionlessChannel = show;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+bool UmsciUpmixIndicatorPaintNControlComponent::getShowDirectionlessChannel() const
+{
+    return m_showDirectionlessChannel;
+}
+
 void UmsciUpmixIndicatorPaintNControlComponent::updateFlashState()
 {
     auto const tolerance = 0.01f;
@@ -1092,6 +1191,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::updateFlashState()
     for (auto const& rcp : m_renderedFloorPositions)
         checkPos(rcp);
     for (auto const& rcp : m_renderedHeightPositions)
+        checkPos(rcp);
+    for (auto const& rcp : m_renderedDirectionlessPositions)
         checkPos(rcp);
 
     if (mismatch)

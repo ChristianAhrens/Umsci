@@ -677,6 +677,20 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent:
     return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
 }
 
+void UmsciControlComponent::setShowDirectionlessChannel(bool show)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShowDirectionlessChannel(show);
+    updateSourceIdFilter();
+}
+
+bool UmsciControlComponent::getShowDirectionlessChannel() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShowDirectionlessChannel();
+    return false;
+}
+
 void UmsciControlComponent::setControlsSize(UmsciPaintNControlComponentBase::ControlsSize size)
 {
     if (m_loudspeakersInAreaPaintComponent)
@@ -803,12 +817,9 @@ void UmsciControlComponent::updateSourceIdFilter()
     }
     else
     {
-        auto startId = getUpmixSourceStartId();
-        auto channelCount = getUpmixChannelConfiguration().size();
-        std::set<std::int16_t> allowedIds;
-        for (int i = 0; i < channelCount; ++i)
-            allowedIds.insert(static_cast<std::int16_t>(startId + i));
-        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(allowedIds);
+        auto sourceIds = getUpmixSourceIds();
+        m_soundobjectsInAreaPaintComponent->setSourceIdFilter(
+            std::set<std::int16_t>(sourceIds.begin(), sourceIds.end()));
     }
 }
 
