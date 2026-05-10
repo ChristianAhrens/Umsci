@@ -24,6 +24,7 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
     * [Control modes](#control-modes)
   * [Side panels](#side-panels)
     * [dbpr project panel](#dbpr-project-panel)
+    * [Upmix spread & delay-mode panel](#spread-delaymode-panel)
     * [Snapshot panel](#snapshot-panel)
   * [Umsci settings menu](#Umsci-settings-menu)
   * [Connection settings](#connection-settings)
@@ -109,7 +110,7 @@ Key things to notice:
 |:--------|:-----------------|
 | Loudspeaker icons | The physical layout of the room as seen by the DS100. They do not move unless you change the DS100 configuration elsewhere. |
 | Soundobject circles | Live positions of all DS100 inputs.  Their colour matches the chosen *Control colour*. |
-| Upmix ring arc | The idealised geometry for the selected immersive format (Stereo → 9.1.6), centred at the ring's transform-adjusted origin. |
+| Upmix ring arc | The idealised geometry for the selected immersive format (Stereo → 9.1 → 9.1.6), centred at the ring's transform-adjusted origin. |
 | Coloured dots on the ring (Live mode) | Actual DS100 positions for the upmix channels.  A flashing dot means Umsci just sent an update and is waiting for the DS100 echo. |
 
 Use the mouse wheel or a trackpad/touch pinch to zoom, and a modifier key + scroll to pan — see [Zoom and pan](#zoom-and-pan) for all input options.
@@ -290,6 +291,12 @@ Click the **Clear** button (trash icon) to discard all loaded project data.  The
 
 The loaded project data is saved to the XML configuration file so it is automatically restored the next time Umsci starts.
 
+<a name="spread-delaymode-panel" />
+
+#### Upmix spread & delay-mode panel
+
+A floating overlay panel is shown when the **Spread** or **Delay mode** parameters of the upmix channels require monitoring or adjustment.  The panel displays the current spread value and delay mode for each upmix channel and allows them to be changed directly, without navigating away from the main scene view.  It is accessible from the main UI and its visibility is independent of the side panels.
+
 <a name="snapshot-panel" />
 
 #### Snapshot panel
@@ -317,14 +324,14 @@ The gear button (top-left) opens the settings menu.  Available options:
 |:------|:--------|
 | **Look & feel** | Follow host / Dark / Light. |
 | **Control colour** | Green / Red / Blue / Anni Pink / Laser. |
-| **Control format** | Stereo, LRS, LCRS, 5.0, 5.1, 5.1.2, 7.0, 7.1, 7.1.4, 9.1.6 — sets the upmix ring channel geometry. |
+| **Control format** | Stereo, LRS, LCRS, 5.0, 5.1, 5.1.2, 7.0, 7.1, 7.1.4, 9.1, 9.1.6 — sets the upmix ring channel geometry. |
 | **Control size** | S / M / L — scales the soundobject, speaker icons, and side panels. |
 | **Connection settings…** | OCP.1 IP/port/IO-size configuration (see below). |
 | **Upmix control settings…** | Upmix mode, shape, channel-start and visibility configuration (see below). |
 | **External control…** | MIDI assignment for the six upmix transform parameters (see below). |
 | **Fullscreen** | Toggles fullscreen / windowed mode (also F key or Escape). |
 
-The control format determines how many channels the upmix ring has and which speaker labels are shown (L, C, R, Ls, Rs, Ltf, Rtf, etc.).  Supported formats span from simple Stereo (2 channels) up to 9.1.6 Atmos (16 channels).
+The control format determines how many channels the upmix ring has and which speaker labels are shown (L, C, R, Ls, Rs, Ltf, Rtf, etc.).  Supported formats span from simple Stereo (2 channels) up to 9.1.6 Atmos (16 channels).  The 9.1 format (10 channels — 9 floor + LFE, no height) is also available and is not a native JUCE channel set; it is constructed from its constituent channel types internally.
 
 <a name="connection-settings" />
 
@@ -346,15 +353,17 @@ Changes take effect on **Ok**; the connection toggle button in the top-right cor
 
 Opens the *Upmix control settings* dialog.  Configure:
 
-- **Channel format** — the channel format whose geometry is used when applying positions (Stereo through 9.1.6). This takes into account the actual immersive format geometry definitions, esp. angles.
+- **Channel format** — the channel format whose geometry is used when applying positions (Stereo through 9.1 and 9.1.6). This takes into account the actual immersive format geometry definitions, esp. angles.
 See e.g.
   - [ITU-R BS.775-4](https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.775-4-202212-I!!PDF-E.pdf)
   - [ITU-R BS.2159-9](https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BS.2159-9-2022-PDF-E.pdf)
   - [Dolby Atmos speaker setup guides](https://www.dolby.com/about/support/guide/speaker-setup-guides/)
 - **Control mode** — see [Control modes](#control-modes) above.
-- **Indicator shape** — *Circle* (default) draws the upmix ring as a circular arc; *Rectangle* draws it as a rounded rectangle path.  Choose based on which shape better matches the physical loudspeaker layout of the venue.
+- **Indicator shape** — *Circle* (default) draws the upmix ring as a circular arc; *Rectangle* draws it as a rounded rectangle path.  Choose based on which shape better matches the physical loudspeaker layout of the venue.  In rectangle mode, horizontal and vertical scale can be adjusted independently for both the floor and height rings.
 - **First soundobject** — the 1-based DS100 input channel index where the upmix renderer's output starts.  If the upmix renderer occupies channels 17–32, set this to `17`.  Subsequent channels are implied consecutively up to the channel count of the selected format.
 - **Visible soundobjects** — *All* shows every soundobject in the scene; *Upmix controlled only* hides all soundobjects that are not part of the current upmix channel block, reducing visual clutter when the DS100 carries many other sources.
+- **LFE channel** — when enabled, the LFE channel is rendered as a positioned sound object at the centre of the ring (alongside the centre channel), making it visible and draggable in the scene view.  When disabled, the LFE channel is treated as directionless and omitted from the ring.
+- **Level metering** — when enabled, a transparent radial level meter overlay is drawn on top of the upmix ring.  Bar lengths for each channel are derived from the DS100 `MatrixInput_LevelMeterPostMute` OCP.1 object and normalised across the −120 dB … 0 dBFS range.  A 2-second peak-hold outline is shown in addition to the filled level polygon.  The overlay repaints at ≤20 fps and only when new meter data has arrived, so it does not impose unnecessary load on the render thread.
 
 <a name="external-control-midi" />
 
@@ -438,16 +447,19 @@ The visual output is produced by three `UmsciPaintNControlComponentBase`-derived
 UmsciControlComponent
   ├── UmsciLoudspeakersPaintComponent           (bottom — display only)
   ├── UmsciSoundobjectsPaintComponent           (middle — draggable source circles)
-  └── UmsciUpmixIndicatorPaintNControlComponent (top — ring + transform handles)
+  ├── UmsciUpmixIndicatorPaintNControlComponent (above middle — ring + transform handles)
+  └── UmsciLevelMeterPaintComponent             (top — optional radial level meter overlay)
 ```
 
-All three inherit `UmsciPaintNControlComponentBase` which provides:
+All components except `UmsciLevelMeterPaintComponent` inherit `UmsciPaintNControlComponentBase` which provides:
 - Coordinate transforms between pixel space and real-world DS100 coordinates (`GetPointForRealCoordinate` / `GetRealCoordinateForPoint`).
 - Zoom/pan state (`m_zoomFactor`, `m_zoomPanOffset`) driven by mouse wheel, trackpad pinch, and on iOS a native `UIPinchGestureRecognizer` (see below).
 - A `setZoom()` / `resetZoom()` API so that `UmsciControlComponent` can keep all three layers synchronised via the `onViewportZoomChanged` callback.
 - A virtual `onZoomChanged()` hook that derived classes override to re-trigger their prerender pass before repaint.
 
-`UmsciUpmixIndicatorPaintNControlComponent` also inherits `JUCEAppBasics::TwoDFieldBase`, which supplies per-channel angle and label data for any `juce::AudioChannelSet` (the chosen surround format).
+`UmsciUpmixIndicatorPaintNControlComponent` also inherits `JUCEAppBasics::TwoDFieldBase`, which supplies per-channel angle and label data for any `juce::AudioChannelSet` (the chosen surround format).  `TwoDFieldBase` was extended with a `create9point1()` static factory to support the 9.1 floor-only format, which has no native JUCE counterpart.
+
+`UmsciLevelMeterPaintComponent` is a transparent overlay (`hitTest()` always returns `false`) that paints a radial level meter ring aligned with the upmix indicator geometry.  Level values arrive via `setLevelValue()` from OCP.1 `MatrixInput_LevelMeterPostMute` notifications; a `juce::Timer` at ≤20 fps drives repaints only when a `std::atomic<bool>` dirty flag has been set since the last tick, avoiding unnecessary GPU work during quiet passages.
 
 `hitTest()` is overridden on the sound-objects and upmix-indicator layers to return `true` only over interactive elements (source circles, ring arcs, handles).  The large empty area of both layers is transparent to mouse/touch events, which pass through to the layer below.
 
