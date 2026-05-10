@@ -189,6 +189,10 @@
               compile="1" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.cpp"/>
         <FILE id="XbpJ1n" name="UmsciUpmixIndicatorPaintNControlComponent.h"
               compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciUpmixIndicatorPaintNControlComponent.h"/>
+        <FILE id="Lm3pQr" name="UmsciLevelMeterPaintComponent.cpp"
+              compile="1" resource="0" file="Source/UmsciPaintNControlComponents/UmsciLevelMeterPaintComponent.cpp"/>
+        <FILE id="Nk7tXs" name="UmsciLevelMeterPaintComponent.h"
+              compile="0" resource="0" file="Source/UmsciPaintNControlComponents/UmsciLevelMeterPaintComponent.h"/>
       </GROUP>
       <FILE id="f1Ee4v" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="M3Kq7o" name="MainComponent.cpp" compile="1" resource="0"

@@ -629,6 +629,23 @@ public:
 			}
 		}
 
+		/** Returns true for objects that update at meter-rate (≤40 ms) and would
+		 *  flood the debug log if printed on every notification. */
+		static bool IsFlickering(const RemObjIdent roi)
+		{
+			switch (roi)
+			{
+			case MatrixInput_LevelMeterPreMute:
+			case MatrixInput_LevelMeterPostMute:
+			case MatrixOutput_LevelMeterPreMute:
+			case MatrixOutput_LevelMeterPostMute:
+			case ReverbInputProcessing_LevelMeter:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		JUCE_LEAK_DETECTOR(RemoteObject)
 	};
 

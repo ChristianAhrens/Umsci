@@ -31,6 +31,7 @@
 /*Fwd decls*/
 class UmsciLoudspeakersPaintComponent;
 class UmsciSoundobjectsPaintComponent;
+class UmsciLevelMeterPaintComponent;
 
 /**
  * @class UmsciControlComponent
@@ -197,6 +198,8 @@ public:
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
     void setShowDirectionlessChannel(bool show);
     bool getShowDirectionlessChannel() const;
+    void setShowLevelMeter(bool show);
+    bool getShowLevelMeter() const;
     /** @} */
 
     //==============================================================================
@@ -314,6 +317,19 @@ public:
     /** @brief Fired when a Positioning_SourceDelayMode echo arrives for any subscribed source. */
     std::function<void(std::int16_t, std::uint16_t)> onSourceDelayModeReceived;
 
+    //==============================================================================
+    /**
+     * @brief Delivers a `MatrixInput_LevelMeterPostMute` value for the given source.
+     *
+     * Called from `setRemoteObject()` when the corresponding OCP.1 notification
+     * arrives.  Forwards to the level meter overlay if the channel belongs to the
+     * current upmix group.
+     *
+     * @param sourceId        1-based DS100 matrix-input channel.
+     * @param normalizedLevel Linear level factor [0, 1].
+     */
+    void setUpmixLevelValue(std::int16_t sourceId, float normalizedLevel);
+
 private:
     //==============================================================================
     void rebuildOcp1ObjectTree();
@@ -333,6 +349,7 @@ private:
     std::unique_ptr<UmsciLoudspeakersPaintComponent>            m_loudspeakersInAreaPaintComponent;
     std::unique_ptr<UmsciSoundobjectsPaintComponent>            m_soundobjectsInAreaPaintComponent;
     std::unique_ptr<UmsciUpmixIndicatorPaintNControlComponent>  m_upmixIndicatorPaintAndControlComponent;
+    std::unique_ptr<UmsciLevelMeterPaintComponent>              m_levelMeterPaintComponent;
 
     std::pair<int, int> m_ocp1IOSize;
 

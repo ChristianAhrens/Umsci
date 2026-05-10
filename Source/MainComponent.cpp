@@ -930,6 +930,14 @@ void MainComponent::showUpmixSettings()
         combo->setSelectedItemIndex(m_controlComponent->getShowDirectionlessChannel() ? 1 : 0,
                                     juce::dontSendNotification);
 
+    juce::StringArray levelMeterItems;
+    levelMeterItems.add("Off");
+    levelMeterItems.add("On");
+    m_messageBox->addComboBox("Level metering", levelMeterItems, "Level metering");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
+        combo->setSelectedItemIndex(m_controlComponent->getShowLevelMeter() ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
@@ -949,6 +957,8 @@ void MainComponent::showUpmixSettings()
                 m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
             if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
                 m_controlComponent->setShowDirectionlessChannel(combo->getSelectedItemIndex() == 1);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
+                m_controlComponent->setShowLevelMeter(combo->getSelectedItemIndex() == 1);
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
@@ -1084,6 +1094,9 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL),
             (m_controlComponent ? (m_controlComponent->getShowDirectionlessChannel() ? 1 : 0) : 0));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER),
+            (m_controlComponent ? (m_controlComponent->getShowLevelMeter() ? 1 : 0) : 1));
         upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
             m_controlComponent ? m_controlComponent->getUpmixRot()           : 0.0f,
             m_controlComponent ? m_controlComponent->getUpmixTransH()        : 1.0f,
@@ -1270,6 +1283,9 @@ void MainComponent::onConfigUpdated()
         auto showLfe = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLFECHANNEL), 0) == 1;
         m_controlComponent->setShowDirectionlessChannel(showLfe);
+        auto showLevelMeter = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER), 1) == 1;
+        m_controlComponent->setShowLevelMeter(showLevelMeter);
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);

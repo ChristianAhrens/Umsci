@@ -219,6 +219,40 @@ public:
      */
     std::vector<std::int16_t> getUpmixSourceIds() const;
 
+    //==============================================================================
+    /**
+     * @brief Holds the prerendered position of a single upmix output channel.
+     *
+     * Produced by `PrerenderUpmixIndicatorInBounds()` for each channel in the
+     * selected `AudioChannelSet` and delivered via `onRingPositionsChanged`.
+     * Contains the pixel position (for painting / overlay consumers) as well as
+     * the real-world position used for live-mode DS100 comparison.
+     */
+    struct RenderedChannelPosition
+    {
+        std::int16_t         sourceId = 0;                   ///< DS100 source channel (1-based).
+        juce::Point<float>   screenPos;                      ///< Pixel position of the dot, component-local.
+        std::array<float, 3> realPos  = { 0.0f, 0.0f, 0.0f }; ///< Ideal world position from the transform.
+        juce::String         label;                          ///< Abbreviated channel name (e.g. "L", "Ltf").
+    };
+
+    /**
+     * @brief Fired after every `PrerenderUpmixIndicatorInBounds()` with the current ring state.
+     *
+     * Delivers the ring centre, the sub-circle radius, and the prerendered per-channel
+     * positions for the floor and height rings (empty vector when the format has no
+     * height channels).  All pixel coordinates are in the component's own local space,
+     * which is shared with all sibling overlay layers.
+     *
+     * `UmsciControlComponent` bridges this to overlay consumers (e.g. the level meter)
+     * that need to know the current ring geometry but must remain decoupled from this
+     * component's internals.
+     */
+    std::function<void(juce::Point<float>                         /*centre*/,
+                       float                                       /*subCircleRadius*/,
+                       const std::vector<RenderedChannelPosition>& /*floor*/,
+                       const std::vector<RenderedChannelPosition>& /*height*/)> onRingPositionsChanged;
+
     /**
      * @brief Fires live-mode position callbacks and `onTransformChanged` after a
      *        programmatic transform change (e.g. from MIDI control).
@@ -256,22 +290,6 @@ public:
 private:
     //==============================================================================
     void onZoomChanged() override;
-
-    //==============================================================================
-    /**
-     * @brief Holds the prerendered position of a single upmix output channel.
-     *
-     * Populated by `PrerenderUpmixIndicatorInBounds()` for each channel in the
-     * selected `AudioChannelSet`.  Contains both the pixel position (for painting)
-     * and the real-world position (for live-mode overlay comparison).
-     */
-    struct RenderedChannelPosition
-    {
-        std::int16_t            sourceId  = 0;       ///< DS100 source channel assigned to this speaker slot.
-        juce::Point<float>      screenPos;            ///< Prerendered pixel position of the speaker dot.
-        std::array<float, 3>    realPos   = { 0.0f, 0.0f, 0.0f }; ///< Ideal world position from the transform.
-        juce::String            label;                ///< Channel label (e.g. "L", "C", "Ltf").
-    };
 
     //==============================================================================
     /**

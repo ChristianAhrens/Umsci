@@ -997,6 +997,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             halfLen, headLen, headWidth, lineWidth);
     }
 
+    if (onRingPositionsChanged)
+        onRingPositionsChanged(m_upmixCenter, m_subCircleRadius,
+                               m_renderedFloorPositions, m_renderedHeightPositions);
+
     updateFlashState();
 }
 
