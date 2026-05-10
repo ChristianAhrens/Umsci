@@ -113,6 +113,7 @@ public:
         ControlFormat_7point0,
         ControlFormat_7point1,
         ControlFormat_7point1point4,
+        ControlFormat_9point1,
         ControlFormat_9point1point6,
         ControlFormat_Last = ControlFormat_9point1point6,
         UpmixSettings,          ///< Opens the upmix settings dialog.
