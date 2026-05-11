@@ -130,8 +130,9 @@ public:
 	{
 		InvalidDev  = 0, ///< Not yet determined or unsupported device.
 		DS100,           ///< Standard DS100.
-		DS100D,          ///< DS100D (Dante network audio variant).
+		DS110,           ///< DS110.
 		DS100M,          ///< DS100M (Milan network audio variant).
+        vCore,           ///< Software signal engine
 		InvalidDev_max
 	};
 
@@ -740,6 +741,18 @@ public:
      */
 	const std::tuple<juce::IPAddress, int, int> getConnectionParameters();
 
+    /**
+     * @brief Sets the expected device I/O size and rebuilds the internal ONos map.
+     *
+     * Call this before `connect()` whenever the device variant changes (e.g. from the
+     * settings dialog).  Values are clamped to [1, sc_MAX_*].  The map rebuild is
+     * cheap (no I/O) and idempotent, so calling it with the same values is harmless.
+     *
+     * @param inputs   Number of input channels (sound objects) on the target device.
+     * @param outputs  Number of output channels (speakers) on the target device.
+     */
+    void setDeviceIOSize(std::uint16_t inputs, std::uint16_t outputs);
+
     //==============================================================================
     /** @brief Returns the current connection/subscription state. */
     const State getState() const;
@@ -1003,6 +1016,10 @@ private:
 	std::vector<RemoteObject>					m_activeRemoteObjects;
 
     //==============================================================================
+    /** Active I/O size; limits the ONos built by CreateKnownONosMap(). */
+    std::uint16_t                               m_activeInputChannelCount  = sc_MAX_INPUTS_CHANNELS;
+    std::uint16_t                               m_activeOutputChannelCount = sc_MAX_OUTPUT_CHANNELS;
+
     /** Underlying NanoOcp1 TCP client. */
     std::unique_ptr<NanoOcp1::NanoOcp1Client>   m_ocp1Connection;
 	juce::IPAddress								m_ocp1IPAddress;  ///< Target device IP.

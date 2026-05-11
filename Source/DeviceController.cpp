@@ -191,6 +191,13 @@ const std::tuple<juce::IPAddress, int, int> DeviceController::getConnectionParam
     return { m_ocp1IPAddress, m_ocp1Port, m_ocp1Timeout };
 }
 
+void DeviceController::setDeviceIOSize(std::uint16_t inputs, std::uint16_t outputs)
+{
+    m_activeInputChannelCount  = juce::jlimit(std::uint16_t(1), sc_MAX_INPUTS_CHANNELS, inputs);
+    m_activeOutputChannelCount = juce::jlimit(std::uint16_t(1), sc_MAX_OUTPUT_CHANNELS, outputs);
+    CreateKnownONosMap();
+}
+
 void DeviceController::timerCallback()
 {
     if (State::Connecting == getState())
@@ -220,6 +227,16 @@ void DeviceController::retryPendingGetValues()
     }
 
     DBG(juce::String(__FUNCTION__) << " re-querying " << staleONos.size() << " unanswered getvalue ONos");
+
+    if (staleONos.empty())
+    {
+        // All getvalue handles already resolved (some may have failed) — advance state.
+        if (!HasPendingSubscriptions())
+            postMessage(new StateChangeMessage(State::Connected));
+        else
+            postMessage(new StateChangeMessage(State::Subscribing));
+        return;
+    }
 
     for (auto ono : staleONos)
     {
@@ -263,6 +280,9 @@ void DeviceController::handleMessage(const juce::Message& message)
  */
 void DeviceController::CreateKnownONosMap()
 {
+    m_ROIsToDefsMap.clear();
+    m_ONoToROIMap.clear();
+
     // Objects with no channel/record indexing.
     m_ROIsToDefsMap[RemoteObject::Fixed_GUID][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Fixed_GUID();
     m_ROIsToDefsMap[RemoteObject::Settings_DeviceName][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Settings_DeviceName();
@@ -279,7 +299,7 @@ void DeviceController::CreateKnownONosMap()
     m_ROIsToDefsMap[RemoteObject::Scene_SceneComment][RemObjAddr()] = NanoOcp1::DS100::dbOcaObjectDef_Scene_SceneComment();
 
     // definitions with channels: inputChannels (sound objects)
-    for (std::int16_t first = 1; first <= sc_MAX_INPUTS_CHANNELS; first++)
+    for (std::int16_t first = 1; first <= m_activeInputChannelCount; first++)
     {
         auto roa = RemObjAddr(first, RemObjAddr::sc_INV);
         m_ROIsToDefsMap[RemoteObject::Positioning_SourcePosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Position(first);
@@ -304,7 +324,7 @@ void DeviceController::CreateKnownONosMap()
         }
 
         // definitions with channels and records: function groups
-        for (std::uint16_t second = 1; second <= sc_MAX_FUNCTION_GROUPS; second++)
+        for (std::uint16_t second = 1; second <= std::min(sc_MAX_FUNCTION_GROUPS, m_activeOutputChannelCount); second++)
         {
             roa.sec = second;
             m_ROIsToDefsMap[RemoteObject::SoundObjectRouting_Mute][roa] = NanoOcp1::DS100::dbOcaObjectDef_SoundObjectRouting_Mute(second, first);
@@ -312,7 +332,7 @@ void DeviceController::CreateKnownONosMap()
         }
 
         // definitions with channels and records but second parameter for output channels
-        for (std::uint16_t second = 1; second <= sc_MAX_OUTPUT_CHANNELS; second++)
+        for (std::uint16_t second = 1; second <= m_activeOutputChannelCount; second++)
         {
             roa.sec = second;
             m_ROIsToDefsMap[RemoteObject::MatrixNode_Enable][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixNode_Enable(first, second);
@@ -323,7 +343,7 @@ void DeviceController::CreateKnownONosMap()
     }
 
     // definitions with channels: matrix outputs
-    for (std::uint16_t first = 1; first <= sc_MAX_OUTPUT_CHANNELS; first++)
+    for (std::uint16_t first = 1; first <= m_activeOutputChannelCount; first++)
     {
         auto roa = RemObjAddr(first, RemObjAddr::sc_INV);
         m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerPosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first);
@@ -340,7 +360,7 @@ void DeviceController::CreateKnownONosMap()
     }
 
     // definitions with channels: function groups
-    for (std::uint16_t first = 1; first <= sc_MAX_FUNCTION_GROUPS; first++)
+    for (std::uint16_t first = 1; first <= std::min(sc_MAX_FUNCTION_GROUPS, m_activeOutputChannelCount); first++)
     {
         auto roa = RemObjAddr(first, RemObjAddr::sc_INV);
         m_ROIsToDefsMap[RemoteObject::FunctionGroup_Name][roa] = NanoOcp1::DS100::dbOcaObjectDef_FunctionGroup_Name(first);
@@ -359,7 +379,7 @@ void DeviceController::CreateKnownONosMap()
         m_ROIsToDefsMap[RemoteObject::ReverbInputProcessing_LevelMeter][roa] = NanoOcp1::DS100::dbOcaObjectDef_ReverbInputProcessing_LevelMeter(first);
 
         // definitions with channels and records: en-space zones with zone as first parameter = channel and sound object as second parameter = record
-        for (std::uint16_t second = 1; second <= sc_MAX_INPUTS_CHANNELS; second++)
+        for (std::uint16_t second = 1; second <= m_activeInputChannelCount; second++)
         {
             roa.sec = second;
             m_ROIsToDefsMap[RemoteObject::ReverbInput_Gain][roa] = NanoOcp1::DS100::dbOcaObjectDef_ReverbInput_Gain(second, first);
@@ -605,8 +625,17 @@ bool DeviceController::ocp1MessageReceived(const NanoOcp1::ByteVector& data)
 
                 auto externalId = -1;
                 PopPendingSubscriptionHandle(handle);
-                PopPendingGetValueHandle(handle);
+                auto failedGetValONo = PopPendingGetValueHandle(handle);
                 PopPendingSetValueHandle(handle, externalId);
+
+                // A failed getvalue still counts as answered — advance state if it was the last one.
+                if (0x00 != failedGetValONo && !HasPendingGetValues())
+                {
+                    if (!HasPendingSubscriptions())
+                        postMessage(new StateChangeMessage(State::Connected));
+                    else
+                        postMessage(new StateChangeMessage(State::Subscribing));
+                }
 
                 return false;
             }
@@ -1112,7 +1141,7 @@ void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
     auto roa = RemObjAddr(RemObjAddr::sc_INV, RemObjAddr::sc_INV);
     if (m_ocp1DeviceStackIdent >= 1) // update internal map with the right definitions
     {
-        for (std::uint16_t first = 1; first <= sc_MAX_OUTPUT_CHANNELS; first++)
+        for (std::uint16_t first = 1; first <= m_activeOutputChannelCount; first++)
         {
             roa.pri = first;
             m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerPosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first);
@@ -1121,7 +1150,7 @@ void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
     }
     else
     {
-        for (std::uint16_t first = 1; first <= sc_MAX_OUTPUT_CHANNELS; first++)
+        for (std::uint16_t first = 1; first <= m_activeOutputChannelCount; first++)
         {
             roa.pri = first;
             m_ROIsToDefsMap[RemoteObject::Positioning_SpeakerPosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Speaker_Position(first);
@@ -1139,7 +1168,7 @@ void DeviceController::ProcessGuidAndSubscribe(const juce::String newGuid)
  * - [0..3] "DB00" — d&b manufacturer prefix; any other value rejects the GUID.
  * - [4..5] firmware version code (hex string), compared lexicographically against
  *          known threshold values to determine the OCA revision.
- * - [6..7] device model code: "D0" = DS100, "D1" = DS100D, "D2" = DS100M.
+ * - [6..7] device model code: "D0" = DS100, "D1" = DS100D, "D2" = DS100M, "DA" = vCore .
  *
  * `m_ocp1DeviceStackIdent` values:
  * - 0 : legacy OCA definitions; speaker position lives at `Positioning_Source_Speaker_Position`.
@@ -1160,10 +1189,12 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
     DbDeviceModel dbDeviceModel; // last two characters decide the model
     if (guid.getLastCharacters(deviceBytes) == "D0") // DS100
         dbDeviceModel = DbDeviceModel::DS100;
-    else if (guid.getLastCharacters(deviceBytes) == "D1") // DS100D
-        dbDeviceModel = DbDeviceModel::DS100D;
+    else if (guid.getLastCharacters(deviceBytes) == "D1") // DS110
+        dbDeviceModel = DbDeviceModel::DS110;
     else if (guid.getLastCharacters(deviceBytes) == "D2") // DS100M
         dbDeviceModel = DbDeviceModel::DS100M;
+    else if (guid.getLastCharacters(deviceBytes) == "DA") // vCore
+        dbDeviceModel = DbDeviceModel::vCore;
     else
         return false;
 
@@ -1179,9 +1210,9 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
             ocp1DeviceStackIdent = 0;
         DBG(juce::String(__FUNCTION__) << " detected DS100 (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
-    case DbDeviceModel::DS100D:
+    case DbDeviceModel::DS110:
         ocp1DeviceStackIdent = 1; // this was implemented pre-release of DS100D and assuming there will be no FW-version without scalability
-        DBG(juce::String(__FUNCTION__) << " detected DS100D (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
+        DBG(juce::String(__FUNCTION__) << " detected DS110 (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
     case DbDeviceModel::DS100M:
         if (versionChars >= "02") // DS100M added scalability with FW version "02"
@@ -1189,6 +1220,10 @@ bool DeviceController::SetOcaRevisionAndDeviceModel(const juce::String& guid)
         else
             ocp1DeviceStackIdent = 0;
         DBG(juce::String(__FUNCTION__) << " detected DS100M (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
+        break;
+    case DbDeviceModel::vCore:
+        ocp1DeviceStackIdent = 1;
+        DBG(juce::String(__FUNCTION__) << " detected vCore (ocp stack:" << ocp1DeviceStackIdent << ") " << guid);
         break;
     default:
         return false;

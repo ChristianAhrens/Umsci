@@ -198,7 +198,10 @@ void UmsciControlComponent::setOcp1IOSize(const std::pair<int, int>& ioSize)
 {
     m_ocp1IOSize = ioSize;
 
-    // todo react to changes
+    DeviceController::getInstance()->setDeviceIOSize(
+        static_cast<std::uint16_t>(ioSize.first),
+        static_cast<std::uint16_t>(ioSize.second));
+
     rebuildOcp1ObjectTree();
 }
 
@@ -236,7 +239,7 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerPosition, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerGroup, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
-    for (std::int16_t g = 1; g <= DeviceController::sc_MAX_FUNCTION_GROUPS; g++)
+    for (std::int16_t g = 1; g <= std::min(static_cast<int>(DeviceController::sc_MAX_FUNCTION_GROUPS), m_ocp1IOSize.second); g++)
     {
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Name, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Mode, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
@@ -396,7 +399,7 @@ bool UmsciControlComponent::checkIsDatabaseComplete()
     complete = complete && m_speakerGain.size() == m_ocp1IOSize.second;
     complete = complete && m_speakerPosition.size() == m_ocp1IOSize.second;
     complete = complete && m_speakerGroup.size() == m_ocp1IOSize.second;
-    if (m_functionGroupData.size() < DeviceController::sc_MAX_FUNCTION_GROUPS)
+    if (static_cast<int>(m_functionGroupData.size()) < std::min(static_cast<int>(DeviceController::sc_MAX_FUNCTION_GROUPS), m_ocp1IOSize.second))
         complete = false;
     else
         for (auto const& kv : m_functionGroupData)
