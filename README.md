@@ -1,4 +1,5 @@
 ![Showreel.001.png](Resources/Documentation/Showreel/Showreel.001.png "Umsci Headline Icons")
+![Showreel.002.png](Resources/Documentation/Showreel/Showreel.002.png "Umsci Main Screen")
 
 See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) for available installer packages or join iOS TestFlight Beta:
 
@@ -70,7 +71,7 @@ This walkthrough assumes you have a **d&b Soundscape DS100** signal processing e
 
 Open the **Settings menu** by clicking the gear icon (⚙) in the upper-left corner of the Umsci window, then choose **Connection settings…**.
 
-![Showreel.002.png](Resources/Documentation/Showreel/Showreel.002.png "Connection Settings")
+![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Connection Settings")
 
 Enter the **IP address** of your DS100, leave the **port** at the default `50014`, and set the **IOsize** to match your DS100 license (`64x64` for L, `128x64` for XL) — a mismatched IOsize will prevent the connection from completing.  The *Discovered devices* drop-down lists DS100 devices found automatically via mDNS; selecting one fills in the address and port.
 
@@ -84,7 +85,7 @@ Press **Ok** to store the settings.  See [Connection settings](#connection-setti
 
 Click the **connection toggle button** in the upper-right corner of the main window.  The button cycles through *disconnected → connecting → connected* states.
 
-![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Connection status")
+![Showreel.004.png](Resources/Documentation/Showreel/Showreel.004.png "Connection status")
 
 Once the button settles into the *connected* state the three scene layers populate automatically:
 
@@ -102,7 +103,7 @@ If the button does not reach the connected state, double-check the IP address, p
 
 The main view is a shared 2D top-down representation of the physical room as configured in the DS100.  All coordinates use the DS100's normalised 0–1 space (X = left → right, Y = front → back).
 
-![Showreel.004.png](Resources/Documentation/Showreel/Showreel.004.png "Scene annotated")
+![Showreel.005.png](Resources/Documentation/Showreel/Showreel.005.png "Scene annotated")
 
 Key things to notice:
 
@@ -132,7 +133,7 @@ Open **Settings → Upmix control settings…**.  The two settings that matter m
 
 Start with **Control mode** set to *Manual* so you can preview adjustments before committing them, and leave **Indicator shape** at *Circle* unless your room is clearly rectangular.  See [Upmix control settings](#upmix-control-settings) for all options.
 
-![Showreel.005.png](Resources/Documentation/Showreel/Showreel.005.png "Upmix control settings")
+![Showreel.006.png](Resources/Documentation/Showreel/Showreel.006.png "Upmix control settings")
 
 Press **Ok**.  The ring updates to show the correct number of channel spokes and labels for the chosen format.
 
@@ -140,7 +141,7 @@ Press **Ok**.  The ring updates to show the correct number of channel spokes and
 
 Use the five interactive handles on the ring to match the idealised geometry to the physical loudspeaker layout visible in the bottom layer.  A practical starting point: click the **Refit button** (top-right of the ring) to auto-fit the ring to the loudspeaker bounding box, then fine-tune **rotation** and **centre offset** to taste.  Double-click any handle to reset it to its default.  See [Upmix indicator handles](#upmix-indicator-handles) for a description of all five handles.
 
-![Showreel.006.png](Resources/Documentation/Showreel/Showreel.006.png "Upmix indicator and modifiers")
+![Showreel.007.png](Resources/Documentation/Showreel/Showreel.007.png "Upmix indicator and modifiers")
 
 #### 4c — Commit the positions (Manual mode) or work live
 
@@ -149,7 +150,7 @@ Use the five interactive handles on the ring to match the idealised geometry to 
 
 See [Control modes](#control-modes) for a full comparison.
 
-![Showreel.007.png](Resources/Documentation/Showreel/Showreel.007.png "Upmix manual vs live")
+![Showreel.008.png](Resources/Documentation/Showreel/Showreel.008.png "Upmix manual vs live")
 
 Once the ring is aligned and positions are committed, Umsci will hold the subscriptions to all DS100 position values.  Any external position change (from a third-party controller, automation, or another Umsci instance) will be reflected live in the scene view. Any conflicting changes will set the upmix indicator back to flashing state to visualise that it is not aligned.
 
@@ -185,7 +186,7 @@ Umsci runs natively on iOS/iPadOS.  The full touch interaction model — includi
 
 ### Main Umsci UI
 
-![Showreel.008.png](Resources/Documentation/Showreel/Showreel.008.png "Umsci main")
+![Showreel.009.png](Resources/Documentation/Showreel/Showreel.009.png "Umsci main")
 
 The main view shows three transparent layers stacked on top of each other — all sharing the same coordinate space and zoom/pan state:
 
@@ -252,7 +253,7 @@ The *Control mode* setting (in *Upmix control settings*) governs how soundobject
 
 Two collapsible side panels live at the left edge of the main window and are accessible at all times — no menu required.  Each panel has a **grab strip** (the narrow vertical bar visible at the left edge) that can be clicked to slide the panel in or out.
 
-![Showreel.010.png](Resources/Documentation/Showreel/Showreel.010.png "Side panels — both untucked (grab strips visible)")
+![Showreel.011.png](Resources/Documentation/Showreel/Showreel.011.png "Side panels — both untucked (grab strips visible)")
 
 <a name="dbpr-project-panel" />
 
@@ -316,7 +317,7 @@ The snapshot is held in memory for the session; it is not persisted to the confi
 
 ### Umsci settings menu
 
-![Showreel.009.png](Resources/Documentation/Showreel/Showreel.009.png "Umsci settings")
+![Showreel.010.png](Resources/Documentation/Showreel/Showreel.010.png "Umsci settings")
 
 The gear button (top-left) opens the settings menu.  Available options:
 
