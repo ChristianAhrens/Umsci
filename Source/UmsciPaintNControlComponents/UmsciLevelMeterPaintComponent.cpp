@@ -263,7 +263,7 @@ void UmsciLevelMeterPaintComponent::paintMeterRing(juce::Graphics& g, const Mete
             return (hit != m_holdLevel.end()) ? hit->second : 0.0f;
         };
 
-        g.setColour(holdColour.withAlpha(0.90f));
+        g.setColour(holdColour.darker(0.3f).withAlpha(0.90f));
 
         // Find the first channel after a gap so wrap-around runs are not split.
         size_t startIdx = 0;
@@ -284,10 +284,15 @@ void UmsciLevelMeterPaintComponent::paintMeterRing(juce::Graphics& g, const Mete
         {
             if (inRun)
             {
-                // Close into a polygon only when every channel is active;
-                // partial runs stay open to avoid a crossing closing segment.
                 if (runChannelCount == static_cast<int>(N))
                     holdPath.closeSubPath();
+                else
+                {
+                    // Partial run: route the closing edge through the origin so the
+                    // polygon closes cleanly at the centre rather than leaving an open path.
+                    holdPath.lineTo(m_centre);
+                    holdPath.closeSubPath();
+                }
                 g.strokePath(holdPath, juce::PathStrokeType(1.5f));
                 holdPath.clear();
                 inRun = false;
