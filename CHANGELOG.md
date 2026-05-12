@@ -4,14 +4,18 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.1] 2026-05-12
 ### Added
 
 ### Changed
+- Changed LFE/Positionless channels to be positioned with center but shown attached
 
 ### Fixed
+- Fixed levelmeter hold painting
+- Fixed access violation in spread slider painting
+- Fixed occasional connection establishment failure (OCA ONo resolving)
 
-## [0.3.2] 2026-05-10
+## [0.4.0] 2026-05-10
 ### Added
 - Added dedicated overlay panel for upmix spread and delay-mode control/monitoring
 - Added optional LFE channel positioning as a sound object alongside the centre channel
