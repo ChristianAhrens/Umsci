@@ -127,8 +127,8 @@ void DeviceController::setState(const State& s, juce::NotificationType notificat
 
         if (s == State::GetValues)
             startTimer(m_ocp1Timeout * 20); // (re)start timeout; fires retryPendingGetValues() if device drops a response
-        else if (s == State::Connected)
-            stopTimer();
+        else if (s == State::Connected || s == State::Subscribing)
+            stopTimer(); // Subscribing has no timer-based retry; stop so timerCallback doesn't fire in that state
 
         if (onStateChanged && juce::NotificationType::sendNotification == notificationType)
             onStateChanged(s);
@@ -624,12 +624,21 @@ bool DeviceController::ocp1MessageReceived(const NanoOcp1::ByteVector& data)
                     ") with status " << NanoOcp1::StatusToString(responseObj->GetResponseStatus()));
 
                 auto externalId = -1;
-                PopPendingSubscriptionHandle(handle);
+                auto wasSubscription = PopPendingSubscriptionHandle(handle);
                 auto failedGetValONo = PopPendingGetValueHandle(handle);
                 PopPendingSetValueHandle(handle, externalId);
 
+                // A failed subscription still counts as answered — advance state if it was the last one.
+                if (wasSubscription && !HasPendingSubscriptions())
+                {
+                    postMessage(new StateChangeMessage(State::Subscribed));
+                    if (HasPendingGetValues())
+                        postMessage(new StateChangeMessage(State::GetValues));
+                    else
+                        postMessage(new StateChangeMessage(State::Connected));
+                }
                 // A failed getvalue still counts as answered — advance state if it was the last one.
-                if (0x00 != failedGetValONo && !HasPendingGetValues())
+                else if (0x00 != failedGetValONo && !HasPendingGetValues())
                 {
                     if (!HasPendingSubscriptions())
                         postMessage(new StateChangeMessage(State::Connected));
