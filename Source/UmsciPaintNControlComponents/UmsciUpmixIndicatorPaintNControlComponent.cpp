@@ -905,11 +905,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
         {
             // locate the centre channel circle; offset LFE one radius toward the ring centre
             juce::Point<float> centreScreenPos = m_upmixCenter;
+            std::array<float, 3> centreRealPos = {};
             for (const auto& floorPos : m_renderedFloorPositions)
             {
                 if (floorPos.label == centreLabel)
                 {
                     centreScreenPos = floorPos.screenPos;
+                    centreRealPos   = floorPos.realPos;
                     break;
                 }
             }
@@ -932,7 +934,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
             rcp.sourceId  = static_cast<std::int16_t>(
                 m_sourceStartId + getChannelNumberForChannelTypeInCurrentConfiguration(channelType) - 1);
             rcp.screenPos = lfeScreenPos;
-            rcp.realPos   = GetRealCoordinateForPoint(lfeScreenPos);
+            // Use the centre channel's zoom-stable real position rather than converting
+            // lfeScreenPos (which carries a fixed screen-pixel offset that does not scale
+            // with zoom, causing the real position to drift whenever zoom changes).
+            rcp.realPos   = centreRealPos;
             rcp.realPos[2] = 1.2f;
             rcp.label     = juce::AudioChannelSet::getAbbreviatedChannelTypeName(channelType);
             m_renderedDirectionlessPositions.push_back(rcp);
