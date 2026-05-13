@@ -74,6 +74,8 @@ public:
         MIDI_UPMIXANGLESTRETCH, ///< MIDI assignment for upmix angle stretch.
         MIDI_UPMIXOFFSETX,      ///< MIDI assignment for upmix X offset.
         MIDI_UPMIXOFFSETY,      ///< MIDI assignment for upmix Y offset.
+        MIDI_UPMIXSCALEV,       ///< MIDI assignment for upmix vertical scale.
+        MIDI_UPMIXHEIGHTSCALEV, ///< MIDI assignment for upmix height vertical scale.
         UPMIXSNAPSHOTCONFIG,    ///< Upmix snapshot container (optional; absent = no snapshot stored).
         UPMIXPARAMSCONFIG,      ///< Upmix params panel aggregate values (spread, delay mode).
         DBPRPROJECTCONFIG,      ///< Persisted dbpr project data (optional; absent = no project loaded).
@@ -83,7 +85,9 @@ public:
         OSC_UPMIXHEIGHTSCALE,   ///< OSC address for upmix height translation.
         OSC_UPMIXANGLESTRETCH,  ///< OSC address for upmix angle stretch.
         OSC_UPMIXOFFSETX,       ///< OSC address for upmix X offset.
-        OSC_UPMIXOFFSETY        ///< OSC address for upmix Y offset.
+        OSC_UPMIXOFFSETY,       ///< OSC address for upmix Y offset.
+        OSC_UPMIXSCALEV,        ///< OSC address for upmix vertical scale.
+        OSC_UPMIXHEIGHTSCALEV   ///< OSC address for upmix height vertical scale.
     };
     static juce::String getTagName(TagID ID)
     {
@@ -121,6 +125,10 @@ public:
             return "MIDI_UPMIXOFFSETX";
         case MIDI_UPMIXOFFSETY:
             return "MIDI_UPMIXOFFSETY";
+        case MIDI_UPMIXSCALEV:
+            return "MIDI_UPMIXSCALEV";
+        case MIDI_UPMIXHEIGHTSCALEV:
+            return "MIDI_UPMIXHEIGHTSCALEV";
         case UPMIXSNAPSHOTCONFIG:
             return "UPMIXSNAPSHOTCONFIG";
         case UPMIXPARAMSCONFIG:
@@ -141,6 +149,10 @@ public:
             return "OSC_UPMIXOFFSETX";
         case OSC_UPMIXOFFSETY:
             return "OSC_UPMIXOFFSETY";
+        case OSC_UPMIXSCALEV:
+            return "OSC_UPMIXSCALEV";
+        case OSC_UPMIXHEIGHTSCALEV:
+            return "OSC_UPMIXHEIGHTSCALEV";
         default:
             return "INVALID";
         }

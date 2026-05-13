@@ -1161,7 +1161,9 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALE,
             UmsciAppConfiguration::TagID::MIDI_UPMIXANGLESTRETCH,
             UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETX,
-            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXSCALEV,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALEV
         };
 
         auto extCtrlXmlElement = std::make_unique<juce::XmlElement>(
@@ -1192,7 +1194,9 @@ void MainComponent::performConfigurationDump()
             UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALE,
             UmsciAppConfiguration::TagID::OSC_UPMIXANGLESTRETCH,
             UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETX,
-            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY,
+            UmsciAppConfiguration::TagID::OSC_UPMIXSCALEV,
+            UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALEV
         };
 
         for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
@@ -1364,7 +1368,9 @@ void MainComponent::onConfigUpdated()
             UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALE,
             UmsciAppConfiguration::TagID::MIDI_UPMIXANGLESTRETCH,
             UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETX,
-            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY
+            UmsciAppConfiguration::TagID::MIDI_UPMIXOFFSETY,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXSCALEV,
+            UmsciAppConfiguration::TagID::MIDI_UPMIXHEIGHTSCALEV
         };
 
         for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
@@ -1393,7 +1399,9 @@ void MainComponent::onConfigUpdated()
             UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALE,
             UmsciAppConfiguration::TagID::OSC_UPMIXANGLESTRETCH,
             UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETX,
-            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY
+            UmsciAppConfiguration::TagID::OSC_UPMIXOFFSETY,
+            UmsciAppConfiguration::TagID::OSC_UPMIXSCALEV,
+            UmsciAppConfiguration::TagID::OSC_UPMIXHEIGHTSCALEV
         };
 
         for (int i = 0; i < UmsciExternalControlComponent::UpmixMidiParam_COUNT; ++i)
