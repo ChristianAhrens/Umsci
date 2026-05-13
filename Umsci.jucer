@@ -154,7 +154,7 @@
       <GROUP id="{5418C8BA-AFDC-83EF-A716-D3FB9CE9A772}" name="Images">
         <FILE id="nR9sVB" name="Umsci.png" compile="0" resource="1" file="Resources/Images/Umsci.png"/>
         <FILE id="Zt8DrC" name="Umsci.svg" compile="0" resource="1" file="Resources/Images/Umsci.svg"/>
-        <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" file="Resources/Images/UmsciRect.png"/>
+        <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" xcodeResource="1" file="Resources/Images/UmsciRect.png"/>
       </GROUP>
       <FILE id="hYzLTg" name="UmsciDefault.config" compile="0" resource="1"
             file="Resources/UmsciDefault.config"/>
