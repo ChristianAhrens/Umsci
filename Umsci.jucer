@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.4.2" companyWebsite="https://christianahrens.github.io/Umsci"
+              jucerFormatVersion="1" version="0.4.3" companyWebsite="https://christianahrens.github.io/Umsci"
               bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/&#10;../../submodules/SQLiteCpp/include&#10;../../submodules/SQLiteCpp/sqlite3"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0,&#10;SQLITE_ENABLE_COLUMN_METADATA=1&#10;USE_DBPR_PROJECT_UTILS=1"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
@@ -154,7 +154,8 @@
       <GROUP id="{5418C8BA-AFDC-83EF-A716-D3FB9CE9A772}" name="Images">
         <FILE id="nR9sVB" name="Umsci.png" compile="0" resource="1" file="Resources/Images/Umsci.png"/>
         <FILE id="Zt8DrC" name="Umsci.svg" compile="0" resource="1" file="Resources/Images/Umsci.svg"/>
-        <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" xcodeResource="1" file="Resources/Images/UmsciRect.png"/>
+        <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" xcodeResource="1"
+              file="Resources/Images/UmsciRect.png"/>
       </GROUP>
       <FILE id="hYzLTg" name="UmsciDefault.config" compile="0" resource="1"
             file="Resources/UmsciDefault.config"/>

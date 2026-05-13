@@ -11,13 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-## [0.4.1] 2026-05-12
+## [0.4.2] 2026-05-13
 ### Added
 
 ### Changed
 - Changed LFE/Positionless channels to be positioned with center but shown attached
 
 ### Fixed
+- Fixed iOS launchscreen icon
 - Fixed levelmeter hold painting
 - Fixed access violation in spread slider painting
 - Fixed occasional connection establishment failure (OCA ONo resolving)
