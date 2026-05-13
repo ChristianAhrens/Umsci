@@ -1,0 +1,5 @@
+<map id="UmsciAppConfiguration" name="UmsciAppConfiguration">
+<area shape="rect" id="Node000001" title="Persists all Umsci user settings to an XML file via the JUCEAppBasics::AppConfigurationBase framework..." alt="" coords="54,79,229,104"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,277,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="144,44,144,79,139,79,139,44"/>
+</map>
