@@ -152,6 +152,20 @@
     </GROUP>
     <GROUP id="{72AB56DC-8637-938F-3846-2BD91435687D}" name="Resources">
       <GROUP id="{5418C8BA-AFDC-83EF-A716-D3FB9CE9A772}" name="Images">
+        <GROUP id="{9E38C9DB-6771-45C2-69FF-5C468E5CC76B}" name="Umsci.icon">
+          <GROUP id="{022CE5D2-2680-5AC9-282F-74494DC5D6E4}" name="Assets">
+            <FILE id="K35e0m" name="Black circle_Black circle.svg" compile="0"
+                  resource="0" file="Resources/Images/Umsci.icon/Assets/Black circle_Black circle.svg"/>
+            <FILE id="WNfWkU" name="Inner grey circle_Inner grey circle.svg" compile="0"
+                  resource="0" file="Resources/Images/Umsci.icon/Assets/Inner grey circle_Inner grey circle.svg"/>
+            <FILE id="DP5mzx" name="Outer grey circle_Outer grey circle.svg" compile="0"
+                  resource="0" file="Resources/Images/Umsci.icon/Assets/Outer grey circle_Outer grey circle.svg"/>
+            <FILE id="N8kNb0" name="Umsci.svg" compile="0" resource="0" file="Resources/Images/Umsci.icon/Assets/Umsci.svg"/>
+            <FILE id="JYKHgk" name="White circle_White circle.svg" compile="0"
+                  resource="0" file="Resources/Images/Umsci.icon/Assets/White circle_White circle.svg"/>
+          </GROUP>
+          <FILE id="D4TMc4" name="icon.json" compile="0" resource="0" file="Resources/Images/Umsci.icon/icon.json"/>
+        </GROUP>
         <FILE id="nR9sVB" name="Umsci.png" compile="0" resource="1" file="Resources/Images/Umsci.png"/>
         <FILE id="Zt8DrC" name="Umsci.svg" compile="0" resource="1" file="Resources/Images/Umsci.svg"/>
         <FILE id="wKQgbQ" name="UmsciRect.png" compile="0" resource="1" xcodeResource="1"
@@ -269,10 +283,10 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="wKQgbQ" bigIcon="wKQgbQ"
-               iosDevelopmentTeamID="SB7Q3PP4FQ" hardenedRuntime="1" applicationCategory="public.app-category.utilities"
-               appSandbox="0" customXcodeResourceFolders="Resources/Images/Umsci.icon"
-               customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist&gt;&#10;  &lt;dict&gt;&#10;    &lt;!-- New Xcode .icon integration --&gt;&#10;    &lt;key&gt;CFBundleIconName&lt;/key&gt;&#10;    &lt;string&gt;Umsci&lt;/string&gt;&#10;  &lt;/dict&gt;&#10;&lt;/plist&gt;">
+    <XCODE_MAC targetFolder="Builds/MacOSX" iosDevelopmentTeamID="SB7Q3PP4FQ"
+               hardenedRuntime="1" applicationCategory="public.app-category.utilities"
+               appSandbox="0" customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist&gt;&#10;  &lt;dict&gt;&#10;    &lt;!-- New Xcode .icon integration --&gt;&#10;    &lt;key&gt;CFBundleIconName&lt;/key&gt;&#10;    &lt;string&gt;Umsci&lt;/string&gt;&#10;  &lt;/dict&gt;&#10;&lt;/plist&gt;"
+               iconComposerIcon="D4TMc4">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release" customXcodeFlags="OTHER_CODE_SIGN_FLAGS = $(inherited) --timestamp -s 'Developer ID Application: Christian Ahrens', CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO"
@@ -317,12 +331,11 @@
         <MODULEPATH id="juce_audio_processors_headless" path="submodules/JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
-    <XCODE_IPHONE targetFolder="Builds/iOS" smallIcon="wKQgbQ" bigIcon="wKQgbQ"
-                  customLaunchStoryboard="Resources/Deployment/iOS/Launchscreen.storyboard"
+    <XCODE_IPHONE targetFolder="Builds/iOS" customLaunchStoryboard="Resources/Deployment/iOS/Launchscreen.storyboard"
                   iosScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iPadScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iosDevelopmentTeamID="SB7Q3PP4FQ" UIRequiresFullScreen="0" customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist&gt;&#10;  &lt;dict&gt;&#10;    &#9;&lt;key&gt;UIBackgroundModes&lt;/key&gt;&#10;    &#9;&lt;array&gt;&#10;&#9;      &#9;&lt;string&gt;processing&lt;/string&gt;&#10;    &#9;&lt;/array&gt;&#10;    &lt;key&gt;BGTaskSchedulerPermittedIdentifiers&lt;/key&gt;&#10;    &lt;array&gt;&#10;      &lt;string&gt;com.ChristianAhrens.Umsci&lt;/string&gt;&#10;    &lt;/array&gt;&#10;    &lt;!-- New Xcode .icon integration --&gt;&#10;    &lt;key&gt;CFBundleIconName&lt;/key&gt;&#10;    &lt;string&gt;Umsci&lt;/string&gt;&#10;&lt;/dict&gt;&#10;&lt;/plist&gt;"
-                  customXcodeResourceFolders="Resources/Images/Umsci.icon">
+                  customXcodeResourceFolders="Resources/Images/Umsci.icon" iconComposerIcon="D4TMc4">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" iosDeploymentTarget="15" iosCompatibility="15"/>
         <CONFIGURATION isDebug="0" name="Release" iosDeploymentTarget="15" iosCompatibility="15"/>
