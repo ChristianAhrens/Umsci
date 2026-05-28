@@ -87,7 +87,10 @@ public:
         OSC_UPMIXOFFSETX,       ///< OSC address for upmix X offset.
         OSC_UPMIXOFFSETY,       ///< OSC address for upmix Y offset.
         OSC_UPMIXSCALEV,        ///< OSC address for upmix vertical scale.
-        OSC_UPMIXHEIGHTSCALEV   ///< OSC address for upmix height vertical scale.
+        OSC_UPMIXHEIGHTSCALEV,  ///< OSC address for upmix height vertical scale.
+        CUSTOMPARAMCONTROLCONFIG,    ///< Top-level container for custom OSC parameter control.
+        CUSTOMOSC_PARAMETERS,        ///< Child container: list of configured parameters.
+        CUSTOMOSC_PARAMETER          ///< Per-parameter entry (index attr + name/type/range/addr attrs).
     };
     static juce::String getTagName(TagID ID)
     {
@@ -153,6 +156,12 @@ public:
             return "OSC_UPMIXSCALEV";
         case OSC_UPMIXHEIGHTSCALEV:
             return "OSC_UPMIXHEIGHTSCALEV";
+        case CUSTOMPARAMCONTROLCONFIG:
+            return "CUSTOMPARAMCONTROLCONFIG";
+        case CUSTOMOSC_PARAMETERS:
+            return "CUSTOMOSC_PARAMETERS";
+        case CUSTOMOSC_PARAMETER:
+            return "CUSTOMOSC_PARAMETER";
         default:
             return "INVALID";
         }

@@ -23,12 +23,15 @@
 #include "UmsciAppConfiguration.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
-#include "MidiController.h"
-#include "OscController.h"
+#include "UpmixMidiController.h"
+#include "UpmixOscController.h"
 #include "DbprController.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 #include "UmsciPaintNControlComponents/UmsciSnapshotComponent.h"
 #include "UmsciPaintNControlComponents/UmsciUpmixParamsComponent.h"
+#include "CustomParameterControl/CustomParameterConfig.h"
+#include "CustomParameterControl/CustomParameterControlComponent.h"
+#include "CustomParameterControl/CustomParameterOscController.h"
 
 
  /**
@@ -118,6 +121,7 @@ public:
         ControlFormat_Last = ControlFormat_9point1point6,
         UpmixSettings,          ///< Opens the upmix settings dialog.
         ExternalControlSettings,///< Opens the external (MIDI) control settings dialog.
+        CustomParameterSettings,///< Opens the custom OSC parameter control settings dialog.
         ControlSize_First,
         ControlSize_S = ControlSize_First, ///< Small icons.
         ControlSize_M,                     ///< Medium icons.
@@ -172,6 +176,8 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
+    void showCustomParameterSettings();
+    void checkOscPortConflict();
     void showDbprProjectLoad();     // called from onLoadRequested on the dbpr panel
     void syncProjectToDevice();     // called from onSyncRequested on the dbpr panel
 
@@ -231,14 +237,20 @@ private:
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
     std::unique_ptr<UmsciExternalControlComponent>  m_externalControlComponent;
+    std::unique_ptr<class CustomParameterControlConfigDialog> m_customParamConfigDialog;
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 
     std::unique_ptr<UmsciAppConfiguration>          m_config;
 
     //==============================================================================
-    std::unique_ptr<MidiController>                 m_midiController;
-    std::unique_ptr<OscController>                  m_oscController;
+    std::unique_ptr<UpmixMidiController>             m_midiController;
+    std::unique_ptr<UpmixOscController>              m_oscController;
+
+    //==============================================================================
+    std::unique_ptr<CustomParameterControlComponent> m_customParamControlComponent;
+    std::unique_ptr<CustomParameterOscController>    m_customParamOscController;
+    CustomParameterConfig                            m_customParamConfig;
 
     //==============================================================================
     std::unique_ptr<DbprController>                 m_dbprController;
