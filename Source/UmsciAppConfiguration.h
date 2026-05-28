@@ -90,7 +90,8 @@ public:
         OSC_UPMIXHEIGHTSCALEV,  ///< OSC address for upmix height vertical scale.
         CUSTOMPARAMCONTROLCONFIG,    ///< Top-level container for custom OSC parameter control.
         CUSTOMOSC_PARAMETERS,        ///< Child container: list of configured parameters.
-        CUSTOMOSC_PARAMETER          ///< Per-parameter entry (index attr + name/type/range/addr attrs).
+        CUSTOMOSC_PARAMETER,         ///< Per-parameter entry (index attr + name/type/range/addr attrs).
+        WINDOWCONFIG                 ///< Window geometry and fullscreen state.
     };
     static juce::String getTagName(TagID ID)
     {
@@ -162,6 +163,8 @@ public:
             return "CUSTOMOSC_PARAMETERS";
         case CUSTOMOSC_PARAMETER:
             return "CUSTOMOSC_PARAMETER";
+        case WINDOWCONFIG:
+            return "WINDOWCONFIG";
         default:
             return "INVALID";
         }

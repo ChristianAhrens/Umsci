@@ -29,11 +29,6 @@ CustomParameterControlComponent::~CustomParameterControlComponent() = default;
 void CustomParameterControlComponent::paint(juce::Graphics& g)
 {
     JUCEAppBasics::ParameterControlComponent::paint(g);
-
-    // Draw a thin separator line on all edges so the strip is visually distinct
-    g.setColour(getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId)
-                                .withAlpha(0.3f));
-    g.drawRect(getLocalBounds(), 1);
 }
 
 void CustomParameterControlComponent::setCustomConfig(const CustomParameterConfig& config)

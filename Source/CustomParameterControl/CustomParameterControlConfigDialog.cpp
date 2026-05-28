@@ -60,7 +60,6 @@ CustomParameterControlConfigDialog::CustomParameterControlConfigDialog()
         newEntry.oscAddress = "/param/" + juce::String(int(m_paramRows.size()));
         m_config.parameters.push_back(newEntry);
         rebuildParameterRows();
-        setSize(kDialogWidth, computePreferredHeight());
         resized();
     };
     addAndMakeVisible(m_addButton.get());
@@ -115,7 +114,7 @@ void CustomParameterControlConfigDialog::resized()
     bounds.removeFromTop(18);      // section label "Parameters"
 
     // Column header row heights (shared with content rows)
-    const int kViewportH = juce::jmax(kRowH, getHeight() - kHeaderH - kAddBtnH - 4 * kMargin - 18);
+    const int kViewportH = juce::jmax(kRowH, getHeight() - kHeaderH - kAddBtnH - 3 * kMargin - 18);
     m_viewport->setBounds(bounds.removeFromTop(kViewportH));
 
     bounds.removeFromTop(kMargin);
@@ -313,13 +312,12 @@ void CustomParameterControlConfigDialog::removeParameterRow(int rowIndex)
 
     m_config = currentConfig;
     rebuildParameterRows();
-    setSize(kDialogWidth, computePreferredHeight());
     resized();
 }
 
 int CustomParameterControlConfigDialog::computePreferredHeight() const
 {
     int listH = juce::jmax(kRowH, int(m_paramRows.size()) * (kRowH + 2));
-    listH     = juce::jmin(listH, 300); // cap scrollable area height
+    listH     = juce::jmin(listH, kMaxViewportH);
     return kHeaderH + 18 + listH + kMargin + kAddBtnH + 2 * kMargin;
 }

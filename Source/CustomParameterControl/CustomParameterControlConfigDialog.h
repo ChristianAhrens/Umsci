@@ -55,7 +55,8 @@ public:
 private:
     //==============================================================================
     static constexpr int kRowH         = 28;  ///< Height of a single parameter row.
-    static constexpr int kHeaderH      = 72;  ///< Height of the connection section.
+    static constexpr int kHeaderH      = 80;  ///< Height of the connection section (kMargin + 18 + kRowH + kRowH).
+    static constexpr int kMaxViewportH = 300; ///< Maximum height of the scrollable parameter list.
     static constexpr int kAddBtnH      = 30;  ///< Height of the "Add parameter" button.
     static constexpr int kMargin       = 6;
     static constexpr int kDialogWidth  = 700; ///< Fixed width used when sizing the component.

@@ -388,6 +388,35 @@ MainComponent::MainComponent()
     };
     addChildComponent(m_customParamControlComponent.get());
 
+    m_paramStripDivider = std::make_unique<ParamStripDivider>();
+    m_paramStripDivider->onDrag = [this](juce::Point<int> cursorInThis, bool isLandscape) {
+        auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+        auto safeBounds = getLocalBounds();
+        safeBounds.removeFromTop(safety._top);
+        safeBounds.removeFromBottom(safety._bottom);
+        safeBounds.removeFromLeft(safety._left);
+        safeBounds.removeFromRight(safety._right);
+
+        if (isLandscape)
+        {
+            const int newW = safeBounds.getRight() - cursorInThis.x;
+            m_paramStripSplitFraction = juce::jlimit(0.1f, 0.75f,
+                float(newW) / float(juce::jmax(1, safeBounds.getWidth())));
+        }
+        else
+        {
+            const int newH = safeBounds.getBottom() - cursorInThis.y;
+            m_paramStripSplitFraction = juce::jlimit(0.1f, 0.75f,
+                float(newH) / float(juce::jmax(1, safeBounds.getHeight())));
+        }
+        resized();
+    };
+    m_paramStripDivider->onDragEnd = [this]() {
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+    addChildComponent(m_paramStripDivider.get());
+
     // dbpr project controller and floating panel
     m_dbprController = std::make_unique<DbprController>();
     m_dbprProjectComponent = std::make_unique<UmsciDbprProjectComponent>();
@@ -530,6 +559,29 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
+    // Save only window geometry at close — the rest is already persisted whenever
+    // settings change. We must NOT call performConfigurationDump() here because it
+    // accesses DeviceController::getInstance(), whose JUCE_DECLARE_SINGLETON(…,false)
+    // flag would recreate the (already-destroyed) singleton, leaking ConnectionThread,
+    // Ocp1Connection, and ~89k RemObjAddr subscription objects.
+    if (m_config)
+    {
+        auto windowConfigXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        windowConfigXml->setAttribute("WIDTH",  getWidth());
+        windowConfigXml->setAttribute("HEIGHT", getHeight());
+        if (auto* topLevel = getTopLevelComponent())
+        {
+            windowConfigXml->setAttribute("X", topLevel->getScreenX());
+            windowConfigXml->setAttribute("Y", topLevel->getScreenY());
+        }
+#if JUCE_WINDOWS || JUCE_MAC
+        windowConfigXml->setAttribute("FULLSCREEN", isFullscreenEnabled() ? 1 : 0);
+#endif
+        m_config->setConfigState(std::move(windowConfigXml),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        m_config->flushToDisk();
+    }
     JUCEAppBasics::iOS_utils::deinitialise();
 }
 
@@ -545,23 +597,47 @@ void MainComponent::resized()
     // Carve a strip for custom parameter controls when parameters are configured
     if (m_customParamControlComponent && !m_customParamConfig.parameters.empty())
     {
-        int controlSizePixels = 35; // S default
-        if (m_settingsItems[UmsciSettingsOption::ControlSize_M].second == 1) controlSizePixels = 50;
-        else if (m_settingsItems[UmsciSettingsOption::ControlSize_L].second == 1) controlSizePixels = 65;
-        const int stripThickness = 3 * controlSizePixels + 20;
+        const bool isLandscape     = safeBounds.getWidth() >= safeBounds.getHeight();
+        const int  dividerW        = 12;
+        const int  availableSize   = isLandscape ? safeBounds.getWidth() : safeBounds.getHeight();
+        const int  stripThickness  = juce::roundToInt(m_paramStripSplitFraction
+                                                       * float(availableSize));
 
-        juce::Rectangle<int> stripBounds;
-        if (safeBounds.getWidth() >= safeBounds.getHeight())
-            stripBounds = safeBounds.removeFromRight(stripThickness);
+        if (isLandscape)
+        {
+            auto fullStripBounds = safeBounds.removeFromRight(stripThickness);
+            auto dividerBounds   = fullStripBounds.removeFromLeft(dividerW);
+
+            if (m_paramStripDivider)
+            {
+                m_paramStripDivider->setIsLandscape(true);
+                m_paramStripDivider->setBounds(dividerBounds);
+                m_paramStripDivider->setVisible(true);
+            }
+            m_customParamControlComponent->setBounds(fullStripBounds);
+        }
         else
-            stripBounds = safeBounds.removeFromBottom(stripThickness);
+        {
+            auto fullStripBounds = safeBounds.removeFromBottom(stripThickness);
+            auto dividerBounds   = fullStripBounds.removeFromTop(dividerW);
 
-        m_customParamControlComponent->setBounds(stripBounds);
+            if (m_paramStripDivider)
+            {
+                m_paramStripDivider->setIsLandscape(false);
+                m_paramStripDivider->setBounds(dividerBounds);
+                m_paramStripDivider->setVisible(true);
+            }
+            m_customParamControlComponent->setBounds(fullStripBounds);
+        }
+
         m_customParamControlComponent->setVisible(true);
     }
-    else if (m_customParamControlComponent)
+    else
     {
-        m_customParamControlComponent->setVisible(false);
+        if (m_customParamControlComponent)
+            m_customParamControlComponent->setVisible(false);
+        if (m_paramStripDivider)
+            m_paramStripDivider->setVisible(false);
     }
 
     m_controlComponent->setBounds(safeBounds);
@@ -1064,6 +1140,9 @@ void MainComponent::applyControlColour()
 
     if (m_upmixParamsComponent)
         m_upmixParamsComponent->setHighlightColour(m_controlColour);
+
+    if (m_paramStripDivider)
+        m_paramStripDivider->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -1268,9 +1347,10 @@ void MainComponent::performConfigurationDump()
         // custom OSC parameter control config
         auto customParamXml = std::make_unique<juce::XmlElement>(
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMPARAMCONTROLCONFIG));
-        customParamXml->setAttribute("HOST",     m_customParamConfig.oscRemoteHost);
-        customParamXml->setAttribute("SENDPORT", m_customParamConfig.oscSendPort);
-        customParamXml->setAttribute("RECVPORT", m_customParamConfig.oscReceivePort);
+        customParamXml->setAttribute("HOST",          m_customParamConfig.oscRemoteHost);
+        customParamXml->setAttribute("SENDPORT",      m_customParamConfig.oscSendPort);
+        customParamXml->setAttribute("RECVPORT",      m_customParamConfig.oscReceivePort);
+        customParamXml->setAttribute("STRIPFRACTION", m_paramStripSplitFraction);
         auto paramsListXml = std::make_unique<juce::XmlElement>(
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMOSC_PARAMETERS));
         for (int i = 0; i < static_cast<int>(m_customParamConfig.parameters.size()); ++i)
@@ -1294,6 +1374,22 @@ void MainComponent::performConfigurationDump()
         customParamXml->addChildElement(paramsListXml.release());
         m_config->setConfigState(std::move(customParamXml),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMPARAMCONTROLCONFIG));
+
+        // window geometry
+        auto windowConfigXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        windowConfigXml->setAttribute("WIDTH",  getWidth());
+        windowConfigXml->setAttribute("HEIGHT", getHeight());
+        if (auto* topLevel = getTopLevelComponent())
+        {
+            windowConfigXml->setAttribute("X", topLevel->getScreenX());
+            windowConfigXml->setAttribute("Y", topLevel->getScreenY());
+        }
+#if JUCE_WINDOWS || JUCE_MAC
+        windowConfigXml->setAttribute("FULLSCREEN", isFullscreenEnabled() ? 1 : 0);
+#endif
+        m_config->setConfigState(std::move(windowConfigXml),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
     }
 }
 
@@ -1509,6 +1605,8 @@ void MainComponent::onConfigUpdated()
         m_customParamConfig.oscRemoteHost  = customParamState->getStringAttribute("HOST", "127.0.0.1");
         m_customParamConfig.oscSendPort    = customParamState->getIntAttribute("SENDPORT", 9001);
         m_customParamConfig.oscReceivePort = customParamState->getIntAttribute("RECVPORT", 9002);
+        m_paramStripSplitFraction = static_cast<float>(
+            customParamState->getDoubleAttribute("STRIPFRACTION", 1.0 / 3.0));
         m_customParamConfig.parameters.clear();
 
         if (auto* paramsXml = customParamState->getChildByName(
@@ -1549,6 +1647,39 @@ void MainComponent::onConfigUpdated()
 
         checkOscPortConflict();
         resized();
+    }
+
+    // window geometry — restore size, position, and fullscreen state
+    auto windowConfigState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+    if (windowConfigState)
+    {
+        const int w = windowConfigState->getIntAttribute("WIDTH",  800);
+        const int h = windowConfigState->getIntAttribute("HEIGHT", 600);
+        setSize(juce::jmax(400, w), juce::jmax(300, h));
+
+        const int x = windowConfigState->getIntAttribute("X", -1);
+        const int y = windowConfigState->getIntAttribute("Y", -1);
+        if (x >= 0 && y >= 0)
+        {
+            if (auto* topLevel = getTopLevelComponent())
+            {
+                // Clamp so at least 100×100 px remain on-screen (guards against removed monitors)
+                auto displayArea = juce::Desktop::getInstance().getDisplays().getTotalBounds(true);
+                const int clampedX = juce::jlimit(displayArea.getX(),
+                                                   juce::jmax(displayArea.getX(), displayArea.getRight()  - 100), x);
+                const int clampedY = juce::jlimit(displayArea.getY(),
+                                                   juce::jmax(displayArea.getY(), displayArea.getBottom() - 100), y);
+                topLevel->setTopLeftPosition(clampedX, clampedY);
+            }
+        }
+
+#if JUCE_WINDOWS || JUCE_MAC
+        if (windowConfigState->getIntAttribute("FULLSCREEN", 0) == 1)
+            juce::Timer::callAfterDelay(150, [this] {
+                if (onSetFullscreenWindow) onSetFullscreenWindow(true);
+            });
+#endif
     }
 }
 
