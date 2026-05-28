@@ -40,7 +40,8 @@
  * 6. Call `disconnect()` when done.
  */
 class CustomParameterOscController
-    : public juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>
+    : public juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>,
+      public juce::AsyncUpdater
 {
 public:
     CustomParameterOscController();
@@ -81,12 +82,17 @@ public:
 private:
     //==============================================================================
     void oscMessageReceived(const juce::OSCMessage& message) override;
+    void handleAsyncUpdate() override;
 
     //==============================================================================
     juce::OSCSender   m_sender;
     juce::OSCReceiver m_receiver;
     CustomParameterConfig m_config;
     bool m_connected = false;
+
+    // Coalesces rapid incoming updates: last value per parameter index wins.
+    // Only accessed on the message thread (MessageLoopCallback delivery).
+    std::unordered_map<int, float> m_pendingValues;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CustomParameterOscController)
 };

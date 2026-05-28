@@ -104,9 +104,20 @@ void CustomParameterOscController::oscMessageReceived(const juce::OSCMessage& me
     {
         if (m_config.parameters[i].oscAddress == address)
         {
-            if (onParameterValueReceived)
-                onParameterValueReceived(i, value);
+            m_pendingValues[i] = value;
+            triggerAsyncUpdate();
             break;
         }
     }
+}
+
+void CustomParameterOscController::handleAsyncUpdate()
+{
+    if (!onParameterValueReceived)
+        return;
+
+    for (auto& [index, value] : m_pendingValues)
+        onParameterValueReceived(index, value);
+
+    m_pendingValues.clear();
 }
