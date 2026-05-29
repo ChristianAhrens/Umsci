@@ -127,44 +127,41 @@ void CustomParameterControlConfigDialog::resized()
         m_listContent->setSize(m_viewport->getWidth() - m_viewport->getScrollBarThickness(),
                                juce::jmax(kRowH, contentH));
 
+        // Column widths — variable section (min+max+step or stepNames) occupies the same total
+        // space so the OSC address column is always the same width regardless of type.
+        const int delW        = 26;
+        const int typeW       = 112;
+        const int nameW       = 100;
+        const int minW        = 52;
+        const int maxW        = 52;
+        const int stepW       = 52;
+        const int gap         = 3;
+        const int varSectionW = minW + maxW + stepW + 2 * gap; // Continuous: min+gap+max+gap+step
+
         int y = 0;
         for (int i = 0; i < int(m_paramRows.size()); ++i)
         {
-            auto& row = m_paramRows[i];
-            int x     = 0;
-            int w     = m_listContent->getWidth();
-            auto rowBounds = juce::Rectangle<int>(x, y, w, kRowH);
+            auto& row      = m_paramRows[i];
+            auto rowBounds = juce::Rectangle<int>(0, y, m_listContent->getWidth(), kRowH);
             y += kRowH + 2;
 
-            // [del(26)] [type(112)] [name(100)] [min(52)] [max(52)] [step(52)] [steps(100)] [osc(remaining-2)]
-            int delW      = 26;
-            int typeW     = 112;
-            int nameW     = 100;
-            int minW      = 52;
-            int maxW      = 52;
-            int stepW     = 52;
-            int stepsW    = 100;
-            int gap       = 3;
-            int oscW      = rowBounds.getWidth()
-                            - delW - typeW - nameW - minW - maxW - stepW - stepsW
-                            - 7 * gap;
-
             auto r = rowBounds.reduced(0, 2);
-            row.deleteButton->setBounds(r.removeFromLeft(delW));
-            r.removeFromLeft(gap);
-            row.typeCombo->setBounds(r.removeFromLeft(typeW));
-            r.removeFromLeft(gap);
-            row.nameEditor->setBounds(r.removeFromLeft(nameW));
-            r.removeFromLeft(gap);
-            row.minEditor->setBounds(r.removeFromLeft(minW));
-            r.removeFromLeft(gap);
-            row.maxEditor->setBounds(r.removeFromLeft(maxW));
-            r.removeFromLeft(gap);
-            row.stepEditor->setBounds(r.removeFromLeft(stepW));
-            r.removeFromLeft(gap);
-            row.stepNamesEditor->setBounds(r.removeFromLeft(stepsW));
-            r.removeFromLeft(gap);
-            row.oscAddrEditor->setBounds(r.removeFromLeft(juce::jmax(50, oscW)));
+            row.deleteButton->setBounds(r.removeFromLeft(delW));  r.removeFromLeft(gap);
+            row.typeCombo->setBounds(r.removeFromLeft(typeW));     r.removeFromLeft(gap);
+            row.nameEditor->setBounds(r.removeFromLeft(nameW));    r.removeFromLeft(gap);
+
+            if (row.minEditor->isVisible())
+            {
+                row.minEditor->setBounds(r.removeFromLeft(minW));   r.removeFromLeft(gap);
+                row.maxEditor->setBounds(r.removeFromLeft(maxW));   r.removeFromLeft(gap);
+                row.stepEditor->setBounds(r.removeFromLeft(stepW)); r.removeFromLeft(gap);
+            }
+            if (row.stepNamesEditor->isVisible())
+            {
+                row.stepNamesEditor->setBounds(r.removeFromLeft(varSectionW)); r.removeFromLeft(gap);
+            }
+
+            row.oscAddrEditor->setBounds(r.removeFromLeft(juce::jmax(50, r.getWidth())));
         }
     }
 }
@@ -200,18 +197,32 @@ CustomParameterConfig CustomParameterControlConfigDialog::getConfig() const
         else                   entry.controlType = JUCEAppBasics::ParameterControlType::Toggle;
 
         entry.name       = row.nameEditor->getText().trim();
-        entry.minValue   = row.minEditor->getText().getFloatValue();
-        entry.maxValue   = row.maxEditor->getText().getFloatValue();
-        entry.stepSize   = row.stepEditor->getText().getFloatValue();
         entry.oscAddress = row.oscAddrEditor->getText().trim();
 
-        if (entry.controlType == JUCEAppBasics::ParameterControlType::Discrete)
+        switch (entry.controlType)
+        {
+        case JUCEAppBasics::ParameterControlType::Continuous:
+            entry.minValue = row.minEditor->getText().getFloatValue();
+            entry.maxValue = row.maxEditor->getText().getFloatValue();
+            entry.stepSize = row.stepEditor->getText().getFloatValue();
+            break;
+        case JUCEAppBasics::ParameterControlType::Discrete:
         {
             juce::StringArray names;
             names.addTokens(row.stepNamesEditor->getText(), ",", "");
-            entry.stepCount = names.size();
             for (auto& n : names)
                 entry.stepNames.push_back(n.trim().toStdString());
+            entry.stepCount = int(entry.stepNames.size());
+            entry.minValue  = 0.0f;
+            entry.maxValue  = entry.stepCount > 1 ? float(entry.stepCount - 1) : 0.0f;
+            entry.stepSize  = 1.0f;
+            break;
+        }
+        case JUCEAppBasics::ParameterControlType::Toggle:
+            entry.minValue = 0.0f;
+            entry.maxValue = 1.0f;
+            entry.stepSize = 1.0f;
+            break;
         }
 
         result.parameters.push_back(entry);
@@ -256,6 +267,7 @@ void CustomParameterControlConfigDialog::addParameterRow(int rowIndex)
     if (entry.controlType == JUCEAppBasics::ParameterControlType::Discrete) typeId = 2;
     else if (entry.controlType == JUCEAppBasics::ParameterControlType::Toggle)  typeId = 3;
     row.typeCombo->setSelectedId(typeId, juce::dontSendNotification);
+    row.typeCombo->onChange = [this, rowIndex]() { updateRowVisibility(rowIndex); };
 
     row.nameEditor = std::make_unique<juce::TextEditor>();
     row.nameEditor->setText(entry.name, juce::dontSendNotification);
@@ -300,6 +312,25 @@ void CustomParameterControlConfigDialog::addParameterRow(int rowIndex)
     m_listContent->addAndMakeVisible(row.deleteButton.get());
 
     m_paramRows.push_back(std::move(row));
+    updateRowVisibility(rowIndex);
+}
+
+void CustomParameterControlConfigDialog::updateRowVisibility(int rowIndex)
+{
+    if (rowIndex < 0 || rowIndex >= int(m_paramRows.size()))
+        return;
+
+    auto& row = m_paramRows[rowIndex];
+    const int typeId        = row.typeCombo->getSelectedId();
+    const bool isContinuous = (typeId == 1);
+    const bool isDiscrete   = (typeId == 2);
+
+    row.minEditor->setVisible(isContinuous);
+    row.maxEditor->setVisible(isContinuous);
+    row.stepEditor->setVisible(isContinuous);
+    row.stepNamesEditor->setVisible(isDiscrete);
+
+    resized();
 }
 
 void CustomParameterControlConfigDialog::removeParameterRow(int rowIndex)

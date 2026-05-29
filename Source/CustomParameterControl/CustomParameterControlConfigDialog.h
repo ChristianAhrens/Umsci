@@ -65,6 +65,7 @@ private:
     void rebuildParameterRows();
     void addParameterRow(int rowIndex);
     void removeParameterRow(int rowIndex);
+    void updateRowVisibility(int rowIndex);
     int  computePreferredHeight() const;
 
     //==============================================================================

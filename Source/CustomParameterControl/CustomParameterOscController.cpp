@@ -76,7 +76,10 @@ void CustomParameterOscController::sendParameterValue(int parameterIndex, float 
         return;
 
     juce::OSCMessage msg(entry.oscAddress);
-    msg.addFloat32(nativeValue);
+    if (entry.controlType == JUCEAppBasics::ParameterControlType::Toggle)
+        msg.addInt32(nativeValue > 0.5f ? 1 : 0);
+    else
+        msg.addFloat32(nativeValue);
     m_sender.send(msg);
 }
 
@@ -95,10 +98,16 @@ void CustomParameterOscController::pollAllValues()
 void CustomParameterOscController::oscMessageReceived(const juce::OSCMessage& message)
 {
     auto address = message.getAddressPattern().toString();
-    if (message.isEmpty() || !message[0].isFloat32())
+    if (message.isEmpty())
         return;
 
-    auto value = message[0].getFloat32();
+    float value = 0.0f;
+    if (message[0].isFloat32())
+        value = message[0].getFloat32();
+    else if (message[0].isInt32())
+        value = float(message[0].getInt32());
+    else
+        return;
 
     for (int i = 0; i < int(m_config.parameters.size()); ++i)
     {
