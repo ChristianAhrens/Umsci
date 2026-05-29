@@ -23,12 +23,15 @@
 #include "UmsciAppConfiguration.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciZeroconfDiscoverComboComponent.h"
-#include "MidiController.h"
-#include "OscController.h"
+#include "UpmixMidiController.h"
+#include "UpmixOscController.h"
 #include "DbprController.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 #include "UmsciPaintNControlComponents/UmsciSnapshotComponent.h"
 #include "UmsciPaintNControlComponents/UmsciUpmixParamsComponent.h"
+#include "CustomParameterControl/CustomParameterConfig.h"
+#include "CustomParameterControl/CustomParameterControlComponent.h"
+#include "CustomParameterControl/CustomParameterOscController.h"
 
 
  /**
@@ -118,6 +121,7 @@ public:
         ControlFormat_Last = ControlFormat_9point1point6,
         UpmixSettings,          ///< Opens the upmix settings dialog.
         ExternalControlSettings,///< Opens the external (MIDI) control settings dialog.
+        CustomParameterSettings,///< Opens the custom OSC parameter control settings dialog.
         ControlSize_First,
         ControlSize_S = ControlSize_First, ///< Small icons.
         ControlSize_M,                     ///< Medium icons.
@@ -163,6 +167,107 @@ public:
 
 private:
     //==============================================================================
+    /** @brief Drag handle separating the main canvas from the custom parameter strip.
+     *         Styled to match the sliding panel grab strips (highlight fill, pills, end cap). */
+    class ParamStripDivider : public juce::Component
+    {
+    public:
+        ParamStripDivider() { setMouseCursor(juce::MouseCursor::LeftRightResizeCursor); }
+
+        void setIsLandscape(bool isLandscape)
+        {
+            if (m_isLandscape == isLandscape) return;
+            m_isLandscape = isLandscape;
+            setMouseCursor(isLandscape ? juce::MouseCursor::LeftRightResizeCursor
+                                       : juce::MouseCursor::UpDownResizeCursor);
+            repaint();
+        }
+
+        void setHighlightColour(juce::Colour c)
+        {
+            if (m_highlightColour == c) return;
+            m_highlightColour = c;
+            repaint();
+        }
+
+        void paint(juce::Graphics& g) override
+        {
+            const auto b = getLocalBounds().toFloat();
+
+            // Background — match the semi-transparent panel background
+            g.setColour(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId)
+                                        .withAlpha(0.93f));
+            g.fillRect(b);
+
+            // Coloured border line on the content-facing edge — mirrors the panel border
+            g.setColour(m_highlightColour);
+            if (m_isLandscape)
+                g.drawLine(0.75f, 0.0f, 0.75f, b.getHeight(), 1.5f);
+            else
+                g.drawLine(0.0f, 0.75f, b.getWidth(), 0.75f, 1.5f);
+
+            // End cap on the far edge: dimmed line, full length with 5px margin at each end
+            // — mirrors the panel separator line style (panels use y=5..height-5)
+            g.setColour(m_highlightColour.withAlpha(0.18f));
+            if (m_isLandscape)
+            {
+                const float lineX = b.getRight() - 1.0f;
+                g.drawLine(lineX, 5.0f, lineX, b.getHeight() - 5.0f, 1.5f);
+            }
+            else
+            {
+                const float lineY = b.getBottom() - 1.0f;
+                g.drawLine(5.0f, lineY, b.getWidth() - 5.0f, lineY, 1.5f);
+            }
+
+            // Three rounded pills centred in the strip — identical to the panel grab strips
+            constexpr float pillW = 4.0f;
+            constexpr float pillH = 2.0f;
+            constexpr float gap   = 5.0f;
+
+            g.setColour(m_highlightColour.withAlpha(0.75f));
+            if (m_isLandscape)
+            {
+                const float cx = b.getCentreX();
+                const float cy = b.getCentreY();
+                for (int i = -1; i <= 1; ++i)
+                    g.fillRoundedRectangle(cx - pillW * 0.5f,
+                                           cy + float(i) * gap - pillH * 0.5f,
+                                           pillW, pillH, pillH * 0.5f);
+            }
+            else
+            {
+                // Rotated: pills are 2×4 arranged horizontally
+                const float cx = b.getCentreX();
+                const float cy = b.getCentreY();
+                for (int i = -1; i <= 1; ++i)
+                    g.fillRoundedRectangle(cx + float(i) * gap - pillH * 0.5f,
+                                           cy - pillW * 0.5f,
+                                           pillH, pillW, pillH * 0.5f);
+            }
+        }
+
+        void mouseDrag(const juce::MouseEvent& e) override
+        {
+            if (onDrag)
+                onDrag(e.getEventRelativeTo(getParentComponent()).getPosition(), m_isLandscape);
+        }
+
+        void mouseUp(const juce::MouseEvent&) override
+        {
+            if (onDragEnd)
+                onDragEnd();
+        }
+
+        std::function<void(juce::Point<int>, bool)> onDrag;
+        std::function<void()>                       onDragEnd;
+
+    private:
+        bool        m_isLandscape   = true;
+        juce::Colour m_highlightColour { juce::Colours::forestgreen };
+    };
+
+    //==============================================================================
     void handleSettingsMenuResult(int selectedId);
     void handleSettingsLookAndFeelMenuResult(int selectedId);
     void handleSettingsControlColourMenuResult(int selectedId);
@@ -172,6 +277,8 @@ private:
     void showConnectionSettings();
     void showUpmixSettings();
     void showExternalControlSettings();
+    void showCustomParameterSettings();
+    void checkOscPortConflict();
     void showDbprProjectLoad();     // called from onLoadRequested on the dbpr panel
     void syncProjectToDevice();     // called from onSyncRequested on the dbpr panel
 
@@ -231,14 +338,22 @@ private:
     std::unique_ptr<juce::AlertWindow>              m_messageBox;
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
     std::unique_ptr<UmsciExternalControlComponent>  m_externalControlComponent;
+    std::unique_ptr<class CustomParameterControlConfigDialog> m_customParamConfigDialog;
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 
     std::unique_ptr<UmsciAppConfiguration>          m_config;
 
     //==============================================================================
-    std::unique_ptr<MidiController>                 m_midiController;
-    std::unique_ptr<OscController>                  m_oscController;
+    std::unique_ptr<UpmixMidiController>             m_midiController;
+    std::unique_ptr<UpmixOscController>              m_oscController;
+
+    //==============================================================================
+    std::unique_ptr<CustomParameterControlComponent> m_customParamControlComponent;
+    std::unique_ptr<CustomParameterOscController>    m_customParamOscController;
+    std::unique_ptr<ParamStripDivider>               m_paramStripDivider;
+    CustomParameterConfig                            m_customParamConfig;
+    float                                            m_paramStripSplitFraction = 1.0f / 3.0f;
 
     //==============================================================================
     std::unique_ptr<DbprController>                 m_dbprController;
