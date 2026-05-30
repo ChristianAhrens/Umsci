@@ -28,6 +28,7 @@
 #include "AboutComponent.h"
 #include "UmsciExternalControlComponent.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
+#include "CustomParameterControl/CustomParameterControlConfigDialog.h"
 
 #include <CustomLookAndFeel.h>
 #include <WebUpdateDetector.h>
@@ -111,6 +112,8 @@ MainComponent::MainComponent()
     m_settingsItems[UmsciSettingsOption::UpmixSettings] = std::make_pair("Upmix control settings...", 0);
     // external (MIDI) control settings
     m_settingsItems[UmsciSettingsOption::ExternalControlSettings] = std::make_pair("External control...", 0);
+    // custom OSC parameter control settings
+    m_settingsItems[UmsciSettingsOption::CustomParameterSettings] = std::make_pair("Custom parameters...", 0);
     // control size
     m_settingsItems[UmsciSettingsOption::ControlSize_S] = std::make_pair("S", 1);
     m_settingsItems[UmsciSettingsOption::ControlSize_M] = std::make_pair("M", 0);
@@ -143,6 +146,7 @@ MainComponent::MainComponent()
         settingsMenu.addItem(UmsciSettingsOption::ConnectionSettings, m_settingsItems[UmsciSettingsOption::ConnectionSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::UpmixSettings, m_settingsItems[UmsciSettingsOption::UpmixSettings].first, true, false);
         settingsMenu.addItem(UmsciSettingsOption::ExternalControlSettings, m_settingsItems[UmsciSettingsOption::ExternalControlSettings].first, true, false);
+        settingsMenu.addItem(UmsciSettingsOption::CustomParameterSettings, m_settingsItems[UmsciSettingsOption::CustomParameterSettings].first, true, false);
 #if JUCE_WINDOWS || JUCE_MAC
         settingsMenu.addSeparator();
         settingsMenu.addItem(UmsciSettingsOption::FullscreenWindowMode, m_settingsItems[UmsciSettingsOption::FullscreenWindowMode].first, true, false);
@@ -162,11 +166,20 @@ MainComponent::MainComponent()
     m_connectionToggleButton->setTooltip("Toggle connection to device.");
     m_connectionToggleButton->onClick = [this] {
         if (m_connectionToggleButton->getToggleState())
+        {
             DeviceController::getInstance()->connect();
+            if (m_customParamOscController && !m_customParamConfig.parameters.empty())
+            {
+                if (m_customParamOscController->connect())
+                    m_customParamOscController->pollAllValues();
+            }
+        }
         else
         {
             DeviceController::getInstance()->disconnect();
             m_controlComponent->resetData();
+            if (m_customParamOscController)
+                m_customParamOscController->disconnect();
         }
 
         lookAndFeelChanged();
@@ -351,15 +364,58 @@ MainComponent::MainComponent()
 
 
     // MIDI and OSC controllers
-    m_midiController = std::make_unique<MidiController>();
+    m_midiController = std::make_unique<UpmixMidiController>();
     m_midiController->onParamValueChanged = [this](UmsciExternalControlComponent::UpmixMidiParam param, float domainValue) {
         applyUpmixParamValue(param, domainValue);
     };
 
-    m_oscController = std::make_unique<OscController>();
+    m_oscController = std::make_unique<UpmixOscController>();
     m_oscController->onParamValueChanged = [this](UmsciExternalControlComponent::UpmixMidiParam param, float domainValue) {
         applyUpmixParamValue(param, domainValue);
     };
+
+    // Custom OSC parameter control
+    m_customParamOscController = std::make_unique<CustomParameterOscController>();
+    m_customParamOscController->onParameterValueReceived = [this](int idx, float val) {
+        if (m_customParamControlComponent)
+            m_customParamControlComponent->setParameterValue(idx, val);
+    };
+
+    m_customParamControlComponent = std::make_unique<CustomParameterControlComponent>();
+    m_customParamControlComponent->onParameterValueChanged = [this](int idx, float val) {
+        if (m_customParamOscController && m_customParamOscController->isConnected())
+            m_customParamOscController->sendParameterValue(idx, val);
+    };
+    addChildComponent(m_customParamControlComponent.get());
+
+    m_paramStripDivider = std::make_unique<ParamStripDivider>();
+    m_paramStripDivider->onDrag = [this](juce::Point<int> cursorInThis, bool isLandscape) {
+        auto safety = JUCEAppBasics::iOS_utils::getDeviceSafetyMargins();
+        auto safeBounds = getLocalBounds();
+        safeBounds.removeFromTop(safety._top);
+        safeBounds.removeFromBottom(safety._bottom);
+        safeBounds.removeFromLeft(safety._left);
+        safeBounds.removeFromRight(safety._right);
+
+        if (isLandscape)
+        {
+            const int newW = safeBounds.getRight() - cursorInThis.x;
+            m_paramStripSplitFraction = juce::jlimit(0.1f, 0.75f,
+                float(newW) / float(juce::jmax(1, safeBounds.getWidth())));
+        }
+        else
+        {
+            const int newH = safeBounds.getBottom() - cursorInThis.y;
+            m_paramStripSplitFraction = juce::jlimit(0.1f, 0.75f,
+                float(newH) / float(juce::jmax(1, safeBounds.getHeight())));
+        }
+        resized();
+    };
+    m_paramStripDivider->onDragEnd = [this]() {
+        if (m_config)
+            m_config->triggerConfigurationDump();
+    };
+    addChildComponent(m_paramStripDivider.get());
 
     // dbpr project controller and floating panel
     m_dbprController = std::make_unique<DbprController>();
@@ -503,6 +559,29 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
+    // Save only window geometry at close — the rest is already persisted whenever
+    // settings change. We must NOT call performConfigurationDump() here because it
+    // accesses DeviceController::getInstance(), whose JUCE_DECLARE_SINGLETON(…,false)
+    // flag would recreate the (already-destroyed) singleton, leaking ConnectionThread,
+    // Ocp1Connection, and ~89k RemObjAddr subscription objects.
+    if (m_config)
+    {
+        auto windowConfigXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        windowConfigXml->setAttribute("WIDTH",  getWidth());
+        windowConfigXml->setAttribute("HEIGHT", getHeight());
+        if (auto* topLevel = getTopLevelComponent())
+        {
+            windowConfigXml->setAttribute("X", topLevel->getScreenX());
+            windowConfigXml->setAttribute("Y", topLevel->getScreenY());
+        }
+#if JUCE_WINDOWS || JUCE_MAC
+        windowConfigXml->setAttribute("FULLSCREEN", isFullscreenEnabled() ? 1 : 0);
+#endif
+        m_config->setConfigState(std::move(windowConfigXml),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        m_config->flushToDisk();
+    }
     JUCEAppBasics::iOS_utils::deinitialise();
 }
 
@@ -515,6 +594,52 @@ void MainComponent::resized()
     safeBounds.removeFromLeft(safety._left);
     safeBounds.removeFromRight(safety._right);
     
+    // Carve a strip for custom parameter controls when parameters are configured
+    if (m_customParamControlComponent && !m_customParamConfig.parameters.empty())
+    {
+        const bool isLandscape     = safeBounds.getWidth() >= safeBounds.getHeight();
+        const int  dividerW        = 12;
+        const int  availableSize   = isLandscape ? safeBounds.getWidth() : safeBounds.getHeight();
+        const int  stripThickness  = juce::roundToInt(m_paramStripSplitFraction
+                                                       * float(availableSize));
+
+        if (isLandscape)
+        {
+            auto fullStripBounds = safeBounds.removeFromRight(stripThickness);
+            auto dividerBounds   = fullStripBounds.removeFromLeft(dividerW);
+
+            if (m_paramStripDivider)
+            {
+                m_paramStripDivider->setIsLandscape(true);
+                m_paramStripDivider->setBounds(dividerBounds);
+                m_paramStripDivider->setVisible(true);
+            }
+            m_customParamControlComponent->setBounds(fullStripBounds);
+        }
+        else
+        {
+            auto fullStripBounds = safeBounds.removeFromBottom(stripThickness);
+            auto dividerBounds   = fullStripBounds.removeFromTop(dividerW);
+
+            if (m_paramStripDivider)
+            {
+                m_paramStripDivider->setIsLandscape(false);
+                m_paramStripDivider->setBounds(dividerBounds);
+                m_paramStripDivider->setVisible(true);
+            }
+            m_customParamControlComponent->setBounds(fullStripBounds);
+        }
+
+        m_customParamControlComponent->setVisible(true);
+    }
+    else
+    {
+        if (m_customParamControlComponent)
+            m_customParamControlComponent->setVisible(false);
+        if (m_paramStripDivider)
+            m_paramStripDivider->setVisible(false);
+    }
+
     m_controlComponent->setBounds(safeBounds);
     m_connectingComponent->setBounds(safeBounds);
     m_discoverHintComponent->setBounds(safeBounds);
@@ -615,6 +740,8 @@ void MainComponent::handleSettingsMenuResult(int selectedId)
         showUpmixSettings();
     else if (UmsciSettingsOption::ExternalControlSettings == selectedId)
         showExternalControlSettings();
+    else if (UmsciSettingsOption::CustomParameterSettings == selectedId)
+        showCustomParameterSettings();
     else if (UmsciSettingsOption::ControlSize_First <= selectedId && UmsciSettingsOption::ControlSize_Last >= selectedId)
         handleSettingsControlSizeMenuResult(selectedId);
     else
@@ -717,27 +844,30 @@ void MainComponent::handleSettingsControlSizeMenuResult(int selectedId)
         setSettingsItemsCheckState(1, 0, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::S);
-        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(0);
-        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(0);
-        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(0);
+        if (m_dbprProjectComponent)        m_dbprProjectComponent->setControlSize(0);
+        if (m_snapshotComponent)           m_snapshotComponent->setControlSize(0);
+        if (m_upmixParamsComponent)        m_upmixParamsComponent->setControlSize(0);
+        if (m_customParamControlComponent) m_customParamControlComponent->setControlSize(0);
         resized();
         break;
     case UmsciSettingsOption::ControlSize_M:
         setSettingsItemsCheckState(0, 1, 0);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::M);
-        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(1);
-        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(1);
-        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(1);
+        if (m_dbprProjectComponent)        m_dbprProjectComponent->setControlSize(1);
+        if (m_snapshotComponent)           m_snapshotComponent->setControlSize(1);
+        if (m_upmixParamsComponent)        m_upmixParamsComponent->setControlSize(1);
+        if (m_customParamControlComponent) m_customParamControlComponent->setControlSize(1);
         resized();
         break;
     case UmsciSettingsOption::ControlSize_L:
         setSettingsItemsCheckState(0, 0, 1);
         if (m_controlComponent)
             m_controlComponent->setControlsSize(UmsciPaintNControlComponentBase::ControlsSize::L);
-        if (m_dbprProjectComponent)  m_dbprProjectComponent->setControlSize(2);
-        if (m_snapshotComponent)     m_snapshotComponent->setControlSize(2);
-        if (m_upmixParamsComponent)  m_upmixParamsComponent->setControlSize(2);
+        if (m_dbprProjectComponent)        m_dbprProjectComponent->setControlSize(2);
+        if (m_snapshotComponent)           m_snapshotComponent->setControlSize(2);
+        if (m_upmixParamsComponent)        m_upmixParamsComponent->setControlSize(2);
+        if (m_customParamControlComponent) m_customParamControlComponent->setControlSize(2);
         resized();
         break;
     default:
@@ -1010,6 +1140,9 @@ void MainComponent::applyControlColour()
 
     if (m_upmixParamsComponent)
         m_upmixParamsComponent->setHighlightColour(m_controlColour);
+
+    if (m_paramStripDivider)
+        m_paramStripDivider->setHighlightColour(m_controlColour);
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key)
@@ -1210,6 +1343,53 @@ void MainComponent::performConfigurationDump()
 
         m_config->setConfigState(std::move(extCtrlXmlElement),
             UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::EXTERNALCONTROLCONFIG));
+
+        // custom OSC parameter control config
+        auto customParamXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMPARAMCONTROLCONFIG));
+        customParamXml->setAttribute("HOST",          m_customParamConfig.oscRemoteHost);
+        customParamXml->setAttribute("SENDPORT",      m_customParamConfig.oscSendPort);
+        customParamXml->setAttribute("RECVPORT",      m_customParamConfig.oscReceivePort);
+        customParamXml->setAttribute("STRIPFRACTION", m_paramStripSplitFraction);
+        auto paramsListXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMOSC_PARAMETERS));
+        for (int i = 0; i < static_cast<int>(m_customParamConfig.parameters.size()); ++i)
+        {
+            const auto& p = m_customParamConfig.parameters[static_cast<std::size_t>(i)];
+            auto paramXml = std::make_unique<juce::XmlElement>(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMOSC_PARAMETER));
+            paramXml->setAttribute("INDEX",     i);
+            paramXml->setAttribute("NAME",      p.name);
+            paramXml->setAttribute("TYPE",      static_cast<int>(p.controlType));
+            paramXml->setAttribute("MIN",       p.minValue);
+            paramXml->setAttribute("MAX",       p.maxValue);
+            paramXml->setAttribute("STEP",      p.stepSize);
+            paramXml->setAttribute("STEPCOUNT", p.stepCount);
+            juce::StringArray stepNames;
+            for (const auto& n : p.stepNames) stepNames.add(juce::String(n));
+            paramXml->setAttribute("STEPNAMES", stepNames.joinIntoString(","));
+            paramXml->setAttribute("ADDRESS",   p.oscAddress);
+            paramsListXml->addChildElement(paramXml.release());
+        }
+        customParamXml->addChildElement(paramsListXml.release());
+        m_config->setConfigState(std::move(customParamXml),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMPARAMCONTROLCONFIG));
+
+        // window geometry
+        auto windowConfigXml = std::make_unique<juce::XmlElement>(
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+        windowConfigXml->setAttribute("WIDTH",  getWidth());
+        windowConfigXml->setAttribute("HEIGHT", getHeight());
+        if (auto* topLevel = getTopLevelComponent())
+        {
+            windowConfigXml->setAttribute("X", topLevel->getScreenX());
+            windowConfigXml->setAttribute("Y", topLevel->getScreenY());
+        }
+#if JUCE_WINDOWS || JUCE_MAC
+        windowConfigXml->setAttribute("FULLSCREEN", isFullscreenEnabled() ? 1 : 0);
+#endif
+        m_config->setConfigState(std::move(windowConfigXml),
+            UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
     }
 }
 
@@ -1416,6 +1596,91 @@ void MainComponent::onConfigUpdated()
             }
         }
     }
+
+    // custom OSC parameter control config
+    auto customParamState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMPARAMCONTROLCONFIG));
+    if (customParamState)
+    {
+        m_customParamConfig.oscRemoteHost  = customParamState->getStringAttribute("HOST", "127.0.0.1");
+        m_customParamConfig.oscSendPort    = customParamState->getIntAttribute("SENDPORT", 9001);
+        m_customParamConfig.oscReceivePort = customParamState->getIntAttribute("RECVPORT", 9002);
+        m_paramStripSplitFraction = static_cast<float>(
+            customParamState->getDoubleAttribute("STRIPFRACTION", 1.0 / 3.0));
+        m_customParamConfig.parameters.clear();
+
+        if (auto* paramsXml = customParamState->getChildByName(
+                UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMOSC_PARAMETERS)))
+        {
+            for (auto* paramXml = paramsXml->getFirstChildElement(); paramXml != nullptr;
+                 paramXml = paramXml->getNextElement())
+            {
+                if (paramXml->getTagName() != UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::CUSTOMOSC_PARAMETER))
+                    continue;
+                CustomParameterEntry entry;
+                entry.name        = paramXml->getStringAttribute("NAME", "Parameter");
+                entry.controlType = static_cast<JUCEAppBasics::ParameterControlType>(paramXml->getIntAttribute("TYPE", 0));
+                entry.minValue    = static_cast<float>(paramXml->getDoubleAttribute("MIN", 0.0));
+                entry.maxValue    = static_cast<float>(paramXml->getDoubleAttribute("MAX", 1.0));
+                entry.stepSize    = static_cast<float>(paramXml->getDoubleAttribute("STEP", 0.0));
+                entry.stepCount   = paramXml->getIntAttribute("STEPCOUNT", 0);
+                auto stepNamesStr = paramXml->getStringAttribute("STEPNAMES", "");
+                if (stepNamesStr.isNotEmpty())
+                {
+                    juce::StringArray names;
+                    names.addTokens(stepNamesStr, ",", "");
+                    for (const auto& n : names)
+                        entry.stepNames.push_back(n.toStdString());
+                }
+                entry.oscAddress  = paramXml->getStringAttribute("ADDRESS", "/param/0");
+                m_customParamConfig.parameters.push_back(std::move(entry));
+            }
+        }
+
+        if (m_customParamOscController)
+            m_customParamOscController->setConfig(m_customParamConfig);
+        if (m_customParamControlComponent)
+        {
+            m_customParamControlComponent->setCustomConfig(m_customParamConfig);
+            m_customParamControlComponent->setVisible(!m_customParamConfig.parameters.empty());
+        }
+
+        checkOscPortConflict();
+        resized();
+    }
+
+    // window geometry — restore size, position, and fullscreen state
+    auto windowConfigState = m_config->getConfigState(
+        UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
+    if (windowConfigState)
+    {
+        const int w = windowConfigState->getIntAttribute("WIDTH",  800);
+        const int h = windowConfigState->getIntAttribute("HEIGHT", 600);
+        setSize(juce::jmax(400, w), juce::jmax(300, h));
+
+        const int x = windowConfigState->getIntAttribute("X", -1);
+        const int y = windowConfigState->getIntAttribute("Y", -1);
+        if (x >= 0 && y >= 0)
+        {
+            if (auto* topLevel = getTopLevelComponent())
+            {
+                // Clamp so at least 100×100 px remain on-screen (guards against removed monitors)
+                auto displayArea = juce::Desktop::getInstance().getDisplays().getTotalBounds(true);
+                const int clampedX = juce::jlimit(displayArea.getX(),
+                                                   juce::jmax(displayArea.getX(), displayArea.getRight()  - 100), x);
+                const int clampedY = juce::jlimit(displayArea.getY(),
+                                                   juce::jmax(displayArea.getY(), displayArea.getBottom() - 100), y);
+                topLevel->setTopLeftPosition(clampedX, clampedY);
+            }
+        }
+
+#if JUCE_WINDOWS || JUCE_MAC
+        if (windowConfigState->getIntAttribute("FULLSCREEN", 0) == 1)
+            juce::Timer::callAfterDelay(150, [this] {
+                if (onSetFullscreenWindow) onSetFullscreenWindow(true);
+            });
+#endif
+    }
 }
 
 bool MainComponent::isFullscreenEnabled()
@@ -1469,12 +1734,78 @@ void MainComponent::showExternalControlSettings()
                     static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i),
                     m_externalControlComponent->getOscAddr(
                         static_cast<UmsciExternalControlComponent::UpmixMidiParam>(i)));
+            checkOscPortConflict();
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
         m_externalControlComponent.reset();
         m_messageBox.reset();
     }));
+}
+
+void MainComponent::showCustomParameterSettings()
+{
+    m_messageBox = std::make_unique<juce::AlertWindow>(
+        "Custom parameter control...",
+        "Configure custom OSC parameter controls.",
+        juce::MessageBoxIconType::NoIcon);
+
+    m_customParamConfigDialog = std::make_unique<CustomParameterControlConfigDialog>();
+    m_customParamConfigDialog->setConfig(m_customParamConfig);
+    m_messageBox->addCustomComponent(m_customParamConfigDialog.get());
+
+    m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
+    m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
+        if (returnValue == 1)
+        {
+            m_customParamConfig = m_customParamConfigDialog->getConfig();
+
+            if (m_customParamOscController)
+            {
+                m_customParamOscController->disconnect();
+                m_customParamOscController->setConfig(m_customParamConfig);
+                if (m_connectionToggleButton && m_connectionToggleButton->getToggleState()
+                    && !m_customParamConfig.parameters.empty())
+                {
+                    if (m_customParamOscController->connect())
+                        m_customParamOscController->pollAllValues();
+                }
+            }
+
+            if (m_customParamControlComponent)
+                m_customParamControlComponent->setCustomConfig(m_customParamConfig);
+
+            checkOscPortConflict();
+
+            if (m_config)
+                m_config->triggerConfigurationDump();
+
+            resized();
+        }
+        m_customParamConfigDialog.reset();
+        m_messageBox.reset();
+    }));
+}
+
+void MainComponent::checkOscPortConflict()
+{
+    if (!m_oscController)
+        return;
+
+    const auto upmixPort  = m_oscController->getPort();
+    const auto customPort = m_customParamConfig.oscReceivePort;
+
+    if (upmixPort != 0 && customPort != 0 && upmixPort == customPort)
+    {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            "OSC Port Conflict",
+            "The OSC receive port for upmix control (" + juce::String(upmixPort) + ") "
+            "is the same as the receive port for custom parameter control (" + juce::String(customPort) + "). "
+            "OSC messages may be received by the wrong handler.\n"
+            "Please assign different ports in \"External control...\" or \"Custom parameters...\".");
+    }
 }
 
 void MainComponent::applyUpmixParamValue(UmsciExternalControlComponent::UpmixMidiParam param,
