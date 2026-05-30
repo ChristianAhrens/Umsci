@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.5.0] 2026-05-30
+### Added
+- Added optional custom external parameter controls via OSC
+
+### Changed
+- Changed submodule JUCE to tag 8.0.13
+- Changed github pages deployment to dedicated product page and deploy doxygen to subdirectory
+
+### Fixed
+- Fixed app liquid-glass icons to comply with macOS/iOS/iPadOS 26 mask (finally make use of .icon assets supported by JUCE 8.0.13)
+
 ## [0.4.2] 2026-05-13
 ### Added
 
