@@ -5,7 +5,7 @@ See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) f
 
 <img src="Resources/AppStore/TestFlightQRCode.png" alt="TestFlight QR Code" width="15%">
 
-Full code documentation available at [![Documentation](https://img.shields.io/badge/docs-doxygen-blue)](https://ChristianAhrens.github.io/Umsci/)
+Full code documentation available at [![Documentation](https://img.shields.io/badge/docs-doxygen-blue)](https://ChristianAhrens.github.io/Umsci/doxygen/)
 
 <a name="toc" />
 
