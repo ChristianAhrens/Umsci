@@ -55,9 +55,10 @@ CustomParameterControlConfigDialog::CustomParameterControlConfigDialog()
     // Add button
     m_addButton = std::make_unique<juce::TextButton>("+ Add parameter");
     m_addButton->onClick = [this]() {
+        m_config = getConfig();
         CustomParameterEntry newEntry;
-        newEntry.name       = "Parameter " + juce::String(int(m_paramRows.size()) + 1);
-        newEntry.oscAddress = "/param/" + juce::String(int(m_paramRows.size()));
+        newEntry.name       = "Parameter " + juce::String(int(m_config.parameters.size()) + 1);
+        newEntry.oscAddress = "/param/" + juce::String(int(m_config.parameters.size()));
         m_config.parameters.push_back(newEntry);
         rebuildParameterRows();
         resized();
