@@ -4,12 +4,16 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] 2026-05-30
 ### Added
+- Added optional custom external parameter controls via OSC
 
 ### Changed
+- Changed submodule JUCE to tag 8.0.13
+- Changed github pages deployment to dedicated product page and deploy doxygen to subdirectory
 
 ### Fixed
+- Fixed app liquid-glass icons to comply with macOS/iOS/iPadOS 26 mask (finally make use of .icon assets supported by JUCE 8.0.13)
 
 ## [0.4.2] 2026-05-13
 ### Added
