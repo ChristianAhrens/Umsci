@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.3.0] 2026-04-12
 ### Added
-- Added dbpr project panel: load a d&b audiotechnik .dbpr project file via a floating side panel, compare its data against the connected DS100, and sync or clear it with dedicated buttons
+- Added dbpr project panel: load a d&b audiotechnik .dbpr project file via a floating side panel, compare its data against the connected Soundscape processing engine, and sync or clear it with dedicated buttons
 
 ### Changed
 - Changed upmix indicator snapshot store/recall to a dedicated floating side panel, consistent with the dbpr panel design and accessible at all times without opening a menu

@@ -46,11 +46,11 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
 
 ## Overview
 
-Umsci is a utility that connects to a **d&b Soundscape** signal processing engine (DS100) via the OCA/OCP.1 network protocol and lets an operator visualise and control soundobject positions in real time.
+Umsci is a utility that connects to a **d&b Soundscape** processing engine (DS100, DS100M, DS100D, DS110 or vCore) via the OCA/OCP.1 network protocol and lets an operator visualise and control soundobject positions in real time.
 
-Its primary focus is the specific workflow of mapping an external **upmix renderer's** virtual output channels onto the physical room layout managed by the DS100.  An upmix renderer (e.g. a DAW plug-in or hardware processor) takes a stereo or surround bus and produces a set of spatialised output channels that should be fed into consecutive DS100 sound objects.  Umsci gives the operator a graphical handle on that block of sound objects, letting them rotate, scale, stretch and shift the entire virtual speaker ring to best match the physical loudspeaker array — while watching how the actual DS100 positions track the intended geometry.
+Its primary focus is the specific workflow of mapping an external **upmix renderer's** virtual output channels onto the physical room layout managed by the processing engine.  An upmix renderer (e.g. a DAW plug-in or hardware processor) takes a stereo or surround bus and produces a set of spatialised output channels that should be fed into consecutive sound objects on the processing engine.  Umsci gives the operator a graphical handle on that block of sound objects, letting them rotate, scale, stretch and shift the entire virtual speaker ring to best match the physical loudspeaker array — while watching how the actual processing-engine positions track the intended geometry.
 
-The application subscribes to all soundobject and loudspeaker position values published by the DS100 and renders them on a shared 2D view that blends three overlaid layers: the physical loudspeaker layout (read-only), the live soundobject positions (interactive), and the upmix indicator control ring.
+The application subscribes to all soundobject and loudspeaker position values published by the processing engine and renders them on a shared 2D view that blends three overlaid layers: the physical loudspeaker layout (read-only), the live soundobject positions (interactive), and the upmix indicator control ring.
 
 Its source code and prebuilt binaries are made publicly available to enable interested users to experiment, extend, and create their own adaptations.
 
@@ -61,7 +61,7 @@ Use what is provided here at your own risk!
 
 ## Getting started
 
-This walkthrough assumes you have a **d&b Soundscape DS100** signal processing engine reachable on your local network and an upmix renderer (DAW plug-in, hardware processor, or similar) feeding output channels into consecutive DS100 sound objects.  If you only want to monitor or edit soundobject positions without the upmix workflow, steps 3 and 4 are still fully relevant — simply ignore the upmix-specific parts.
+This walkthrough assumes you have a **d&b Soundscape** processing engine (DS100, DS100M, DS100D, DS110 or vCore) reachable on your local network and an upmix renderer (DAW plug-in, hardware processor, or similar) feeding output channels into consecutive sound objects on the processing engine.  If you only want to monitor or edit soundobject positions without the upmix workflow, steps 3 and 4 are still fully relevant — simply ignore the upmix-specific parts.
 
 ---
 
@@ -73,7 +73,7 @@ Open the **Settings menu** by clicking the gear icon (⚙) in the upper-left cor
 
 ![Showreel.003.png](Resources/Documentation/Showreel/Showreel.003.png "Connection Settings")
 
-Enter the **IP address** of your DS100, leave the **port** at the default `50014`, and set the **IOsize** to match your DS100 license (`64x64` for L, `128x64` for XL) — a mismatched IOsize will prevent the connection from completing.  The *Discovered devices* drop-down lists DS100 devices found automatically via mDNS; selecting one fills in the address and port.
+Enter the **IP address** of your processing engine, leave the **port** at the default `50014`, and set the **IOsize** to match its license (`64x64` for L, `128x64` for XL) — a mismatched IOsize will prevent the connection from completing.  The *Discovered devices* drop-down lists Soundscape processing engines found automatically via mDNS; selecting one fills in the address and port.
 
 Press **Ok** to store the settings.  See [Connection settings](#connection-settings) for the full field reference.
 
@@ -89,11 +89,11 @@ Click the **connection toggle button** in the upper-right corner of the main win
 
 Once the button settles into the *connected* state the three scene layers populate automatically:
 
-- **Loudspeaker icons** appear at the positions stored in the DS100 (bottom layer, display-only).
+- **Loudspeaker icons** appear at the positions stored in the processing engine (bottom layer, display-only).
 - **Soundobject circles** appear at their live positions and can be dragged (middle layer).
 - The **upmix indicator ring** appears if a format other than *None* is selected (top layer).
 
-If the button does not reach the connected state, double-check the IP address, port, and IOsize values from Step 1.  A mismatch between the IOsize and the actual DS100 license is the most common cause.
+If the button does not reach the connected state, double-check the IP address, port, and IOsize values from Step 1.  A mismatch between the IOsize and the actual processing-engine license is the most common cause.
 
 ---
 
@@ -101,7 +101,7 @@ If the button does not reach the connected state, double-check the IP address, p
 
 ### Step 3 — Read the scene
 
-The main view is a shared 2D top-down representation of the physical room as configured in the DS100.  All coordinates use the DS100's normalised 0–1 space (X = left → right, Y = front → back).
+The main view is a shared 2D top-down representation of the physical room as configured in the processing engine.  All coordinates use the processing engine's normalised 0–1 space (X = left → right, Y = front → back).
 
 ![Showreel.005.png](Resources/Documentation/Showreel/Showreel.005.png "Scene annotated")
 
@@ -109,10 +109,10 @@ Key things to notice:
 
 | Element | What it tells you |
 |:--------|:-----------------|
-| Loudspeaker icons | The physical layout of the room as seen by the DS100. They do not move unless you change the DS100 configuration elsewhere. |
-| Soundobject circles | Live positions of all DS100 inputs.  Their colour matches the chosen *Control colour*. |
+| Loudspeaker icons | The physical layout of the room as seen by the processing engine. They do not move unless you change the processing-engine configuration elsewhere. |
+| Soundobject circles | Live positions of all processing-engine inputs.  Their colour matches the chosen *Control colour*. |
 | Upmix ring arc | The idealised geometry for the selected immersive format (Stereo → 9.1 → 9.1.6), centred at the ring's transform-adjusted origin. |
-| Coloured dots on the ring (Live mode) | Actual DS100 positions for the upmix channels.  A flashing dot means Umsci just sent an update and is waiting for the DS100 echo. |
+| Coloured dots on the ring (Live mode) | Actual processing-engine positions for the upmix channels.  A flashing dot means Umsci just sent an update and is waiting for the processing-engine echo. |
 
 Use the mouse wheel or a trackpad/touch pinch to zoom, and a modifier key + scroll to pan — see [Zoom and pan](#zoom-and-pan) for all input options.
 
@@ -129,7 +129,7 @@ The upmix indicator ring is the core workflow tool.  This step walks through con
 Open **Settings → Upmix control settings…**.  The two settings that matter most at first are:
 
 - **Channel format** — the immersive format your renderer produces (e.g. `7.1.4` for a 12-channel Atmos bed).
-- **First soundobject** — the 1-based DS100 input channel where your renderer's output starts (e.g. `17` if the renderer occupies channels 17–28).
+- **First soundobject** — the 1-based processing-engine input channel where your renderer's output starts (e.g. `17` if the renderer occupies channels 17–28).
 
 Start with **Control mode** set to *Manual* so you can preview adjustments before committing them, and leave **Indicator shape** at *Circle* unless your room is clearly rectangular.  See [Upmix control settings](#upmix-control-settings) for all options.
 
@@ -145,14 +145,14 @@ Use the five interactive handles on the ring to match the idealised geometry to 
 
 #### 4c — Commit the positions (Manual mode) or work live
 
-- **Manual mode:** drag the handles to the desired geometry, then **double-click** the ring or a handle to push the positions to the DS100.  The soundobject circles in the middle layer will jump to match.
-- **Live mode:** every handle drag immediately sends updated positions to the DS100.  The coloured dots on the ring show the DS100's echoed-back positions tracking your adjustments in real time.
+- **Manual mode:** drag the handles to the desired geometry, then **double-click** the ring or a handle to push the positions to the processing engine.  The soundobject circles in the middle layer will jump to match.
+- **Live mode:** every handle drag immediately sends updated positions to the processing engine.  The coloured dots on the ring show the processing engine's echoed-back positions tracking your adjustments in real time.
 
 See [Control modes](#control-modes) for a full comparison.
 
 ![Showreel.008.png](Resources/Documentation/Showreel/Showreel.008.png "Upmix manual vs live")
 
-Once the ring is aligned and positions are committed, Umsci will hold the subscriptions to all DS100 position values.  Any external position change (from a third-party controller, automation, or another Umsci instance) will be reflected live in the scene view. Any conflicting changes will set the upmix indicator back to flashing state to visualise that it is not aligned.
+Once the ring is aligned and positions are committed, Umsci will hold the subscriptions to all processing-engine position values.  Any external position change (from a third-party controller, automation, or another Umsci instance) will be reflected live in the scene view. Any conflicting changes will set the upmix indicator back to flashing state to visualise that it is not aligned.
 
 ---
 
@@ -162,11 +162,11 @@ Once the ring is aligned and positions are committed, Umsci will hold the subscr
 
 ### Upmix monitoring and alignment
 
-The primary use case: an external upmix renderer outputs N channels (e.g. 16 channels for a 7.1.4 Atmos bed) into DS100 sound objects starting at a configurable channel index.  Umsci shows the idealised ring geometry for the chosen channel format (Stereo through 9.1.6) superimposed over the physical loudspeaker layout.  The operator can interactively adjust rotation, horizontal and vertical scale (independently for the floor and height rings), front/rear angular stretch and centre offset to align the virtual ring with the available speakers, and in *Live* mode the DS100 positions are updated in real time as the handles are dragged.
+The primary use case: an external upmix renderer outputs N channels (e.g. 16 channels for a 7.1.4 Atmos bed) into sound objects on the processing engine starting at a configurable channel index.  Umsci shows the idealised ring geometry for the chosen channel format (Stereo through 9.1.6) superimposed over the physical loudspeaker layout.  The operator can interactively adjust rotation, horizontal and vertical scale (independently for the floor and height rings), front/rear angular stretch and centre offset to align the virtual ring with the available speakers, and in *Live* mode the processing-engine positions are updated in real time as the handles are dragged.
 
 ### General soundobject position monitoring and editing
 
-All DS100 sound objects (up to 64 / 128 depending on the M / L / XL license installed in the signal engine) are rendered as draggable circles.  Even without the upmix focus, Umsci provides a quick spatial overview of the full object set and allows individual objects to be repositioned from any connected device.
+All sound objects on the processing engine (up to 64 / 128 depending on the M / L / XL license installed) are rendered as draggable circles.  Even without the upmix focus, Umsci provides a quick spatial overview of the full object set and allows individual objects to be repositioned from any connected device.
 
 ### Kiosk / embedded control surface
 
@@ -174,7 +174,7 @@ Using the `--noconfigui` and `--noupdates` command-line flags, Umsci can be lock
 
 ### iOS / iPadOS mobile control
 
-Umsci runs natively on iOS/iPadOS.  The full touch interaction model — including two-finger pinch zoom on the scene view — is supported.  An iPad can act as a wireless remote control surface for a DS100 on the same network, using Zeroconf/mDNS auto-discovery to find the device without entering an IP address manually.
+Umsci runs natively on iOS/iPadOS.  The full touch interaction model — including two-finger pinch zoom on the scene view — is supported.  An iPad can act as a wireless remote control surface for a Soundscape processing engine on the same network, using Zeroconf/mDNS auto-discovery to find the device without entering an IP address manually.
 
 ---
 
@@ -192,7 +192,7 @@ The main view shows three transparent layers stacked on top of each other — al
 
 | Layer | Content |
 |:------|:--------|
-| **Bottom** | Loudspeaker positions read from the DS100 (SVG icons, display only). |
+| **Bottom** | Loudspeaker positions read from the processing engine (SVG icons, display only). |
 | **Middle** | Soundobject positions, updated live via OCP.1. Draggable in Live mode. |
 | **Top** | Upmix indicator ring with interactive transform handles (see below). |
 
@@ -219,7 +219,7 @@ Each ring drag commits to a single mode (rotate **or** scale) on the first few p
 
 Double-clicking a handle resets that parameter to its default value.
 
-When *Live mode* is active, coloured dots show the actual DS100 source positions for the upmix channels overlaid on the ideal ring, allowing the operator to see alignment errors and oscillations in real time.  A flashing dot indicates that the DS100 is echoing back position updates (normal behaviour during active control).
+When *Live mode* is active, coloured dots show the actual processing-engine source positions for the upmix channels overlaid on the ideal ring, allowing the operator to see alignment errors and oscillations in real time.  A flashing dot indicates that the processing engine is echoing back position updates (normal behaviour during active control).
 
 <a name="zoom-and-pan" />
 
@@ -240,12 +240,12 @@ The zoom level is shared across all three layers so they stay aligned.
 
 #### Control modes
 
-The *Control mode* setting (in *Upmix control settings*) governs how soundobject position changes originating from Umsci are sent to the DS100:
+The *Control mode* setting (in *Upmix control settings*) governs how soundobject position changes originating from Umsci are sent to the processing engine:
 
 | Mode | Behaviour |
 |:-----|:----------|
-| **Manual (double-click to apply)** | Dragging or adjusting handles updates the on-screen geometry locally. The new positions are only sent to the DS100 when the user double-clicks the ring or handle. Use this mode when you want to preview a new layout before committing it. |
-| **Live (apply changes immediately)** | Every position change is sent to the DS100 in real time as the user drags. DS100 echo-backs are automatically absorbed so they do not produce spurious visual feedback. |
+| **Manual (double-click to apply)** | Dragging or adjusting handles updates the on-screen geometry locally. The new positions are only sent to the processing engine when the user double-clicks the ring or handle. Use this mode when you want to preview a new layout before committing it. |
+| **Live (apply changes immediately)** | Every position change is sent to the processing engine in real time as the user drags. Echo-backs from the processing engine are automatically absorbed so they do not produce spurious visual feedback. |
 
 <a name="side-panels" />
 
@@ -259,7 +259,7 @@ Two collapsible side panels live at the left edge of the main window and are acc
 
 #### dbpr project panel
 
-The dbpr panel (lower of the two) lets you load a **d&b audiotechnik software project file** (`.dbpr`) and use it as a reference for the currently connected DS100.
+The dbpr panel (lower of the two) lets you load a **d&b audiotechnik software project file** (`.dbpr`) and use it as a reference for the currently connected processing engine.
 
 **Loading a project**
 
@@ -274,19 +274,19 @@ Click the **Load** button (folder icon) to open a file browser and select a `.db
 
 A condensed summary is shown in the panel, e.g. *4 CMP · 52 SPK · 48 SO · 8 FG*.
 
-> **Note:** Umsci only supports projects with a single DS100.  Projects that reference multiple device IDs, or that contain no En-Scene matrix inputs, are rejected with an error message.
+> **Note:** Umsci only supports projects with a single Soundscape processing engine.  Projects that reference multiple device IDs, or that contain no En-Scene matrix inputs, are rejected with an error message.
 
 **Comparing project data to the device**
 
-Once a project is loaded and a DS100 is connected, Umsci continuously compares the project data against the values reported by the device.  If any mismatch is detected, the panel border and a sync-problem icon next to the title begin to **flash** to draw attention.
+Once a project is loaded and a processing engine is connected, Umsci continuously compares the project data against the values reported by the device.  If any mismatch is detected, the panel border and a sync-problem icon next to the title begin to **flash** to draw attention.
 
 **Syncing project data to the device**
 
-Click the **Sync** button (upload icon) to push the loaded project data to the connected DS100 in a single step.  After a successful sync the flashing stops and the panel returns to its steady-state appearance.
+Click the **Sync** button (upload icon) to push the loaded project data to the connected processing engine in a single step.  After a successful sync the flashing stops and the panel returns to its steady-state appearance.
 
 **Clearing project data**
 
-Click the **Clear** button (trash icon) to discard all loaded project data.  The panel returns to the empty state.  The DS100 is not modified by this action.
+Click the **Clear** button (trash icon) to discard all loaded project data.  The panel returns to the empty state.  The processing engine is not modified by this action.
 
 **Persistence**
 
@@ -307,7 +307,7 @@ The snapshot panel (upper of the two) stores and recalls a single upmix transfor
 | Button | Action |
 |:-------|:-------|
 | **Store** | Captures the current upmix transform into the panel.  The six parameter values are displayed as a summary. |
-| **Recall** | Applies the stored snapshot to the upmix indicator.  In *Live* mode the positions are immediately sent to the DS100. |
+| **Recall** | Applies the stored snapshot to the upmix indicator.  In *Live* mode the positions are immediately sent to the processing engine. |
 
 The snapshot is held in memory for the session; it is not persisted to the config file.
 
@@ -340,9 +340,9 @@ The control format determines how many channels the upmix ring has and which spe
 
 Opens the *Control connection settings* dialog.  Configure:
 
-- **OCP.1 IP** — the network address of the d&b Soundscape signal engine (DS100).  On iOS/iPadOS the *Discovered devices* combo box automatically lists DS100 devices found via Zeroconf/mDNS on the local network; selecting one fills in the IP and port fields automatically.
+- **OCP.1 IP** — the network address of the d&b Soundscape processing engine.  On iOS/iPadOS the *Discovered devices* combo box automatically lists Soundscape processing engines found via Zeroconf/mDNS on the local network; selecting one fills in the IP and port fields automatically.
 - **OCP.1 port** — default `50014`.
-- **OCP.1 IOsize** — the input × output channel count matching the software license installed in the DS100 signal engine.  Enter as `<inputs>x<outputs>`, for example `64x64` for an L license or `128x64` for an XL license.  This controls how many soundobject and loudspeaker subscriptions Umsci creates.
+- **OCP.1 IOsize** — the input × output channel count matching the software license installed in the processing engine.  Enter as `<inputs>x<outputs>`, for example `64x64` for an L license or `128x64` for an XL license.  This controls how many soundobject and loudspeaker subscriptions Umsci creates.
 
 > **Beware:** The IOsize defines how many channels are expected to be available on the signal engine, and Umsci will not finish the connection and subscription cycle if this expectation is not met by the actual available device!
 
@@ -361,10 +361,10 @@ See e.g.
   - [Dolby Atmos speaker setup guides](https://www.dolby.com/about/support/guide/speaker-setup-guides/)
 - **Control mode** — see [Control modes](#control-modes) above.
 - **Indicator shape** — *Circle* (default) draws the upmix ring as a circular arc; *Rectangle* draws it as a rounded rectangle path.  Choose based on which shape better matches the physical loudspeaker layout of the venue.  In rectangle mode, horizontal and vertical scale can be adjusted independently for both the floor and height rings.
-- **First soundobject** — the 1-based DS100 input channel index where the upmix renderer's output starts.  If the upmix renderer occupies channels 17–32, set this to `17`.  Subsequent channels are implied consecutively up to the channel count of the selected format.
-- **Visible soundobjects** — *All* shows every soundobject in the scene; *Upmix controlled only* hides all soundobjects that are not part of the current upmix channel block, reducing visual clutter when the DS100 carries many other sources.
+- **First soundobject** — the 1-based processing-engine input channel index where the upmix renderer's output starts.  If the upmix renderer occupies channels 17–32, set this to `17`.  Subsequent channels are implied consecutively up to the channel count of the selected format.
+- **Visible soundobjects** — *All* shows every soundobject in the scene; *Upmix controlled only* hides all soundobjects that are not part of the current upmix channel block, reducing visual clutter when the processing engine carries many other sources.
 - **LFE channel** — when enabled, the LFE channel is rendered as a positioned sound object at the centre of the ring (alongside the centre channel), making it visible and draggable in the scene view.  When disabled, the LFE channel is treated as directionless and omitted from the ring.
-- **Level metering** — when enabled, a transparent radial level meter overlay is drawn on top of the upmix ring.  Bar lengths for each channel are derived from the DS100 `MatrixInput_LevelMeterPostMute` OCP.1 object and normalised across the −120 dB … 0 dBFS range.  A 2-second peak-hold outline is shown in addition to the filled level polygon.  The overlay repaints at ≤20 fps and only when new meter data has arrived, so it does not impose unnecessary load on the render thread.
+- **Level metering** — when enabled, a transparent radial level meter overlay is drawn on top of the upmix ring.  Bar lengths for each channel are derived from the processing engine's `MatrixInput_LevelMeterPostMute` OCP.1 object and normalised across the −120 dB … 0 dBFS range.  A 2-second peak-hold outline is shown in addition to the filled level polygon.  The overlay repaints at ≤20 fps and only when new meter data has arrived, so it does not impose unnecessary load on the render thread.
 
 <a name="external-control-midi" />
 
@@ -395,7 +395,7 @@ Click **Learn** on a row and move a MIDI controller to capture its CC number and
 
 Changes are applied only when **Ok** is pressed; **Cancel** discards any edits.  Assignments are persisted in the XML configuration file.
 
-> **Note:** In *Live* mode, MIDI parameter changes are immediately forwarded to the DS100 as OCP.1 position updates.  DS100 echo-backs are automatically suppressed so that they do not cause spurious indicator flashing.
+> **Note:** In *Live* mode, MIDI parameter changes are immediately forwarded to the processing engine as OCP.1 position updates.  Echo-backs from the processing engine are automatically suppressed so that they do not cause spurious indicator flashing.
 
 
 <a name="platform-support" />
@@ -453,7 +453,7 @@ UmsciControlComponent
 ```
 
 All components except `UmsciLevelMeterPaintComponent` inherit `UmsciPaintNControlComponentBase` which provides:
-- Coordinate transforms between pixel space and real-world DS100 coordinates (`GetPointForRealCoordinate` / `GetRealCoordinateForPoint`).
+- Coordinate transforms between pixel space and real-world processing-engine coordinates (`GetPointForRealCoordinate` / `GetRealCoordinateForPoint`).
 - Zoom/pan state (`m_zoomFactor`, `m_zoomPanOffset`) driven by mouse wheel, trackpad pinch, and on iOS a native `UIPinchGestureRecognizer` (see below).
 - A `setZoom()` / `resetZoom()` API so that `UmsciControlComponent` can keep all three layers synchronised via the `onViewportZoomChanged` callback.
 - A virtual `onZoomChanged()` hook that derived classes override to re-trigger their prerender pass before repaint.
@@ -540,7 +540,7 @@ UmsciUpmixIndicatorPaintNControlComponent::notifyTransformChanged()
   └── fires onTransformChanged → config dump
 ```
 
-The `m_inhibitFlashCount` counter absorbs OCP.1 echo-backs (the DS100 reflects each `SetObjectValue` back as a notification).  Without it, each echo would call `updateFlashState()`, which detects a mismatch between rendered and live positions and starts the flash animation — producing visible flicker during MIDI control.
+The `m_inhibitFlashCount` counter absorbs OCP.1 echo-backs (the processing engine reflects each `SetObjectValue` back as a notification).  Without it, each echo would call `updateFlashState()`, which detects a mismatch between rendered and live positions and starts the flash animation — producing visible flicker during MIDI control.
 
 MIDI assignments are stored as `JUCEAppBasics::MidiCommandRangeAssignment` objects and serialised to hex strings in the XML config under the `<ExternalControlConfig>` element.
 
@@ -575,6 +575,6 @@ UmsciDbprProjectComponent::setProjectData()  — updates panel summary, triggers
 
 The `dbpr::ProjectData` struct aggregates all four data maps and supports round-trip serialisation to a compact pipe-delimited string, which is written to the XML config under `<DbprProjectData>` so that the data survives restarts without re-reading the original `.dbpr` file.
 
-**Mismatch detection** works by comparing the `SpeakerPositionData` values in the loaded project against the loudspeaker positions continuously subscribed from the DS100 via OCP.1.  A tolerance-checked element-wise comparison is run on the message thread whenever either the project data or the live device data changes.  On mismatch, `UmsciDbprProjectComponent::setMismatchFlashing(true)` is called, which starts a 500 ms `juce::Timer` that toggles the border and icon visibility on each tick.
+**Mismatch detection** works by comparing the `SpeakerPositionData` values in the loaded project against the loudspeaker positions continuously subscribed from the processing engine via OCP.1.  A tolerance-checked element-wise comparison is run on the message thread whenever either the project data or the live device data changes.  On mismatch, `UmsciDbprProjectComponent::setMismatchFlashing(true)` is called, which starts a 500 ms `juce::Timer` that toggles the border and icon visibility on each tick.
 
-**Sync** iterates over the loaded `SpeakerPositionDataMap` and `CoordinateMappingDataMap` and sends the corresponding OCP.1 `SetValue` commands to the DS100 via `DeviceController`.  After the last command is enqueued the mismatch comparator re-runs; if all values now match the flashing stops automatically.
+**Sync** iterates over the loaded `SpeakerPositionDataMap` and `CoordinateMappingDataMap` and sends the corresponding OCP.1 `SetValue` commands to the processing engine via `DeviceController`.  After the last command is enqueued the mismatch comparator re-runs; if all values now match the flashing stops automatically.
