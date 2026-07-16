@@ -339,6 +339,7 @@ private:
     std::unique_ptr<UmsciZeroconfDiscoverComboComponent> m_zeroconfDiscoverComboComponent;
     std::unique_ptr<UmsciExternalControlComponent>  m_externalControlComponent;
     std::unique_ptr<class CustomParameterControlConfigDialog> m_customParamConfigDialog;
+    std::unique_ptr<class UmsciUpmixSettingsComponent> m_upmixSettingsComponent;
 
     juce::Colour                                    m_controlColour = juce::Colours::forestgreen;
 

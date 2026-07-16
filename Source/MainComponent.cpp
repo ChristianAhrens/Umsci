@@ -27,6 +27,7 @@
 
 #include "AboutComponent.h"
 #include "UmsciExternalControlComponent.h"
+#include "UmsciUpmixSettingsComponent.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 #include "CustomParameterControl/CustomParameterControlConfigDialog.h"
 
@@ -1019,6 +1020,8 @@ void MainComponent::showUpmixSettings()
         "Configure the upmix overlay control settings.",
         juce::MessageBoxIconType::NoIcon);
 
+    m_upmixSettingsComponent = std::make_unique<UmsciUpmixSettingsComponent>();
+
     juce::StringArray formatItems;
     int currentFormatIndex = 0;
     for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
@@ -1027,101 +1030,44 @@ void MainComponent::showUpmixSettings()
         if (m_settingsItems[i].second == 1)
             currentFormatIndex = i - UmsciSettingsOption::ControlFormat_First;
     }
-    m_messageBox->addComboBox("Control format", formatItems, "Channel format");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
-        combo->setSelectedItemIndex(currentFormatIndex, juce::dontSendNotification);
+    m_upmixSettingsComponent->setControlFormatItems(formatItems, currentFormatIndex);
+    m_upmixSettingsComponent->setLiveMode(m_controlComponent->getUpmixLiveMode());
+    m_upmixSettingsComponent->setShapeIsRectangle(
+        m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle);
+    m_upmixSettingsComponent->setVisualizationIsSolidBar(
+        m_controlComponent->getUpmixVisualization() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar);
+    m_upmixSettingsComponent->setStartSoundobjectId(m_controlComponent->getUpmixSourceStartId());
+    m_upmixSettingsComponent->setShowAllSources(m_controlComponent->getShowAllSources());
+    m_upmixSettingsComponent->setShowLfeChannel(m_controlComponent->getShowDirectionlessChannel());
+    m_upmixSettingsComponent->setShowLevelMeter(m_controlComponent->getShowLevelMeter());
+    m_upmixSettingsComponent->setShowChannelLabels(m_controlComponent->getShowChannelLabels());
 
-    juce::StringArray liveModeItems;
-    liveModeItems.add("Manual (double-click to apply)");
-    liveModeItems.add("Live (apply changes immediately)");
-    m_messageBox->addComboBox("Live mode", liveModeItems, "Control mode");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
-        combo->setSelectedItemIndex(m_controlComponent->getUpmixLiveMode() ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray shapeItems;
-    shapeItems.add("Circle");
-    shapeItems.add("Rectangle");
-    m_messageBox->addComboBox("Shape", shapeItems, "Indicator shape");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
-        combo->setSelectedItemIndex(m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray visualizationItems;
-    visualizationItems.add("Dots & Line");
-    visualizationItems.add("Solid Bar");
-    m_messageBox->addComboBox("Visualization", visualizationItems, "Indicator visualization");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Visualization"))
-        combo->setSelectedItemIndex(m_controlComponent->getUpmixVisualization() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    m_messageBox->addTextEditor("Start soundobject ID",
-        juce::String(m_controlComponent->getUpmixSourceStartId()),
-        "First soundobject");
-
-    juce::StringArray showSourcesItems;
-    showSourcesItems.add("All");
-    showSourcesItems.add("Upmix controlled only");
-    m_messageBox->addComboBox("Show sources", showSourcesItems, "Visible soundobjects");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
-                                    juce::dontSendNotification);
-
-    juce::StringArray lfeItems;
-    lfeItems.add("Disregard");
-    lfeItems.add("Position with bed");
-    m_messageBox->addComboBox("LFE channel", lfeItems, "LFE / positionless channel");
-    if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowDirectionlessChannel() ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray levelMeterItems;
-    levelMeterItems.add("Off");
-    levelMeterItems.add("On");
-    m_messageBox->addComboBox("Level metering", levelMeterItems, "Level metering");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowLevelMeter() ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray channelLabelsItems;
-    channelLabelsItems.add("Off");
-    channelLabelsItems.add("On");
-    m_messageBox->addComboBox("Channel labels", channelLabelsItems, "Channel labels");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Channel labels"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowChannelLabels() ? 1 : 0,
-                                    juce::dontSendNotification);
+    m_messageBox->addCustomComponent(m_upmixSettingsComponent.get());
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
-            if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
-                handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
-            if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
-                m_controlComponent->setUpmixLiveMode(combo->getSelectedItemIndex() == 1);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
-                m_controlComponent->setUpmixShape(combo->getSelectedItemIndex() == 1
-                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
-                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Visualization"))
-                m_controlComponent->setUpmixVisualization(combo->getSelectedItemIndex() == 1
-                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar
-                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine);
-            auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
-            m_controlComponent->setUpmixSourceStartId(startId);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
-                m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
-            if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
-                m_controlComponent->setShowDirectionlessChannel(combo->getSelectedItemIndex() == 1);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
-                m_controlComponent->setShowLevelMeter(combo->getSelectedItemIndex() == 1);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Channel labels"))
-                m_controlComponent->setShowChannelLabels(combo->getSelectedItemIndex() == 1);
+            handleSettingsControlFormatMenuResult(
+                UmsciSettingsOption::ControlFormat_First + m_upmixSettingsComponent->getControlFormatIndex());
+            m_controlComponent->setUpmixLiveMode(m_upmixSettingsComponent->getLiveMode());
+            m_controlComponent->setUpmixShape(m_upmixSettingsComponent->getShapeIsRectangle()
+                ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
+                : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
+            m_controlComponent->setUpmixVisualization(m_upmixSettingsComponent->getVisualizationIsSolidBar()
+                ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar
+                : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine);
+            m_controlComponent->setUpmixSourceStartId(m_upmixSettingsComponent->getStartSoundobjectId());
+            m_controlComponent->setShowAllSources(m_upmixSettingsComponent->getShowAllSources());
+            m_controlComponent->setShowDirectionlessChannel(m_upmixSettingsComponent->getShowLfeChannel());
+            m_controlComponent->setShowLevelMeter(m_upmixSettingsComponent->getShowLevelMeter());
+            m_controlComponent->setShowChannelLabels(m_upmixSettingsComponent->getShowChannelLabels());
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
         m_messageBox.reset();
+        m_upmixSettingsComponent.reset();
     }));
 }
 

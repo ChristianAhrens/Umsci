@@ -249,6 +249,10 @@
             resource="0" file="Source/UmsciExternalControlComponent.cpp"/>
       <FILE id="qmNMPJ" name="UmsciExternalControlComponent.h" compile="0"
             resource="0" file="Source/UmsciExternalControlComponent.h"/>
+      <FILE id="uUmSC1" name="UmsciUpmixSettingsComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciUpmixSettingsComponent.cpp"/>
+      <FILE id="uUmSC2" name="UmsciUpmixSettingsComponent.h" compile="0"
+            resource="0" file="Source/UmsciUpmixSettingsComponent.h"/>
       <FILE id="mC1dXp" name="MidiController.cpp" compile="0" resource="0"
             file="Source/MidiController.cpp"/>
       <FILE id="mC1hYq" name="MidiController.h" compile="0" resource="0"
