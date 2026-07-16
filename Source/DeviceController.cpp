@@ -305,6 +305,7 @@ void DeviceController::CreateKnownONosMap()
         m_ROIsToDefsMap[RemoteObject::Positioning_SourcePosition][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Position(first);
         m_ROIsToDefsMap[RemoteObject::Positioning_SourceSpread][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Spread(first);
         m_ROIsToDefsMap[RemoteObject::Positioning_SourceDelayMode][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_DelayMode(first);
+        m_ROIsToDefsMap[RemoteObject::Positioning_SourceEnable][roa] = NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Enable(first);
         m_ROIsToDefsMap[RemoteObject::MatrixInput_Mute][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixInput_Mute(first);
         m_ROIsToDefsMap[RemoteObject::MatrixInput_Gain][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixInput_Gain(first);
         m_ROIsToDefsMap[RemoteObject::MatrixInput_Delay][roa] = NanoOcp1::DS100::dbOcaObjectDef_MatrixInput_Delay(first);
@@ -493,6 +494,8 @@ std::optional<std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>> DeviceController
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Spread(first));
     case RemoteObject::Positioning_SourceDelayMode:
         return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_DelayMode(first));
+    case RemoteObject::Positioning_SourceEnable:
+        return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Source_Enable(first));
     case RemoteObject::Positioning_SpeakerPosition:
         if (m_ocp1DeviceStackIdent >= 1) // newer oca revision needs newer oca object definition
             return std::unique_ptr<NanoOcp1::Ocp1CommandDefinition>(new NanoOcp1::DS100::dbOcaObjectDef_Positioning_Speaker_Position(first));
@@ -1036,6 +1039,7 @@ bool DeviceController::UpdateObjectValue(const RemoteObject::RemObjIdent roi, Na
     case RemoteObject::MatrixOutput_DelayEnable:
     case RemoteObject::MatrixOutput_EqEnable:
     case RemoteObject::Positioning_SourceDelayMode:
+    case RemoteObject::Positioning_SourceEnable:
     case RemoteObject::MatrixSettings_ReverbRoomId:
     case RemoteObject::FunctionGroup_Mode:
     case RemoteObject::ReverbInputProcessing_EqEnable:

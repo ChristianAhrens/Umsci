@@ -389,6 +389,7 @@ public:
 			MatrixOutput_LevelMeterPostMute,
 			Positioning_SourceSpread,				/**< spread remote object id. */
 			Positioning_SourceDelayMode,			/**< delaymode remote object id. */
+			Positioning_SourceEnable,				/**< En-Scene participation switch (OcaSwitch, positions 0=matrix-only, 1=En-Scene). */
 			Positioning_SourcePosition_XY,
 			Positioning_SourcePosition_X,
 			Positioning_SourcePosition_Y,
@@ -542,6 +543,8 @@ public:
 				return "Sound Object Spread";
 			case Positioning_SourceDelayMode:
 				return "Sound Object Delay Mode";
+			case Positioning_SourceEnable:
+				return "Sound Object En-Scene Enable";
 			case Positioning_SourcePosition:
 				return "Absolute Sound Object Position XYZ";
 			case Positioning_SourcePosition_XY:

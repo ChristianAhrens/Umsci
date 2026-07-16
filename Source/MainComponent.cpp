@@ -1910,10 +1910,11 @@ void MainComponent::checkDbprDeviceSync()
         return;
     }
 
-    const auto& projectData      = m_dbprController->getProjectData();
-    const auto& deviceNames      = m_controlComponent->getSourceNames();
-    const auto& devicePositions  = m_controlComponent->getSpeakerPositions();
-    const auto& deviceFgData     = m_controlComponent->getFunctionGroupData();
+    const auto& projectData        = m_dbprController->getProjectData();
+    const auto& deviceNames        = m_controlComponent->getSourceNames();
+    const auto& deviceEnableStates = m_controlComponent->getSourceEnableStates();
+    const auto& devicePositions    = m_controlComponent->getSpeakerPositions();
+    const auto& deviceFgData       = m_controlComponent->getFunctionGroupData();
 
     bool mismatch = false;
 
@@ -1928,6 +1929,23 @@ void MainComponent::checkDbprDeviceSync()
 
         if (!projectName.empty() || !deviceName.empty())
             if (projectName != deviceName) { mismatch = true; break; }
+    }
+
+    // ── MatrixInput En-Scene enable state ─────────────────────────────────────
+    // Compared only for inputs the device has already reported a value for;
+    // channels not yet received (e.g. right after connecting) are skipped
+    // rather than counted as a mismatch.
+    if (!mismatch)
+    {
+        for (auto const& kv : projectData.matrixInputData)
+        {
+            auto it = deviceEnableStates.find(static_cast<std::int16_t>(kv.first));
+            if (it == deviceEnableStates.end())
+                continue;
+
+            if (static_cast<std::uint16_t>(kv.second.inputMode) != it->second)
+                { mismatch = true; break; }
+        }
     }
 
     // ── Loudspeaker count and positions ──────────────────────────────────────
@@ -2123,15 +2141,21 @@ void MainComponent::syncProjectToDevice()
     const auto& projectData = m_dbprController->getProjectData();
     auto* dc = DeviceController::getInstance();
 
-    // MatrixInput channel names — all 128; unused → empty string
+    // MatrixInput channel names and En-Scene enable — all 128; unused → empty string / matrix-only.
+    // Positioning_SourceEnable is an OcaSwitch with positions 0 (matrix-only) and 1 (En-Scene),
+    // matching dbpr's MatrixInputs.InputMode encoding directly — no offset needed.
     for (int i = 1; i <= DeviceController::sc_MAX_INPUTS_CHANNELS; ++i)
     {
         auto it = projectData.matrixInputData.find(i);
         const auto name = (it != projectData.matrixInputData.end()) ? it->second.name : std::string{};
+        const auto inputMode = (it != projectData.matrixInputData.end())
+            ? static_cast<std::uint16_t>(it->second.inputMode) : std::uint16_t(0);
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::MatrixInput_ChannelName,
-            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
-            NanoOcp1::Variant(name)));
+            DeviceController::RemoteObject::MatrixInput_ChannelName, addr, NanoOcp1::Variant(name)));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::Positioning_SourceEnable, addr, NanoOcp1::Variant(inputMode)));
     }
 
     // Speaker positions — all 64; unused → all-zero 6DOF
