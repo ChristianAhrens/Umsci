@@ -723,6 +723,19 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent:
     return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
 }
 
+void UmsciControlComponent::setUpmixVisualization(UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization visualization)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setVisualization(visualization);
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization UmsciControlComponent::getUpmixVisualization() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getVisualization();
+    return UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine;
+}
+
 void UmsciControlComponent::setShowDirectionlessChannel(bool show)
 {
     if (m_upmixIndicatorPaintAndControlComponent)

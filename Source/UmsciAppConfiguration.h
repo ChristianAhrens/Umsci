@@ -180,6 +180,7 @@ public:
         UPMIXSOURCESTARTID,  ///< Integer: 1-based first DS100 channel for upmix inputs.
         UPMIXLIVEMODE,       ///< Boolean: follow live DS100 source positions.
         UPMIXSHAPE,          ///< String: "Circle" or "Rectangle".
+        UPMIXVISUALIZATION,  ///< String: "DotsAndLine" or "SolidBar".
         UPMIXSHOWALLSOURCES, ///< Boolean: render all sources or only upmix group.
         UPMIXSPREAD,              ///< Float: aggregate Positioning_SourceSpread value (0–1).
         UPMIXDELAYMODE,           ///< Integer: aggregate Positioning_SourceDelayMode (0=Off, 1=Tight, 2=Full).
@@ -204,6 +205,8 @@ public:
             return "UPMIXLIVEMODE";
         case UPMIXSHAPE:
             return "UPMIXSHAPE";
+        case UPMIXVISUALIZATION:
+            return "UPMIXVISUALIZATION";
         case UPMIXSHOWALLSOURCES:
             return "UPMIXSHOWALLSOURCES";
         case UPMIXSPREAD:

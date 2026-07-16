@@ -121,9 +121,35 @@ public:
             return IndicatorShape::Rectangle;
         else if (name == "Circle")
             return IndicatorShape::Circle;
-        
+
         jassertfalse; // unknown string passed as name
         return IndicatorShape::Circle;
+    }
+
+    /** @brief How the ring/rect indicator path itself is rendered — the current
+     *         per-channel-circle-and-line look, or a uniform-width solid bar with
+     *         no distinct per-channel markers. Orthogonal to `IndicatorShape`. */
+    enum class IndicatorVisualization { DotsAndLine, SolidBar };
+    static juce::String getVisualizationName(IndicatorVisualization visualization)
+    {
+        switch (visualization)
+        {
+        case IndicatorVisualization::SolidBar:
+            return "SolidBar";
+        case IndicatorVisualization::DotsAndLine:
+        default:
+            return "DotsAndLine";
+        }
+    }
+    static IndicatorVisualization getVisualizationForName(const juce::String& name)
+    {
+        if (name == "SolidBar")
+            return IndicatorVisualization::SolidBar;
+        else if (name == "DotsAndLine")
+            return IndicatorVisualization::DotsAndLine;
+
+        jassertfalse; // unknown string passed as name
+        return IndicatorVisualization::DotsAndLine;
     }
 
     UmsciUpmixIndicatorPaintNControlComponent();
@@ -186,6 +212,11 @@ public:
     /** @brief Sets the indicator ring geometry (circle or rectangle). */
     void setShape(IndicatorShape shape);
     IndicatorShape getShape() const;
+
+    //==============================================================================
+    /** @brief Sets how the ring itself is rendered — dots-and-line (default) or solid bar. */
+    void setVisualization(IndicatorVisualization visualization);
+    IndicatorVisualization getVisualization() const;
 
     //==============================================================================
     /** @brief When true, renders the LFE (directionless) channel as a circle positioned
@@ -368,6 +399,7 @@ private:
      *         spuriously start the flash timer. */
     int            m_inhibitFlashCount = 0;
     IndicatorShape m_shape      = IndicatorShape::Circle; ///< Current ring geometry.
+    IndicatorVisualization m_visualization = IndicatorVisualization::DotsAndLine; ///< Current ring render style.
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

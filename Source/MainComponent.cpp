@@ -1047,6 +1047,14 @@ void MainComponent::showUpmixSettings()
         combo->setSelectedItemIndex(m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle ? 1 : 0,
                                     juce::dontSendNotification);
 
+    juce::StringArray visualizationItems;
+    visualizationItems.add("Dots & Line");
+    visualizationItems.add("Solid Bar");
+    m_messageBox->addComboBox("Visualization", visualizationItems, "Indicator visualization");
+    if (auto* combo = m_messageBox->getComboBoxComponent("Visualization"))
+        combo->setSelectedItemIndex(m_controlComponent->getUpmixVisualization() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar ? 1 : 0,
+                                    juce::dontSendNotification);
+
     m_messageBox->addTextEditor("Start soundobject ID",
         juce::String(m_controlComponent->getUpmixSourceStartId()),
         "First soundobject");
@@ -1088,6 +1096,10 @@ void MainComponent::showUpmixSettings()
                 m_controlComponent->setUpmixShape(combo->getSelectedItemIndex() == 1
                     ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
                     : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
+            if (auto* combo = m_messageBox->getComboBoxComponent("Visualization"))
+                m_controlComponent->setUpmixVisualization(combo->getSelectedItemIndex() == 1
+                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar
+                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine);
             auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
             m_controlComponent->setUpmixSourceStartId(startId);
             if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
@@ -1228,6 +1240,11 @@ void MainComponent::performConfigurationDump()
             UmsciUpmixIndicatorPaintNControlComponent::getShapeName(
                 m_controlComponent ? m_controlComponent->getUpmixShape()
                                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXVISUALIZATION),
+            UmsciUpmixIndicatorPaintNControlComponent::getVisualizationName(
+                m_controlComponent ? m_controlComponent->getUpmixVisualization()
+                                   : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine));
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
@@ -1484,6 +1501,12 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
+        auto upmixVisualization = UmsciUpmixIndicatorPaintNControlComponent::getVisualizationForName(
+            upmixConfigState->getStringAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXVISUALIZATION),
+                UmsciUpmixIndicatorPaintNControlComponent::getVisualizationName(
+                    UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine)));
+        m_controlComponent->setUpmixVisualization(upmixVisualization);
         auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
         m_controlComponent->setUpmixTransform(upmixParams.rot,
                                               upmixParams.scaleH, upmixParams.scaleV,

@@ -646,7 +646,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto radiusH = baseRadius * m_upmixTransH;  // floor ring horizontal half-extent
     auto radiusV = baseRadius * m_upmixTransV;  // floor ring vertical half-extent
     m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
-    auto arcStrokeWidth = m_subCircleRadius * 0.5f;
+    // Solid Bar uses the current per-channel circle's diameter as the ring stroke width,
+    // replacing the thin default line, so it visually stands in for the omitted bumps.
+    auto arcStrokeWidth = (m_visualization == IndicatorVisualization::SolidBar)
+        ? m_subCircleRadius * 2.0f
+        : m_subCircleRadius * 0.5f;
     auto cosRot = std::cos(m_upmixRot);
     auto sinRot = std::sin(m_upmixRot);
 
@@ -762,8 +766,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 py = cy + local_x * sinRot + local_y * cosRot;
             }
 
-            m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
-                                        m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar omits the per-channel bump — the wider stroke above stands in for it.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
+                                            m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             if (i < upmixPositionNames.size())
             {
@@ -876,8 +882,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 py = cy + local_x * sinRot + local_y * cosRot;
             }
 
-            m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
-                                              m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar omits the per-channel bump — the wider stroke above stands in for it.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
+                                                  m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             if (i < upmixHeightPositionNames.size())
             {
@@ -926,9 +934,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 centreScreenPos.x + dirX * m_subCircleRadius * 2.0f,
                 centreScreenPos.y + dirY * m_subCircleRadius * 2.0f);
 
-            m_upmixDirectionlessIndicator.addEllipse(
-                lfeScreenPos.x - m_subCircleRadius, lfeScreenPos.y - m_subCircleRadius,
-                m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar suppresses all distinct per-channel markers, including LFE.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixDirectionlessIndicator.addEllipse(
+                    lfeScreenPos.x - m_subCircleRadius, lfeScreenPos.y - m_subCircleRadius,
+                    m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             RenderedChannelPosition rcp;
             rcp.sourceId  = static_cast<std::int16_t>(
@@ -1061,6 +1071,18 @@ void UmsciUpmixIndicatorPaintNControlComponent::setShape(IndicatorShape shape)
 UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPaintNControlComponent::getShape() const
 {
     return m_shape;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setVisualization(IndicatorVisualization visualization)
+{
+    m_visualization = visualization;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization UmsciUpmixIndicatorPaintNControlComponent::getVisualization() const
+{
+    return m_visualization;
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch)

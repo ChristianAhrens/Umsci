@@ -198,6 +198,8 @@ public:
     bool getUpmixLiveMode() const;
     void setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape);
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
+    void setUpmixVisualization(UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization visualization);
+    UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization getUpmixVisualization() const;
     void setShowDirectionlessChannel(bool show);
     bool getShowDirectionlessChannel() const;
     void setShowLevelMeter(bool show);
