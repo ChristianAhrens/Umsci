@@ -39,10 +39,13 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     g.setFont(font);
 
     auto opacity = (isTimerRunning() && !m_flashState) ? 0.25f : 1.0f;
+    // Solid Bar gets a small bit of permanent transparency on top of the flash dimming above,
+    // so it reads as a lighter-weight overlay than the opaque Dots & Line look.
+    auto ringOpacity = (m_visualization == IndicatorVisualization::SolidBar) ? opacity * 0.85f : opacity;
 
     // draw all ring fills first so no fill can paint over a label
     g.setColour(indicatorColour);
-    g.setOpacity(opacity);
+    g.setOpacity(ringOpacity);
     g.fillPath(m_upmixIndicator);
     g.fillPath(m_upmixHeightIndicator);
     g.fillPath(m_upmixDirectionlessIndicator);
@@ -649,11 +652,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto radiusH = baseRadius * m_upmixTransH;  // floor ring horizontal half-extent
     auto radiusV = baseRadius * m_upmixTransV;  // floor ring vertical half-extent
     m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
-    // Solid Bar uses the current per-channel circle's diameter as the ring stroke width,
-    // replacing the thin default line, so it visually stands in for the omitted bumps.
+    // Solid Bar uses a width close to (but slightly narrower than) the current per-channel
+    // circle's diameter, replacing the thin default line, so it visually stands in for the
+    // omitted bumps without looking as heavy as the raw circle diameter.
     auto arcStrokeWidth = (m_visualization == IndicatorVisualization::SolidBar)
-        ? m_subCircleRadius * 2.0f
+        ? m_subCircleRadius * 1.6f
         : m_subCircleRadius * 0.5f;
+    // Solid Bar's open ends get rounded (semicircular) caps instead of a hard cut, since
+    // there are no bumps to visually absorb the ends the way Dots & Line has.
+    auto ringEndCapStyle = (m_visualization == IndicatorVisualization::SolidBar)
+        ? juce::PathStrokeType::rounded
+        : juce::PathStrokeType::butt;
     auto cosRot = std::cos(m_upmixRot);
     auto sinRot = std::sin(m_upmixRot);
 
@@ -730,8 +739,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 
         if (m_shape == IndicatorShape::Rectangle)
         {
-            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator,
-                buildOpenRectPath(radiusH, radiusV, minAngleDeg, maxAngleDeg));
+            juce::PathStrokeType(arcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixIndicator,
+                    buildOpenRectPath(radiusH, radiusV, minAngleDeg, maxAngleDeg));
         }
         else
         {
@@ -742,7 +752,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                                   juce::degreesToRadians(minAngleDeg),
                                   juce::degreesToRadians(maxAngleDeg),
                                   true);
-            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator, arcPath);
+            juce::PathStrokeType(arcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixIndicator, arcPath);
         }
 
         // add a filled sub-circle at each position and record its data for paint() and hit-testing
@@ -851,8 +862,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 
         if (m_shape == IndicatorShape::Rectangle)
         {
-            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator,
-                buildOpenRectPath(heightRadiusH, heightRadiusV, minHeightAngleDeg, maxHeightAngleDeg));
+            juce::PathStrokeType(heightArcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixHeightIndicator,
+                    buildOpenRectPath(heightRadiusH, heightRadiusV, minHeightAngleDeg, maxHeightAngleDeg));
         }
         else
         {
@@ -861,7 +873,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                                         juce::degreesToRadians(minHeightAngleDeg),
                                         juce::degreesToRadians(maxHeightAngleDeg),
                                         true);
-            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator, heightArcPath);
+            juce::PathStrokeType(heightArcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixHeightIndicator, heightArcPath);
         }
 
         for (size_t i = 0; i < upmixHeightPositionAnglesDeg.size(); ++i)
