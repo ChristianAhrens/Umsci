@@ -48,25 +48,28 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     g.fillPath(m_upmixDirectionlessIndicator);
 
     // draw all labels on top of the fills
-    g.setColour(labelColour);
-    g.setOpacity(opacity);
-    for (const auto& rcp : m_renderedFloorPositions)
+    if (m_showChannelLabels)
     {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
-    }
-    for (const auto& rcp : m_renderedHeightPositions)
-    {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
-    }
-    for (const auto& rcp : m_renderedDirectionlessPositions)
-    {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        g.setColour(labelColour);
+        g.setOpacity(opacity);
+        for (const auto& rcp : m_renderedFloorPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
+        for (const auto& rcp : m_renderedHeightPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
+        for (const auto& rcp : m_renderedDirectionlessPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
     }
 
     // draw height annotation in lower-right corner
@@ -1197,6 +1200,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::setShowDirectionlessChannel(bool
 bool UmsciUpmixIndicatorPaintNControlComponent::getShowDirectionlessChannel() const
 {
     return m_showDirectionlessChannel;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setShowChannelLabels(bool show)
+{
+    m_showChannelLabels = show;
+    repaint();
+}
+
+bool UmsciUpmixIndicatorPaintNControlComponent::getShowChannelLabels() const
+{
+    return m_showChannelLabels;
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::updateFlashState()

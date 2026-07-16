@@ -366,6 +366,7 @@ See e.g.
 - **Visible soundobjects** — *All* shows every soundobject in the scene; *Upmix controlled only* hides all soundobjects that are not part of the current upmix channel block, reducing visual clutter when the processing engine carries many other sources.
 - **LFE channel** — when enabled, the LFE channel is rendered as a positioned sound object at the centre of the ring (alongside the centre channel), making it visible and draggable in the scene view.  When disabled, the LFE channel is treated as directionless and omitted from the ring.
 - **Level metering** — when enabled, a transparent radial level meter overlay is drawn on top of the upmix ring.  Bar lengths for each channel are derived from the processing engine's `MatrixInput_LevelMeterPostMute` OCP.1 object and normalised across the −120 dB … 0 dBFS range.  A 2-second peak-hold outline is shown in addition to the filled level polygon.  The overlay repaints at ≤20 fps and only when new meter data has arrived, so it does not impose unnecessary load on the render thread.
+- **Channel labels** — *On* (default) draws the abbreviated channel-name label (e.g. `L`, `Ltf`) at each floor, height, and LFE position. *Off* hides all channel-name labels, in either indicator visualization mode.
 
 <a name="external-control-midi" />
 

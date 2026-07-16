@@ -225,6 +225,13 @@ public:
     bool getShowDirectionlessChannel() const;
 
     //==============================================================================
+    /** @brief When true (default), draws the abbreviated channel-name label for each
+     *         floor, height, and LFE channel. When false, no labels are drawn in
+     *         either indicator visualization mode. */
+    void setShowChannelLabels(bool show);
+    bool getShowChannelLabels() const;
+
+    //==============================================================================
     /** @brief Applies all transform parameters and triggers a prerender + repaint. */
     void setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch = 1.0f);
     float getUpmixRot() const;           ///< Ring rotation (normalised 0–1 = 0–360°).
@@ -393,6 +400,7 @@ private:
     bool           m_flashState = false;                 ///< Toggled by timer for live-mode dot animation.
     bool           m_liveMode   = false;                 ///< When true, overlays real DS100 source positions.
     bool           m_showDirectionlessChannel = false;   ///< When true, renders LFE inward at centre-channel angle.
+    bool           m_showChannelLabels = true;            ///< When true, draws per-channel name labels.
     /** @brief Number of `setSourcePosition` echo-backs to absorb without calling
      *         `updateFlashState`.  Incremented by `notifyTransformChanged` for every
      *         position sent to DS100 so that the expected OCP.1 echoes do not

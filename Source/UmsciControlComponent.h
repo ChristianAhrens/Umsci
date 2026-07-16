@@ -202,6 +202,8 @@ public:
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization getUpmixVisualization() const;
     void setShowDirectionlessChannel(bool show);
     bool getShowDirectionlessChannel() const;
+    void setShowChannelLabels(bool show);
+    bool getShowChannelLabels() const;
     void setShowLevelMeter(bool show);
     bool getShowLevelMeter() const;
     /** @} */

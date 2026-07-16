@@ -185,7 +185,8 @@ public:
         UPMIXSPREAD,              ///< Float: aggregate Positioning_SourceSpread value (0–1).
         UPMIXDELAYMODE,           ///< Integer: aggregate Positioning_SourceDelayMode (0=Off, 1=Tight, 2=Full).
         UPMIXSHOWLFECHANNEL,      ///< Boolean: render the LFE (directionless) channel dot inward at centre-channel angle.
-        UPMIXSHOWLEVELMETER       ///< Boolean: show the radial level meter overlay.
+        UPMIXSHOWLEVELMETER,      ///< Boolean: show the radial level meter overlay.
+        UPMIXSHOWCHANNELLABELS    ///< Boolean: draw per-channel name labels on the upmix indicator.
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -217,6 +218,8 @@ public:
             return "UPMIXSHOWLFECHANNEL";
         case UPMIXSHOWLEVELMETER:
             return "UPMIXSHOWLEVELMETER";
+        case UPMIXSHOWCHANNELLABELS:
+            return "UPMIXSHOWCHANNELLABELS";
         default:
             return "-";
         }

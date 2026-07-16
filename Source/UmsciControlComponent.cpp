@@ -750,6 +750,19 @@ bool UmsciControlComponent::getShowDirectionlessChannel() const
     return false;
 }
 
+void UmsciControlComponent::setShowChannelLabels(bool show)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShowChannelLabels(show);
+}
+
+bool UmsciControlComponent::getShowChannelLabels() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShowChannelLabels();
+    return true;
+}
+
 void UmsciControlComponent::setShowLevelMeter(bool show)
 {
     if (m_levelMeterPaintComponent)
