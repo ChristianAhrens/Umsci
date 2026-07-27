@@ -697,17 +697,17 @@ void MainComponent::paint(juce::Graphics& g)
 
 void MainComponent::lookAndFeelChanged()
 {
-    auto aboutButtonDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::question_mark_24dp_svg).get());
+    auto aboutButtonDrawable = juce::Drawable::createFromSVGString(BinaryData::question_mark_24dp_svg);
     aboutButtonDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
     m_aboutButton->setImages(aboutButtonDrawable.get());
 
-    auto settingsDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::settings_24dp_svg).get());
+    auto settingsDrawable = juce::Drawable::createFromSVGString(BinaryData::settings_24dp_svg);
     settingsDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
     m_settingsButton->setImages(settingsDrawable.get());
 
-    auto connectedDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::link_off_24dp_svg).get());
+    auto connectedDrawable = juce::Drawable::createFromSVGString(BinaryData::link_off_24dp_svg);
     connectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    auto disconnectedDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::link_24dp_svg).get());
+    auto disconnectedDrawable = juce::Drawable::createFromSVGString(BinaryData::link_24dp_svg);
     disconnectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOffId));
     if (m_connectionToggleButton->getToggleState())
         m_connectionToggleButton->setImages(connectedDrawable.get());

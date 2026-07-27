@@ -247,23 +247,19 @@ void UmsciDbprProjectComponent::paintGrabStrip(juce::Graphics& g, juce::Rectangl
 
 void UmsciDbprProjectComponent::updateButtonImages()
 {
-    auto syncDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::sync_arrow_up_24dp_svg).get());
+    auto syncDrawable = juce::Drawable::createFromSVGString(BinaryData::sync_arrow_up_24dp_svg);
     syncDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_syncButton->setImages(syncDrawable.get());
 
-    auto loadDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::file_open_24dp_svg).get());
+    auto loadDrawable = juce::Drawable::createFromSVGString(BinaryData::file_open_24dp_svg);
     loadDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_loadButton->setImages(loadDrawable.get());
 
-    auto deleteDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::delete_24dp_svg).get());
+    auto deleteDrawable = juce::Drawable::createFromSVGString(BinaryData::delete_24dp_svg);
     deleteDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_deleteButton->setImages(deleteDrawable.get());
 
-    m_syncProblemDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::sync_problem_24dp_svg).get());
+    m_syncProblemDrawable = juce::Drawable::createFromSVGString(BinaryData::sync_problem_24dp_svg);
     m_syncProblemDrawable->replaceColour(juce::Colours::black, m_highlightColour);
 }
 
