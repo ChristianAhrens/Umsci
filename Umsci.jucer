@@ -63,6 +63,15 @@
                 file="submodules/NanoOcp/Source/Ocp1ObjectDefinitions.h"/>
           <FILE id="aoCcc9" name="Variant.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Variant.cpp"/>
           <FILE id="MLaA5Q" name="Variant.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Variant.h"/>
+          <GROUP id="{B3C1D2E4-F5A6-7B8C-9D0E-1F2A3B4C5D6E}" name="internal">
+            <FILE id="nAd0Cp" name="NanoAsyncDispatcher.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.cpp"/>
+            <FILE id="nAd0Hp" name="NanoAsyncDispatcher.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.h"/>
+            <FILE id="nSk1Cp" name="NanoSocket.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.cpp"/>
+            <FILE id="nSk2Hp" name="NanoSocket.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.h"/>
+            <FILE id="nThr3Hp" name="NanoThread.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoThread.h"/>
+            <FILE id="nTm4Cp" name="NanoTimer.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoTimer.cpp"/>
+            <FILE id="nTm5Hp" name="NanoTimer.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoTimer.h"/>
+          </GROUP>
         </GROUP>
       </GROUP>
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">

@@ -54,7 +54,7 @@ DeviceController::DeviceController()
     m_ocp1Timeout = 100;
 
     // false = callbacks on socket thread, not message thread.
-    m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString(), m_ocp1Port, false);
+    m_ocp1Connection = std::make_unique<NanoOcp1::NanoOcp1Client>(m_ocp1IPAddress.toString().toStdString(), m_ocp1Port, false);
 
     m_ocp1Connection->onConnectionEstablished = [=]() {
         stopTimer(); // Connection succeeded — no more retries needed.
@@ -202,7 +202,7 @@ void DeviceController::timerCallback()
 {
     if (State::Connecting == getState())
     {
-        m_ocp1Connection->connectToSocket(m_ocp1IPAddress.toString(), m_ocp1Port, m_ocp1Timeout);
+        m_ocp1Connection->connectToSocket(m_ocp1IPAddress.toString().toStdString(), m_ocp1Port, m_ocp1Timeout);
     }
     else if (State::GetValues == getState())
     {
