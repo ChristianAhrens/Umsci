@@ -63,6 +63,10 @@
                 file="submodules/NanoOcp/Source/Ocp1ObjectDefinitions.h"/>
           <FILE id="aoCcc9" name="Variant.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Variant.cpp"/>
           <FILE id="MLaA5Q" name="Variant.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Variant.h"/>
+          <FILE id="oCt1Cp" name="Ocp1Controller.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Ocp1Controller.cpp"/>
+          <FILE id="oCt2Hp" name="Ocp1Controller.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Ocp1Controller.h"/>
+          <FILE id="dC1Cp" name="SoundscapeController.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/SoundscapeController.cpp"/>
+          <FILE id="dC2Hp" name="SoundscapeController.h" compile="0" resource="0" file="submodules/NanoOcp/Source/SoundscapeController.h"/>
           <GROUP id="{B3C1D2E4-F5A6-7B8C-9D0E-1F2A3B4C5D6E}" name="internal">
             <FILE id="nAd0Cp" name="NanoAsyncDispatcher.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.cpp"/>
             <FILE id="nAd0Hp" name="NanoAsyncDispatcher.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.h"/>
