@@ -18,8 +18,6 @@
 
 #include "DbprController.h"
 
-#include <set>
-
 DbprController::DbprController() = default;
 DbprController::~DbprController() = default;
 
@@ -29,17 +27,18 @@ void DbprController::loadProjectFromFile(const std::string& filePath)
     if (data.isEmpty())
         return; // openAndReadProject already logged the error to stderr
 
-    // Validate: only a single DeviceId is supported
+    // Validate: only a single DeviceId is supported.
+    // Uses the raw per-row DeviceId set rather than deriving it from matrixInputData,
+    // since matrixInputData is keyed by MatrixInput number only and would silently
+    // collapse same-numbered inputs from different devices (e.g. redundant DS100
+    // pairs), hiding the presence of multiple devices from this check.
     {
-        std::set<int> deviceIds;
-        for (auto const& kv : data.matrixInputData)
-            deviceIds.insert(kv.second.deviceId);
-
-        if (deviceIds.size() > 1)
+        if (data.matrixInputDeviceIds.size() > 1)
         {
             auto msg = std::string("The project contains inputs from ")
-                + std::to_string(deviceIds.size())
-                + " different devices. Umsci supports only a single DS100 device per project.";
+                + std::to_string(data.matrixInputDeviceIds.size())
+                + " different devices (redundant pairs or multi-device setups are not supported). "
+                  "Umsci supports only a single Soundscape processing engine per project.";
             if (onProjectLoadFailed)
             {
                 juce::MessageManager::callAsync([this, msg] {

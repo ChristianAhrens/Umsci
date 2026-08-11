@@ -273,13 +273,11 @@ UmsciSnapshotComponent::PanelState UmsciSnapshotComponent::getPanelState() const
 
 void UmsciSnapshotComponent::updateButtonImages()
 {
-    auto storeDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::variable_add_24dp_svg).get());
+    auto storeDrawable = juce::Drawable::createFromSVGString(BinaryData::variable_add_24dp_svg);
     storeDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_storeButton->setImages(storeDrawable.get());
 
-    auto recallDrawable = juce::Drawable::createFromSVG(
-        *juce::XmlDocument::parse(BinaryData::variable_insert_24dp_svg).get());
+    auto recallDrawable = juce::Drawable::createFromSVGString(BinaryData::variable_insert_24dp_svg);
     recallDrawable->replaceColour(juce::Colours::black, m_highlightColour);
     m_recallButton->setImages(recallDrawable.get());
 }

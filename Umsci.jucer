@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.5.1" companyWebsite="https://christianahrens.github.io/Umsci"
+              jucerFormatVersion="1" version="0.6.0" companyWebsite="https://christianahrens.github.io/Umsci"
               bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/&#10;../../submodules/SQLiteCpp/include&#10;../../submodules/SQLiteCpp/sqlite3"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0,&#10;SQLITE_ENABLE_COLUMN_METADATA=1&#10;USE_DBPR_PROJECT_UTILS=1"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
@@ -63,6 +63,25 @@
                 file="submodules/NanoOcp/Source/Ocp1ObjectDefinitions.h"/>
           <FILE id="aoCcc9" name="Variant.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Variant.cpp"/>
           <FILE id="MLaA5Q" name="Variant.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Variant.h"/>
+          <FILE id="oCt1Cp" name="Ocp1Controller.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Controller.cpp"/>
+          <FILE id="oCt2Hp" name="Ocp1Controller.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Controller.h"/>
+          <FILE id="dC1Cp" name="SoundscapeController.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/SoundscapeController.cpp"/>
+          <FILE id="dC2Hp" name="SoundscapeController.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/SoundscapeController.h"/>
+          <GROUP id="{B3C1D2E4-F5A6-7B8C-9D0E-1F2A3B4C5D6E}" name="internal">
+            <FILE id="nAd0Cp" name="NanoAsyncDispatcher.cpp" compile="1" resource="0"
+                  file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.cpp"/>
+            <FILE id="nAd0Hp" name="NanoAsyncDispatcher.h" compile="0" resource="0"
+                  file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.h"/>
+            <FILE id="nSk1Cp" name="NanoSocket.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.cpp"/>
+            <FILE id="nSk2Hp" name="NanoSocket.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.h"/>
+            <FILE id="nThr3Hp" name="NanoThread.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoThread.h"/>
+            <FILE id="nTm4Cp" name="NanoTimer.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoTimer.cpp"/>
+            <FILE id="nTm5Hp" name="NanoTimer.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoTimer.h"/>
+          </GROUP>
         </GROUP>
       </GROUP>
       <GROUP id="{A748DC48-D24B-A4B1-772D-A48B7873F767}" name="JUCEAppBascics">
@@ -249,6 +268,10 @@
             resource="0" file="Source/UmsciExternalControlComponent.cpp"/>
       <FILE id="qmNMPJ" name="UmsciExternalControlComponent.h" compile="0"
             resource="0" file="Source/UmsciExternalControlComponent.h"/>
+      <FILE id="uUmSC1" name="UmsciUpmixSettingsComponent.cpp" compile="1"
+            resource="0" file="Source/UmsciUpmixSettingsComponent.cpp"/>
+      <FILE id="uUmSC2" name="UmsciUpmixSettingsComponent.h" compile="0"
+            resource="0" file="Source/UmsciUpmixSettingsComponent.h"/>
       <FILE id="mC1dXp" name="MidiController.cpp" compile="0" resource="0"
             file="Source/MidiController.cpp"/>
       <FILE id="mC1hYq" name="MidiController.h" compile="0" resource="0"
@@ -363,7 +386,7 @@
                   iosScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iPadScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight,UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown"
                   iosDevelopmentTeamID="SB7Q3PP4FQ" UIRequiresFullScreen="0" customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist&gt;&#10;  &lt;dict&gt;&#10;    &#9;&lt;key&gt;UIBackgroundModes&lt;/key&gt;&#10;    &#9;&lt;array&gt;&#10;&#9;      &#9;&lt;string&gt;processing&lt;/string&gt;&#10;    &#9;&lt;/array&gt;&#10;    &lt;key&gt;BGTaskSchedulerPermittedIdentifiers&lt;/key&gt;&#10;    &lt;array&gt;&#10;      &lt;string&gt;com.ChristianAhrens.Umsci&lt;/string&gt;&#10;    &lt;/array&gt;&#10;    &lt;!-- New Xcode .icon integration --&gt;&#10;    &lt;key&gt;CFBundleIconName&lt;/key&gt;&#10;    &lt;string&gt;Umsci&lt;/string&gt;&#10;&lt;/dict&gt;&#10;&lt;/plist&gt;"
-                  customXcodeResourceFolders="Resources/Images/Umsci.icon" iconComposerIcon="D4TMc4">
+                  iconComposerIcon="D4TMc4" smallIcon="wKQgbQ" bigIcon="wKQgbQ">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" iosDeploymentTarget="15" iosCompatibility="15"/>
         <CONFIGURATION isDebug="0" name="Release" iosDeploymentTarget="15" iosCompatibility="15"/>

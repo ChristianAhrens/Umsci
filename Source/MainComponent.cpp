@@ -27,6 +27,7 @@
 
 #include "AboutComponent.h"
 #include "UmsciExternalControlComponent.h"
+#include "UmsciUpmixSettingsComponent.h"
 #include "UmsciPaintNControlComponents/UmsciDbprProjectComponent.h"
 #include "CustomParameterControl/CustomParameterControlConfigDialog.h"
 
@@ -696,17 +697,17 @@ void MainComponent::paint(juce::Graphics& g)
 
 void MainComponent::lookAndFeelChanged()
 {
-    auto aboutButtonDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::question_mark_24dp_svg).get());
+    auto aboutButtonDrawable = juce::Drawable::createFromSVGString(BinaryData::question_mark_24dp_svg);
     aboutButtonDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
     m_aboutButton->setImages(aboutButtonDrawable.get());
 
-    auto settingsDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::settings_24dp_svg).get());
+    auto settingsDrawable = juce::Drawable::createFromSVGString(BinaryData::settings_24dp_svg);
     settingsDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
     m_settingsButton->setImages(settingsDrawable.get());
 
-    auto connectedDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::link_off_24dp_svg).get());
+    auto connectedDrawable = juce::Drawable::createFromSVGString(BinaryData::link_off_24dp_svg);
     connectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOnId));
-    auto disconnectedDrawable = juce::Drawable::createFromSVG(*juce::XmlDocument::parse(BinaryData::link_24dp_svg).get());
+    auto disconnectedDrawable = juce::Drawable::createFromSVGString(BinaryData::link_24dp_svg);
     disconnectedDrawable->replaceColour(juce::Colours::black, getLookAndFeel().findColour(juce::TextButton::ColourIds::textColourOffId));
     if (m_connectionToggleButton->getToggleState())
         m_connectionToggleButton->setImages(connectedDrawable.get());
@@ -1019,6 +1020,8 @@ void MainComponent::showUpmixSettings()
         "Configure the upmix overlay control settings.",
         juce::MessageBoxIconType::NoIcon);
 
+    m_upmixSettingsComponent = std::make_unique<UmsciUpmixSettingsComponent>();
+
     juce::StringArray formatItems;
     int currentFormatIndex = 0;
     for (int i = UmsciSettingsOption::ControlFormat_First; i <= UmsciSettingsOption::ControlFormat_Last; i++)
@@ -1027,79 +1030,44 @@ void MainComponent::showUpmixSettings()
         if (m_settingsItems[i].second == 1)
             currentFormatIndex = i - UmsciSettingsOption::ControlFormat_First;
     }
-    m_messageBox->addComboBox("Control format", formatItems, "Channel format");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
-        combo->setSelectedItemIndex(currentFormatIndex, juce::dontSendNotification);
+    m_upmixSettingsComponent->setControlFormatItems(formatItems, currentFormatIndex);
+    m_upmixSettingsComponent->setLiveMode(m_controlComponent->getUpmixLiveMode());
+    m_upmixSettingsComponent->setShapeIsRectangle(
+        m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle);
+    m_upmixSettingsComponent->setVisualizationIsSolidBar(
+        m_controlComponent->getUpmixVisualization() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar);
+    m_upmixSettingsComponent->setStartSoundobjectId(m_controlComponent->getUpmixSourceStartId());
+    m_upmixSettingsComponent->setShowAllSources(m_controlComponent->getShowAllSources());
+    m_upmixSettingsComponent->setShowLfeChannel(m_controlComponent->getShowDirectionlessChannel());
+    m_upmixSettingsComponent->setShowLevelMeter(m_controlComponent->getShowLevelMeter());
+    m_upmixSettingsComponent->setShowChannelLabels(m_controlComponent->getShowChannelLabels());
 
-    juce::StringArray liveModeItems;
-    liveModeItems.add("Manual (double-click to apply)");
-    liveModeItems.add("Live (apply changes immediately)");
-    m_messageBox->addComboBox("Live mode", liveModeItems, "Control mode");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
-        combo->setSelectedItemIndex(m_controlComponent->getUpmixLiveMode() ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray shapeItems;
-    shapeItems.add("Circle");
-    shapeItems.add("Rectangle");
-    m_messageBox->addComboBox("Shape", shapeItems, "Indicator shape");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
-        combo->setSelectedItemIndex(m_controlComponent->getUpmixShape() == UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    m_messageBox->addTextEditor("Start soundobject ID",
-        juce::String(m_controlComponent->getUpmixSourceStartId()),
-        "First soundobject");
-
-    juce::StringArray showSourcesItems;
-    showSourcesItems.add("All");
-    showSourcesItems.add("Upmix controlled only");
-    m_messageBox->addComboBox("Show sources", showSourcesItems, "Visible soundobjects");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowAllSources() ? 0 : 1,
-                                    juce::dontSendNotification);
-
-    juce::StringArray lfeItems;
-    lfeItems.add("Disregard");
-    lfeItems.add("Position with bed");
-    m_messageBox->addComboBox("LFE channel", lfeItems, "LFE / positionless channel");
-    if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowDirectionlessChannel() ? 1 : 0,
-                                    juce::dontSendNotification);
-
-    juce::StringArray levelMeterItems;
-    levelMeterItems.add("Off");
-    levelMeterItems.add("On");
-    m_messageBox->addComboBox("Level metering", levelMeterItems, "Level metering");
-    if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
-        combo->setSelectedItemIndex(m_controlComponent->getShowLevelMeter() ? 1 : 0,
-                                    juce::dontSendNotification);
+    m_messageBox->addCustomComponent(m_upmixSettingsComponent.get());
 
     m_messageBox->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
     m_messageBox->addButton("Ok",     1, juce::KeyPress(juce::KeyPress::returnKey));
     m_messageBox->enterModalState(true, juce::ModalCallbackFunction::create([=](int returnValue) {
         if (returnValue == 1)
         {
-            if (auto* combo = m_messageBox->getComboBoxComponent("Control format"))
-                handleSettingsControlFormatMenuResult(UmsciSettingsOption::ControlFormat_First + combo->getSelectedItemIndex());
-            if (auto* combo = m_messageBox->getComboBoxComponent("Live mode"))
-                m_controlComponent->setUpmixLiveMode(combo->getSelectedItemIndex() == 1);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Shape"))
-                m_controlComponent->setUpmixShape(combo->getSelectedItemIndex() == 1
-                    ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
-                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
-            auto startId = m_messageBox->getTextEditorContents("Start soundobject ID").getIntValue();
-            m_controlComponent->setUpmixSourceStartId(startId);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Show sources"))
-                m_controlComponent->setShowAllSources(combo->getSelectedItemIndex() == 0);
-            if (auto* combo = m_messageBox->getComboBoxComponent("LFE channel"))
-                m_controlComponent->setShowDirectionlessChannel(combo->getSelectedItemIndex() == 1);
-            if (auto* combo = m_messageBox->getComboBoxComponent("Level metering"))
-                m_controlComponent->setShowLevelMeter(combo->getSelectedItemIndex() == 1);
+            handleSettingsControlFormatMenuResult(
+                UmsciSettingsOption::ControlFormat_First + m_upmixSettingsComponent->getControlFormatIndex());
+            m_controlComponent->setUpmixLiveMode(m_upmixSettingsComponent->getLiveMode());
+            m_controlComponent->setUpmixShape(m_upmixSettingsComponent->getShapeIsRectangle()
+                ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Rectangle
+                : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle);
+            m_controlComponent->setUpmixVisualization(m_upmixSettingsComponent->getVisualizationIsSolidBar()
+                ? UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::SolidBar
+                : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine);
+            m_controlComponent->setUpmixSourceStartId(m_upmixSettingsComponent->getStartSoundobjectId());
+            m_controlComponent->setShowAllSources(m_upmixSettingsComponent->getShowAllSources());
+            m_controlComponent->setShowDirectionlessChannel(m_upmixSettingsComponent->getShowLfeChannel());
+            m_controlComponent->setShowLevelMeter(m_upmixSettingsComponent->getShowLevelMeter());
+            m_controlComponent->setShowChannelLabels(m_upmixSettingsComponent->getShowChannelLabels());
             if (m_config)
                 m_config->triggerConfigurationDump();
         }
         m_messageBox.reset();
+        m_upmixSettingsComponent.reset();
     }));
 }
 
@@ -1229,6 +1197,11 @@ void MainComponent::performConfigurationDump()
                 m_controlComponent ? m_controlComponent->getUpmixShape()
                                    : UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle));
         upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXVISUALIZATION),
+            UmsciUpmixIndicatorPaintNControlComponent::getVisualizationName(
+                m_controlComponent ? m_controlComponent->getUpmixVisualization()
+                                   : UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine));
+        upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWALLSOURCES),
             (m_controlComponent ? (m_controlComponent->getShowAllSources() ? 1 : 0) : 1));
         upmixConfigXmlElement->setAttribute(
@@ -1237,6 +1210,9 @@ void MainComponent::performConfigurationDump()
         upmixConfigXmlElement->setAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER),
             (m_controlComponent ? (m_controlComponent->getShowLevelMeter() ? 1 : 0) : 1));
+        upmixConfigXmlElement->setAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWCHANNELLABELS),
+            (m_controlComponent ? (m_controlComponent->getShowChannelLabels() ? 1 : 0) : 1));
         upmixConfigXmlElement->addTextElement(UmsciSnapshotComponent::UpmixSnapshot{
             m_controlComponent ? m_controlComponent->getUpmixRot()           : 0.0f,
             m_controlComponent ? m_controlComponent->getUpmixTransH()        : 1.0f,
@@ -1477,6 +1453,9 @@ void MainComponent::onConfigUpdated()
         auto showLevelMeter = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWLEVELMETER), 1) == 1;
         m_controlComponent->setShowLevelMeter(showLevelMeter);
+        auto showChannelLabels = upmixConfigState->getIntAttribute(
+            UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHOWCHANNELLABELS), 1) == 1;
+        m_controlComponent->setShowChannelLabels(showChannelLabels);
         auto liveMode = upmixConfigState->getIntAttribute(
             UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXLIVEMODE), 0) == 1;
         m_controlComponent->setUpmixLiveMode(liveMode);
@@ -1484,6 +1463,12 @@ void MainComponent::onConfigUpdated()
             upmixConfigState->getStringAttribute(
                 UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXSHAPE)));
         m_controlComponent->setUpmixShape(upmixShape);
+        auto upmixVisualization = UmsciUpmixIndicatorPaintNControlComponent::getVisualizationForName(
+            upmixConfigState->getStringAttribute(
+                UmsciAppConfiguration::getAttributeName(UmsciAppConfiguration::AttributeID::UPMIXVISUALIZATION),
+                UmsciUpmixIndicatorPaintNControlComponent::getVisualizationName(
+                    UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine)));
+        m_controlComponent->setUpmixVisualization(upmixVisualization);
         auto upmixParams = UmsciSnapshotComponent::UpmixSnapshot::fromString(upmixConfigState->getAllSubText());
         m_controlComponent->setUpmixTransform(upmixParams.rot,
                                               upmixParams.scaleH, upmixParams.scaleV,
@@ -1910,10 +1895,11 @@ void MainComponent::checkDbprDeviceSync()
         return;
     }
 
-    const auto& projectData      = m_dbprController->getProjectData();
-    const auto& deviceNames      = m_controlComponent->getSourceNames();
-    const auto& devicePositions  = m_controlComponent->getSpeakerPositions();
-    const auto& deviceFgData     = m_controlComponent->getFunctionGroupData();
+    const auto& projectData        = m_dbprController->getProjectData();
+    const auto& deviceNames        = m_controlComponent->getSourceNames();
+    const auto& deviceEnableStates = m_controlComponent->getSourceEnableStates();
+    const auto& devicePositions    = m_controlComponent->getSpeakerPositions();
+    const auto& deviceFgData       = m_controlComponent->getFunctionGroupData();
 
     bool mismatch = false;
 
@@ -1928,6 +1914,23 @@ void MainComponent::checkDbprDeviceSync()
 
         if (!projectName.empty() || !deviceName.empty())
             if (projectName != deviceName) { mismatch = true; break; }
+    }
+
+    // ── MatrixInput En-Scene enable state ─────────────────────────────────────
+    // Compared only for inputs the device has already reported a value for;
+    // channels not yet received (e.g. right after connecting) are skipped
+    // rather than counted as a mismatch.
+    if (!mismatch)
+    {
+        for (auto const& kv : projectData.matrixInputData)
+        {
+            auto it = deviceEnableStates.find(static_cast<std::int16_t>(kv.first));
+            if (it == deviceEnableStates.end())
+                continue;
+
+            if (static_cast<std::uint16_t>(kv.second.inputMode) != it->second)
+                { mismatch = true; break; }
+        }
     }
 
     // ── Loudspeaker count and positions ──────────────────────────────────────
@@ -2123,15 +2126,21 @@ void MainComponent::syncProjectToDevice()
     const auto& projectData = m_dbprController->getProjectData();
     auto* dc = DeviceController::getInstance();
 
-    // MatrixInput channel names — all 128; unused → empty string
+    // MatrixInput channel names and En-Scene enable — all 128; unused → empty string / matrix-only.
+    // Positioning_SourceEnable is an OcaSwitch with positions 0 (matrix-only) and 1 (En-Scene),
+    // matching dbpr's MatrixInputs.InputMode encoding directly — no offset needed.
     for (int i = 1; i <= DeviceController::sc_MAX_INPUTS_CHANNELS; ++i)
     {
         auto it = projectData.matrixInputData.find(i);
         const auto name = (it != projectData.matrixInputData.end()) ? it->second.name : std::string{};
+        const auto inputMode = (it != projectData.matrixInputData.end())
+            ? static_cast<std::uint16_t>(it->second.inputMode) : std::uint16_t(0);
+        const auto addr = DeviceController::RemObjAddr(
+            static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::MatrixInput_ChannelName,
-            DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
-            NanoOcp1::Variant(name)));
+            DeviceController::RemoteObject::MatrixInput_ChannelName, addr, NanoOcp1::Variant(name)));
+        dc->SetObjectValue(DeviceController::RemoteObject(
+            DeviceController::RemoteObject::Positioning_SourceEnable, addr, NanoOcp1::Variant(inputMode)));
     }
 
     // Speaker positions — all 64; unused → all-zero 6DOF

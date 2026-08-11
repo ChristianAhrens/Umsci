@@ -71,11 +71,8 @@ UmsciUpmixParamsComponent::UmsciUpmixParamsComponent()
     };
     updateDelayModeButtonStates();
 
-    if (auto xml = juce::XmlDocument::parse(BinaryData::sync_problem_24dp_svg))
-    {
-        m_syncProblemDrawable = juce::Drawable::createFromSVG(*xml);
+    if (m_syncProblemDrawable = juce::Drawable::createFromSVGString(BinaryData::sync_problem_24dp_svg))
         m_syncProblemDrawable->replaceColour(juce::Colours::black, m_highlightColour);
-    }
 }
 
 UmsciUpmixParamsComponent::~UmsciUpmixParamsComponent() = default;
@@ -213,11 +210,8 @@ void UmsciUpmixParamsComponent::setHighlightColour(const juce::Colour& colour)
     for (auto* btn : { m_delayModeOff.get(), m_delayModeTight.get(), m_delayModeFull.get() })
         if (btn) btn->setColour(juce::TextButton::buttonOnColourId, colour);
 
-    if (auto xml = juce::XmlDocument::parse(BinaryData::sync_problem_24dp_svg))
-    {
-        m_syncProblemDrawable = juce::Drawable::createFromSVG(*xml);
+    if (m_syncProblemDrawable = juce::Drawable::createFromSVGString(BinaryData::sync_problem_24dp_svg))
         m_syncProblemDrawable->replaceColour(juce::Colours::black, colour);
-    }
 
     repaint();
 }

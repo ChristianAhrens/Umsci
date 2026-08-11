@@ -23,19 +23,19 @@ A spatial audio control surface for d&b Soundscape. See the room, move objects, 
 
 ## What it does
 
-Umsci connects to a **d&b Soundscape DS100** signal processing engine over the OCA/OCP.1 network protocol and renders a live 2D top-down map of the room as configured in the DS100. Three transparent layers share the same coordinate space: loudspeaker icons at the bottom, draggable sound object circles in the middle, and an interactive upmix indicator ring on top.
+Umsci connects to a **d&b Soundscape processing engine** (DS100, DS100M, DS100D, DS110 or vCore) over the OCA/OCP.1 network protocol and renders a live 2D top-down map of the room as configured in the processing engine. Three transparent layers share the same coordinate space: loudspeaker icons at the bottom, draggable sound object circles in the middle, and an interactive upmix indicator ring on top.
 
-Its core workflow addresses the **upmix alignment problem**: an external upmix renderer — a standalone application, DAW plug-in or hardware processor — produces a set of spatialised output channels fed into consecutive DS100 sound objects. Umsci gives a single graphic handle on that block of objects. Drag five transform handles on the indicator ring to rotate, scale, stretch and shift the virtual speaker geometry until it matches the physical room. In Live mode every adjustment is forwarded to the DS100 in real time.
+Its core workflow addresses the **upmix alignment problem**: an external upmix renderer — a standalone application, DAW plug-in or hardware processor — produces a set of spatialised output channels fed into consecutive sound objects on the processing engine. Umsci gives a single graphic handle on that block of objects. Drag five transform handles on the indicator ring to rotate, scale, stretch and shift the virtual speaker geometry until it matches the physical room. In Live mode every adjustment is forwarded to the processing engine in real time.
 
 Beyond alignment, Umsci can also send OSC messages directly to the upmix renderer itself, so its internal parameters — such as room size, reverb characteristics or format-specific controls — can be adjusted from the same interface without switching to the renderer's own UI.
 
 ## The scene view
 
-All three layers render in the same normalised DS100 coordinate space and share the same zoom and pan state:
+All three layers render in the same normalised coordinate space used by the processing engine and share the same zoom and pan state:
 
 | Layer | Content |
 |:------|:--------|
-| Bottom | Physical loudspeaker positions read from the DS100 — display only. |
+| Bottom | Physical loudspeaker positions read from the processing engine — display only. |
 | Middle | Live sound object positions, draggable in Live mode. |
 | Top | Upmix indicator ring with interactive transform handles. |
 
@@ -58,8 +58,8 @@ Double-click any handle to reset it to its default. Both Circle and Rectangle in
 
 | Mode | Behaviour |
 |:-----|:----------|
-| **Manual** | Geometry changes are previewed locally. Double-click to commit positions to the DS100. |
-| **Live** | Every handle movement is sent to the DS100 immediately. DS100 echo-backs are absorbed to prevent spurious visual feedback. |
+| **Manual** | Geometry changes are previewed locally. Double-click to commit positions to the processing engine. |
+| **Live** | Every handle movement is sent to the processing engine immediately. Echo-backs from the processing engine are absorbed to prevent spurious visual feedback. |
 
 ## MIDI external control
 
@@ -69,21 +69,21 @@ All eight upmix transform parameters — rotation, floor H/V scale, height H/V s
 
 Umsci can send OSC messages directly to a upmix renderer — whether it is a standalone application, a DAW plug-in (via a virtual OSC bridge) or a hardware unit with an OSC interface. Custom parameter mappings are configured in Umsci's settings: assign an OSC address and value range to each renderer parameter you want to expose, and those controls become available alongside the spatial view.
 
-This closes the loop between spatial alignment and renderer operation. Instead of switching back and forth between Umsci and the renderer's own UI, the complete upmix workflow — geometry alignment, live DS100 position updates and renderer parameter adjustments — is accessible from a single interface.
+This closes the loop between spatial alignment and renderer operation. Instead of switching back and forth between Umsci and the renderer's own UI, the complete upmix workflow — geometry alignment, live processing-engine position updates and renderer parameter adjustments — is accessible from a single interface.
 
 ## d&b project integration
 
-Load a `.dbpr` d&b audiotechnik software project file to use as a reference. Umsci reads coordinate mappings, speaker positions, sound object names and function groups from the file's internal SQLite database and displays a compact summary. Continuous mismatch detection highlights any divergence between the loaded project data and the live DS100 state; a single Sync button pushes the project data back to the device.
+Load a `.dbpr` d&b audiotechnik software project file to use as a reference. Umsci reads coordinate mappings, speaker positions, sound object names and function groups from the file's internal SQLite database and displays a compact summary. Continuous mismatch detection highlights any divergence between the loaded project data and the live processing-engine state; a single Sync button pushes the project data back to the device.
 
 ## iOS and iPadOS
 
-Umsci runs natively on iOS and iPadOS with full touch support: two-finger pinch zoom on the scene view, correct safe-area handling for notch, Dynamic Island and home indicator, and automatic DS100 discovery via Zeroconf/mDNS — no IP address required. An iPad or iPhone becomes a wireless spatial control surface for any DS100 reachable on the local network.
+Umsci runs natively on iOS and iPadOS with full touch support: two-finger pinch zoom on the scene view, correct safe-area handling for notch, Dynamic Island and home indicator, and automatic discovery of Soundscape processing engines via Zeroconf/mDNS — no IP address required. An iPad or iPhone becomes a wireless spatial control surface for any Soundscape processing engine reachable on the local network.
 
 ## Getting started
 
-1. Open **Settings → Connection settings** and enter the DS100 IP address, port (`50014`) and the IOsize matching your device license (`64x64` for L, `128x64` for XL).
+1. Open **Settings → Connection settings** and enter the processing engine's IP address, port (`50014`) and the IOsize matching your device license (`64x64` for L, `128x64` for XL).
 2. Click the connection toggle in the top-right corner. Loudspeaker icons and live sound object positions populate the scene view.
-3. Open **Settings → Upmix control settings**, select the channel format your upmix renderer produces and the first DS100 input it occupies.
+3. Open **Settings → Upmix control settings**, select the channel format your upmix renderer produces and the first processing-engine input it occupies.
 4. Click **Refit** on the indicator ring as a starting point, then drag handles to align the geometry with the physical speaker layout. Switch to Live mode to send positions in real time.
 
 The full step-by-step walkthrough, settings reference and architecture documentation are in the [README](https://github.com/ChristianAhrens/Umsci/blob/main/README.md).

@@ -68,18 +68,18 @@ void UmsciLoudspeakersPaintComponent::PrerenderSpeakerDrawable(std::int16_t spea
     if (hor != 0.0f || ver != 0.0f || x != 0.0f || y != 0.0f || z != 0.0f)
     {
         if (juce::isWithin<int>((int(std::abs(ver)) % 180), 90, 15))
-            m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_vert24px_svg));
+            m_speakerDrawables[speakerId] = Drawable::createFromSVGString(BinaryData::loudspeaker_vert24px_svg);
         else
-            m_speakerDrawables[speakerId] = Drawable::createFromSVG(*XmlDocument::parse(BinaryData::loudspeaker_hor24px_svg));
+            m_speakerDrawables[speakerId] = Drawable::createFromSVGString(BinaryData::loudspeaker_hor24px_svg);
         auto& drawable = m_speakerDrawables.at(speakerId);
         drawable->replaceColour(Colours::black, m_speakerDrawablesCurrentColour);
-        auto drawableBounds = drawable->getBounds().toFloat();
+        auto drawableBounds = drawable->getDrawableBounds();
         // hor (azimuth) directly determines the 2D screen rotation. Elevation (ver) only
         // selects the icon (hor vs. vert SVG) but does not change the projected direction.
         // +90 deg adjusts d&b coordinate convention to screen orientation.
         // The third 6DOF angle (dispersion-axis roll) is irrelevant for 2D rendering and is ignored.
         auto angle2D = -hor + 90.0f;
-        drawable->setTransform(juce::AffineTransform::rotation(juce::degreesToRadians(angle2D), drawableBounds.getCentreX(), drawableBounds.getCentreY()));
+        drawable->setDrawableTransform(juce::AffineTransform::rotation(juce::degreesToRadians(angle2D), drawableBounds.getCentreX(), drawableBounds.getCentreY()));
     }
     else
     {

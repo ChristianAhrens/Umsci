@@ -251,6 +251,7 @@ void ProjectData::clear()
     coordinateMappingData.clear();
     speakerPositionData.clear();
     matrixInputData.clear();
+    matrixInputDeviceIds.clear();
     functionGroupData.clear();
 }
 
@@ -461,8 +462,13 @@ ProjectData ProjectData::openAndReadProject(const std::string& projectFilePath)
         while (queryMI.executeStep())
         {
             auto inputNumber = queryMI.getColumn("MatrixInput").getInt();
+            auto deviceId    = queryMI.getColumn("DeviceId").getInt();
 
-            projectData.matrixInputData[inputNumber].deviceId  = queryMI.getColumn("DeviceId").getInt();
+            // Recorded from the raw row before the MatrixInput-keyed map below can
+            // overwrite same-numbered inputs from a different device.
+            projectData.matrixInputDeviceIds.insert(deviceId);
+
+            projectData.matrixInputData[inputNumber].deviceId  = deviceId;
             projectData.matrixInputData[inputNumber].name      = queryMI.getColumn("Name").getString();
             projectData.matrixInputData[inputNumber].inputMode = queryMI.getColumn("InputMode").getInt();
         }

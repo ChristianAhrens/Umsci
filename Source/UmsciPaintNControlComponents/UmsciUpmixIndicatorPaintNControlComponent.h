@@ -121,9 +121,35 @@ public:
             return IndicatorShape::Rectangle;
         else if (name == "Circle")
             return IndicatorShape::Circle;
-        
+
         jassertfalse; // unknown string passed as name
         return IndicatorShape::Circle;
+    }
+
+    /** @brief How the ring/rect indicator path itself is rendered — the current
+     *         per-channel-circle-and-line look, or a uniform-width solid bar with
+     *         no distinct per-channel markers. Orthogonal to `IndicatorShape`. */
+    enum class IndicatorVisualization { DotsAndLine, SolidBar };
+    static juce::String getVisualizationName(IndicatorVisualization visualization)
+    {
+        switch (visualization)
+        {
+        case IndicatorVisualization::SolidBar:
+            return "SolidBar";
+        case IndicatorVisualization::DotsAndLine:
+        default:
+            return "DotsAndLine";
+        }
+    }
+    static IndicatorVisualization getVisualizationForName(const juce::String& name)
+    {
+        if (name == "SolidBar")
+            return IndicatorVisualization::SolidBar;
+        else if (name == "DotsAndLine")
+            return IndicatorVisualization::DotsAndLine;
+
+        jassertfalse; // unknown string passed as name
+        return IndicatorVisualization::DotsAndLine;
     }
 
     UmsciUpmixIndicatorPaintNControlComponent();
@@ -188,10 +214,22 @@ public:
     IndicatorShape getShape() const;
 
     //==============================================================================
+    /** @brief Sets how the ring itself is rendered — dots-and-line (default) or solid bar. */
+    void setVisualization(IndicatorVisualization visualization);
+    IndicatorVisualization getVisualization() const;
+
+    //==============================================================================
     /** @brief When true, renders the LFE (directionless) channel as a circle positioned
      *         inward along the centre-channel axis, with its label on top. */
     void setShowDirectionlessChannel(bool show);
     bool getShowDirectionlessChannel() const;
+
+    //==============================================================================
+    /** @brief When true (default), draws the abbreviated channel-name label for each
+     *         floor, height, and LFE channel. When false, no labels are drawn in
+     *         either indicator visualization mode. */
+    void setShowChannelLabels(bool show);
+    bool getShowChannelLabels() const;
 
     //==============================================================================
     /** @brief Applies all transform parameters and triggers a prerender + repaint. */
@@ -362,12 +400,14 @@ private:
     bool           m_flashState = false;                 ///< Toggled by timer for live-mode dot animation.
     bool           m_liveMode   = false;                 ///< When true, overlays real DS100 source positions.
     bool           m_showDirectionlessChannel = false;   ///< When true, renders LFE inward at centre-channel angle.
+    bool           m_showChannelLabels = true;            ///< When true, draws per-channel name labels.
     /** @brief Number of `setSourcePosition` echo-backs to absorb without calling
      *         `updateFlashState`.  Incremented by `notifyTransformChanged` for every
      *         position sent to DS100 so that the expected OCP.1 echoes do not
      *         spuriously start the flash timer. */
     int            m_inhibitFlashCount = 0;
     IndicatorShape m_shape      = IndicatorShape::Circle; ///< Current ring geometry.
+    IndicatorVisualization m_visualization = IndicatorVisualization::DotsAndLine; ///< Current ring render style.
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UmsciUpmixIndicatorPaintNControlComponent)
 };

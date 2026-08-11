@@ -214,6 +214,7 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
     m_sourcePosition.clear();
     m_sourceDelayMode.clear();
     m_sourceSpread.clear();
+    m_sourceEnable.clear();
     m_sourceName.clear();
     m_speakerName.clear();
 
@@ -228,6 +229,7 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_Gain, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceSpread, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceDelayMode, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceEnable, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourcePosition, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
         ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_LevelMeterPostMute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
@@ -282,6 +284,10 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
     case DeviceController::RemoteObject::Positioning_SourceSpread:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType());
         setSourceSpread(obj.Addr.pri, obj.Var.ToFloat());
+        break;
+    case DeviceController::RemoteObject::Positioning_SourceEnable:
+        jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16 == obj.Var.GetDataType());
+        setSourceEnable(obj.Addr.pri, obj.Var.ToUInt16());
         break;
     case DeviceController::RemoteObject::MatrixOutput_ChannelName:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
@@ -392,6 +398,7 @@ bool UmsciControlComponent::checkIsDatabaseComplete()
     complete = complete && m_sourceGain.size() == m_ocp1IOSize.first;
     complete = complete && m_sourceSpread.size() == m_ocp1IOSize.first;
     complete = complete && m_sourceDelayMode.size() == m_ocp1IOSize.first;
+    complete = complete && m_sourceEnable.size() == m_ocp1IOSize.first;
     complete = complete && m_sourcePosition.size() == m_ocp1IOSize.first;
 
     complete = complete && m_speakerName.size() == m_ocp1IOSize.second;
@@ -455,6 +462,7 @@ void UmsciControlComponent::setDatabaseComplete(bool complete)
         m_sourceGain.clear();
         m_sourceSpread.clear();
         m_sourceDelayMode.clear();
+        m_sourceEnable.clear();
         m_sourcePosition.clear();
 
         m_speakerName.clear();
@@ -587,6 +595,12 @@ void UmsciControlComponent::setSourceSpread(std::int16_t sourceId, const std::fl
     if (onSourceSpreadReceived) onSourceSpreadReceived(sourceId, spread);
 }
 
+void UmsciControlComponent::setSourceEnable(std::int16_t sourceId, const std::uint16_t& enable)
+{
+    m_sourceEnable[sourceId] = enable;
+    if (onDeviceDataUpdated) onDeviceDataUpdated();
+}
+
 void UmsciControlComponent::setSpeakerName(std::int16_t speakerId, const std::string& name)
 {
     m_speakerName[speakerId] = name;
@@ -709,6 +723,19 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciControlComponent:
     return UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape::Circle;
 }
 
+void UmsciControlComponent::setUpmixVisualization(UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization visualization)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setVisualization(visualization);
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization UmsciControlComponent::getUpmixVisualization() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getVisualization();
+    return UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization::DotsAndLine;
+}
+
 void UmsciControlComponent::setShowDirectionlessChannel(bool show)
 {
     if (m_upmixIndicatorPaintAndControlComponent)
@@ -721,6 +748,19 @@ bool UmsciControlComponent::getShowDirectionlessChannel() const
     if (m_upmixIndicatorPaintAndControlComponent)
         return m_upmixIndicatorPaintAndControlComponent->getShowDirectionlessChannel();
     return false;
+}
+
+void UmsciControlComponent::setShowChannelLabels(bool show)
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        m_upmixIndicatorPaintAndControlComponent->setShowChannelLabels(show);
+}
+
+bool UmsciControlComponent::getShowChannelLabels() const
+{
+    if (m_upmixIndicatorPaintAndControlComponent)
+        return m_upmixIndicatorPaintAndControlComponent->getShowChannelLabels();
+    return true;
 }
 
 void UmsciControlComponent::setShowLevelMeter(bool show)

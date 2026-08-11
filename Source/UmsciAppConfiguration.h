@@ -180,11 +180,13 @@ public:
         UPMIXSOURCESTARTID,  ///< Integer: 1-based first DS100 channel for upmix inputs.
         UPMIXLIVEMODE,       ///< Boolean: follow live DS100 source positions.
         UPMIXSHAPE,          ///< String: "Circle" or "Rectangle".
+        UPMIXVISUALIZATION,  ///< String: "DotsAndLine" or "SolidBar".
         UPMIXSHOWALLSOURCES, ///< Boolean: render all sources or only upmix group.
         UPMIXSPREAD,              ///< Float: aggregate Positioning_SourceSpread value (0–1).
         UPMIXDELAYMODE,           ///< Integer: aggregate Positioning_SourceDelayMode (0=Off, 1=Tight, 2=Full).
         UPMIXSHOWLFECHANNEL,      ///< Boolean: render the LFE (directionless) channel dot inward at centre-channel angle.
-        UPMIXSHOWLEVELMETER       ///< Boolean: show the radial level meter overlay.
+        UPMIXSHOWLEVELMETER,      ///< Boolean: show the radial level meter overlay.
+        UPMIXSHOWCHANNELLABELS    ///< Boolean: draw per-channel name labels on the upmix indicator.
     };
     static juce::String getAttributeName(AttributeID ID)
     {
@@ -204,6 +206,8 @@ public:
             return "UPMIXLIVEMODE";
         case UPMIXSHAPE:
             return "UPMIXSHAPE";
+        case UPMIXVISUALIZATION:
+            return "UPMIXVISUALIZATION";
         case UPMIXSHOWALLSOURCES:
             return "UPMIXSHOWALLSOURCES";
         case UPMIXSPREAD:
@@ -214,6 +218,8 @@ public:
             return "UPMIXSHOWLFECHANNEL";
         case UPMIXSHOWLEVELMETER:
             return "UPMIXSHOWLEVELMETER";
+        case UPMIXSHOWCHANNELLABELS:
+            return "UPMIXSHOWCHANNELLABELS";
         default:
             return "-";
         }

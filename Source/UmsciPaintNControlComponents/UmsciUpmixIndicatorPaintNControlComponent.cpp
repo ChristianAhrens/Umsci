@@ -39,34 +39,40 @@ void UmsciUpmixIndicatorPaintNControlComponent::paint(juce::Graphics &g)
     g.setFont(font);
 
     auto opacity = (isTimerRunning() && !m_flashState) ? 0.25f : 1.0f;
+    // Solid Bar gets a small bit of permanent transparency on top of the flash dimming above,
+    // so it reads as a lighter-weight overlay than the opaque Dots & Line look.
+    auto ringOpacity = (m_visualization == IndicatorVisualization::SolidBar) ? opacity * 0.85f : opacity;
 
     // draw all ring fills first so no fill can paint over a label
     g.setColour(indicatorColour);
-    g.setOpacity(opacity);
+    g.setOpacity(ringOpacity);
     g.fillPath(m_upmixIndicator);
     g.fillPath(m_upmixHeightIndicator);
     g.fillPath(m_upmixDirectionlessIndicator);
 
     // draw all labels on top of the fills
-    g.setColour(labelColour);
-    g.setOpacity(opacity);
-    for (const auto& rcp : m_renderedFloorPositions)
+    if (m_showChannelLabels)
     {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
-    }
-    for (const auto& rcp : m_renderedHeightPositions)
-    {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
-    }
-    for (const auto& rcp : m_renderedDirectionlessPositions)
-    {
-        auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
-                               .withCentre(rcp.screenPos);
-        g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        g.setColour(labelColour);
+        g.setOpacity(opacity);
+        for (const auto& rcp : m_renderedFloorPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
+        for (const auto& rcp : m_renderedHeightPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
+        for (const auto& rcp : m_renderedDirectionlessPositions)
+        {
+            auto labelBounds = juce::Rectangle<float>(m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f)
+                                   .withCentre(rcp.screenPos);
+            g.drawFittedText(rcp.label, labelBounds.toNearestInt(), juce::Justification::centred, 1);
+        }
     }
 
     // draw height annotation in lower-right corner
@@ -646,7 +652,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
     auto radiusH = baseRadius * m_upmixTransH;  // floor ring horizontal half-extent
     auto radiusV = baseRadius * m_upmixTransV;  // floor ring vertical half-extent
     m_subCircleRadius = 15.0f * getControlsSizeMultiplier();
-    auto arcStrokeWidth = m_subCircleRadius * 0.5f;
+    // Solid Bar uses a width close to (but slightly narrower than) the current per-channel
+    // circle's diameter, replacing the thin default line, so it visually stands in for the
+    // omitted bumps without looking as heavy as the raw circle diameter.
+    auto arcStrokeWidth = (m_visualization == IndicatorVisualization::SolidBar)
+        ? m_subCircleRadius * 1.6f
+        : m_subCircleRadius * 0.5f;
+    // Solid Bar's open ends get rounded (semicircular) caps instead of a hard cut, since
+    // there are no bumps to visually absorb the ends the way Dots & Line has.
+    auto ringEndCapStyle = (m_visualization == IndicatorVisualization::SolidBar)
+        ? juce::PathStrokeType::rounded
+        : juce::PathStrokeType::butt;
     auto cosRot = std::cos(m_upmixRot);
     auto sinRot = std::sin(m_upmixRot);
 
@@ -723,8 +739,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 
         if (m_shape == IndicatorShape::Rectangle)
         {
-            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator,
-                buildOpenRectPath(radiusH, radiusV, minAngleDeg, maxAngleDeg));
+            juce::PathStrokeType(arcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixIndicator,
+                    buildOpenRectPath(radiusH, radiusV, minAngleDeg, maxAngleDeg));
         }
         else
         {
@@ -735,7 +752,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                                   juce::degreesToRadians(minAngleDeg),
                                   juce::degreesToRadians(maxAngleDeg),
                                   true);
-            juce::PathStrokeType(arcStrokeWidth).createStrokedPath(m_upmixIndicator, arcPath);
+            juce::PathStrokeType(arcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixIndicator, arcPath);
         }
 
         // add a filled sub-circle at each position and record its data for paint() and hit-testing
@@ -762,8 +780,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 py = cy + local_x * sinRot + local_y * cosRot;
             }
 
-            m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
-                                        m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar omits the per-channel bump — the wider stroke above stands in for it.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
+                                            m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             if (i < upmixPositionNames.size())
             {
@@ -842,8 +862,9 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
 
         if (m_shape == IndicatorShape::Rectangle)
         {
-            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator,
-                buildOpenRectPath(heightRadiusH, heightRadiusV, minHeightAngleDeg, maxHeightAngleDeg));
+            juce::PathStrokeType(heightArcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixHeightIndicator,
+                    buildOpenRectPath(heightRadiusH, heightRadiusV, minHeightAngleDeg, maxHeightAngleDeg));
         }
         else
         {
@@ -852,7 +873,8 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                                         juce::degreesToRadians(minHeightAngleDeg),
                                         juce::degreesToRadians(maxHeightAngleDeg),
                                         true);
-            juce::PathStrokeType(heightArcStrokeWidth).createStrokedPath(m_upmixHeightIndicator, heightArcPath);
+            juce::PathStrokeType(heightArcStrokeWidth, juce::PathStrokeType::mitered, ringEndCapStyle)
+                .createStrokedPath(m_upmixHeightIndicator, heightArcPath);
         }
 
         for (size_t i = 0; i < upmixHeightPositionAnglesDeg.size(); ++i)
@@ -876,8 +898,10 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 py = cy + local_x * sinRot + local_y * cosRot;
             }
 
-            m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
-                                              m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar omits the per-channel bump — the wider stroke above stands in for it.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixHeightIndicator.addEllipse(px - m_subCircleRadius, py - m_subCircleRadius,
+                                                  m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             if (i < upmixHeightPositionNames.size())
             {
@@ -926,9 +950,11 @@ void UmsciUpmixIndicatorPaintNControlComponent::PrerenderUpmixIndicatorInBounds(
                 centreScreenPos.x + dirX * m_subCircleRadius * 2.0f,
                 centreScreenPos.y + dirY * m_subCircleRadius * 2.0f);
 
-            m_upmixDirectionlessIndicator.addEllipse(
-                lfeScreenPos.x - m_subCircleRadius, lfeScreenPos.y - m_subCircleRadius,
-                m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
+            // Solid Bar suppresses all distinct per-channel markers, including LFE.
+            if (m_visualization == IndicatorVisualization::DotsAndLine)
+                m_upmixDirectionlessIndicator.addEllipse(
+                    lfeScreenPos.x - m_subCircleRadius, lfeScreenPos.y - m_subCircleRadius,
+                    m_subCircleRadius * 2.0f, m_subCircleRadius * 2.0f);
 
             RenderedChannelPosition rcp;
             rcp.sourceId  = static_cast<std::int16_t>(
@@ -1063,6 +1089,18 @@ UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape UmsciUpmixIndicatorPai
     return m_shape;
 }
 
+void UmsciUpmixIndicatorPaintNControlComponent::setVisualization(IndicatorVisualization visualization)
+{
+    m_visualization = visualization;
+    PrerenderUpmixIndicatorInBounds();
+    repaint();
+}
+
+UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization UmsciUpmixIndicatorPaintNControlComponent::getVisualization() const
+{
+    return m_visualization;
+}
+
 void UmsciUpmixIndicatorPaintNControlComponent::setUpmixTransform(float rot, float transH, float transV, float heightTransH, float heightTransV, float angleStretch)
 {
     m_upmixRot          = rot;
@@ -1175,6 +1213,17 @@ void UmsciUpmixIndicatorPaintNControlComponent::setShowDirectionlessChannel(bool
 bool UmsciUpmixIndicatorPaintNControlComponent::getShowDirectionlessChannel() const
 {
     return m_showDirectionlessChannel;
+}
+
+void UmsciUpmixIndicatorPaintNControlComponent::setShowChannelLabels(bool show)
+{
+    m_showChannelLabels = show;
+    repaint();
+}
+
+bool UmsciUpmixIndicatorPaintNControlComponent::getShowChannelLabels() const
+{
+    return m_showChannelLabels;
 }
 
 void UmsciUpmixIndicatorPaintNControlComponent::updateFlashState()

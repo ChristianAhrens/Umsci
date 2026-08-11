@@ -140,6 +140,8 @@ public:
     void setSourceDelayMode(std::int16_t sourceId, const std::uint16_t& delayMode);
     /** @brief Spread factor 0.0–1.0 (0 = point source, 1 = full spread). */
     void setSourceSpread(std::int16_t sourceId, const std::float_t& spread);
+    /** @brief En-Scene participation: 0 = matrix routing only, 1 = En-Scene (sound object). */
+    void setSourceEnable(std::int16_t sourceId, const std::uint16_t& enable);
     /** @} */
 
     /** @name Loudspeaker (matrix output) setters
@@ -196,8 +198,12 @@ public:
     bool getUpmixLiveMode() const;
     void setUpmixShape(UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape shape);
     UmsciUpmixIndicatorPaintNControlComponent::IndicatorShape getUpmixShape() const;
+    void setUpmixVisualization(UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization visualization);
+    UmsciUpmixIndicatorPaintNControlComponent::IndicatorVisualization getUpmixVisualization() const;
     void setShowDirectionlessChannel(bool show);
     bool getShowDirectionlessChannel() const;
+    void setShowChannelLabels(bool show);
+    bool getShowChannelLabels() const;
     void setShowLevelMeter(bool show);
     bool getShowLevelMeter() const;
     /** @} */
@@ -288,6 +294,8 @@ public:
     const std::map<std::int16_t, std::array<std::float_t, 6>>& getSpeakerPositions() const { return m_speakerPosition; }
     /** @brief Returns the currently cached function-group state (name + mode) keyed by group ID. */
     const std::map<std::int16_t, FunctionGroupState>&           getFunctionGroupData() const { return m_functionGroupData; }
+    /** @brief Returns the currently cached En-Scene enable state (0/1) keyed by matrix-input channel number. */
+    const std::map<std::int16_t, std::uint16_t>&                getSourceEnableStates() const { return m_sourceEnable; }
 
     //==============================================================================
     /**
@@ -367,6 +375,7 @@ private:
     std::map<std::int16_t, std::array<std::float_t, 3>> m_sourcePosition;
     std::map<std::int16_t, std::uint16_t>               m_sourceDelayMode;
     std::map<std::int16_t, std::float_t>                m_sourceSpread;
+    std::map<std::int16_t, std::uint16_t>               m_sourceEnable;
 
     std::map<std::int16_t, std::string>                 m_speakerName;
     std::map<std::int16_t, bool>                        m_speakerMute;

@@ -21,6 +21,7 @@
 #ifdef USE_DBPR_PROJECT_UTILS
 
 #include <map>
+#include <set>
 #include <string>
 
 /**
@@ -176,6 +177,19 @@ struct ProjectData
     SpeakerPositionDataMap   speakerPositionData;   ///< Keyed by matrix-output number.
     MatrixInputDataMap       matrixInputData;        ///< Keyed by matrix-input number (MatrixInput column).
     FunctionGroupDataMap     functionGroupData;      ///< Keyed by FunctionGroupId.
+
+    /**
+     * @brief All distinct DeviceId values seen in the raw MatrixInputs rows.
+     *
+     * `matrixInputData` is keyed by MatrixInput number only, so a project that
+     * references more than one physical DS100 (e.g. two redundant pairs) would
+     * silently overwrite one device's rows with another's during reading,
+     * hiding the presence of multiple devices from anything that inspects
+     * `matrixInputData` after the fact. This set is populated directly from
+     * the raw query results, independent of that overwrite, so callers can
+     * reliably detect and reject unsupported multi-device projects.
+     */
+    std::set<int> matrixInputDeviceIds;
 
     /** @brief Returns true when both coordinate-mapping and speaker maps are empty. */
     bool isEmpty() const;
