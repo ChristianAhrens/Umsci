@@ -4,12 +4,18 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] 2026-08-11
 ### Added
+- Added optional solid-bar instead of dots-with-line upmix indicator shape
+- Added optional hiding of bed channel labels from upmix indicator
 
 ### Changed
+- Changed submodule JUCE to new major release 9
+- Changed submodule NanoOcp to latest JUCEless release
 
 ### Fixed
+- Fixed dbpr project handling
+- Fixed upmix settings popup layouting
 
 ## [0.5.0] 2026-05-30
 ### Added
