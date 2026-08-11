@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="ja98xe" name="Umsci" projectType="guiapp" useAppConfig="0"
-              jucerFormatVersion="1" version="0.5.1" companyWebsite="https://christianahrens.github.io/Umsci"
+              jucerFormatVersion="1" version="0.6.0" companyWebsite="https://christianahrens.github.io/Umsci"
               bundleIdentifier="com.ChristianAhrens.Umsci" headerPath="../../submodules/JUCE-AppBasics/Source&#10;../../submodules/NanoOcp/Source/&#10;../../submodules/SQLiteCpp/include&#10;../../submodules/SQLiteCpp/sqlite3"
               defines="JUCE_USE_LAME_AUDIO_FORMAT=1,&#10;JUCE_USE_MP3AUDIOFORMAT=1,&#10;JUCE_DISPLAY_SPLASH_SCREEN=0,&#10;SQLITE_ENABLE_COLUMN_METADATA=1&#10;USE_DBPR_PROJECT_UTILS=1"
               companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
@@ -63,13 +63,19 @@
                 file="submodules/NanoOcp/Source/Ocp1ObjectDefinitions.h"/>
           <FILE id="aoCcc9" name="Variant.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Variant.cpp"/>
           <FILE id="MLaA5Q" name="Variant.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Variant.h"/>
-          <FILE id="oCt1Cp" name="Ocp1Controller.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/Ocp1Controller.cpp"/>
-          <FILE id="oCt2Hp" name="Ocp1Controller.h" compile="0" resource="0" file="submodules/NanoOcp/Source/Ocp1Controller.h"/>
-          <FILE id="dC1Cp" name="SoundscapeController.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/SoundscapeController.cpp"/>
-          <FILE id="dC2Hp" name="SoundscapeController.h" compile="0" resource="0" file="submodules/NanoOcp/Source/SoundscapeController.h"/>
+          <FILE id="oCt1Cp" name="Ocp1Controller.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Controller.cpp"/>
+          <FILE id="oCt2Hp" name="Ocp1Controller.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/Ocp1Controller.h"/>
+          <FILE id="dC1Cp" name="SoundscapeController.cpp" compile="1" resource="0"
+                file="submodules/NanoOcp/Source/SoundscapeController.cpp"/>
+          <FILE id="dC2Hp" name="SoundscapeController.h" compile="0" resource="0"
+                file="submodules/NanoOcp/Source/SoundscapeController.h"/>
           <GROUP id="{B3C1D2E4-F5A6-7B8C-9D0E-1F2A3B4C5D6E}" name="internal">
-            <FILE id="nAd0Cp" name="NanoAsyncDispatcher.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.cpp"/>
-            <FILE id="nAd0Hp" name="NanoAsyncDispatcher.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.h"/>
+            <FILE id="nAd0Cp" name="NanoAsyncDispatcher.cpp" compile="1" resource="0"
+                  file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.cpp"/>
+            <FILE id="nAd0Hp" name="NanoAsyncDispatcher.h" compile="0" resource="0"
+                  file="submodules/NanoOcp/Source/internal/NanoAsyncDispatcher.h"/>
             <FILE id="nSk1Cp" name="NanoSocket.cpp" compile="1" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.cpp"/>
             <FILE id="nSk2Hp" name="NanoSocket.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoSocket.h"/>
             <FILE id="nThr3Hp" name="NanoThread.h" compile="0" resource="0" file="submodules/NanoOcp/Source/internal/NanoThread.h"/>
