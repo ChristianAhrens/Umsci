@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+## [0.6.0] 2026-08-11
+### Added
+- Added optional solid-bar instead of dots-with-line upmix indicator shape
+- Added optional hiding of bed channel labels from upmix indicator
+
+### Changed
+- Changed submodule JUCE to new major release 9
+- Changed submodule NanoOcp to latest JUCEless release
+
+### Fixed
+- Fixed dbpr project handling
+- Fixed upmix settings popup layouting
+
 ## [0.5.0] 2026-05-30
 ### Added
 - Added optional custom external parameter controls via OSC
