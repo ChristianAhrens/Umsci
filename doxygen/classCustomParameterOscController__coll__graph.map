@@ -1,0 +1,7 @@
+<map id="CustomParameterOscController" name="CustomParameterOscController">
+<area shape="rect" id="Node000001" title="Manages OSC communication for user&#45;defined custom parameter control." alt="" coords="261,52,488,77"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,213,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="227,44,269,49,269,55,226,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="35,84,183,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,84,269,75,269,80,197,89"/>
+</map>

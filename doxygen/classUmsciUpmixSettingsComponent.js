@@ -1,0 +1,25 @@
+var classUmsciUpmixSettingsComponent =
+[
+    [ "UmsciUpmixSettingsComponent", "classUmsciUpmixSettingsComponent.html#ac8203e47d89152556f52d48689842f5c", null ],
+    [ "~UmsciUpmixSettingsComponent", "classUmsciUpmixSettingsComponent.html#aa2228b6a9e6e4bef379372d89c9f1830", null ],
+    [ "getControlFormatIndex", "classUmsciUpmixSettingsComponent.html#a790a5af98c69f88d349f867be78b9069", null ],
+    [ "getLiveMode", "classUmsciUpmixSettingsComponent.html#a0493845098686cf9d4ef117df9dc2b82", null ],
+    [ "getPreferredHeight", "classUmsciUpmixSettingsComponent.html#a14c0231f732ee6f2059d35be1cd437a5", null ],
+    [ "getShapeIsRectangle", "classUmsciUpmixSettingsComponent.html#a3144af77c98040acfa530a6799da2791", null ],
+    [ "getShowAllSources", "classUmsciUpmixSettingsComponent.html#aa76c3d1a7857619429db7e821b86866d", null ],
+    [ "getShowChannelLabels", "classUmsciUpmixSettingsComponent.html#a748bf80e9d099d8a1953a409cf0a0e78", null ],
+    [ "getShowLevelMeter", "classUmsciUpmixSettingsComponent.html#a16c11b71aa279c3ee1b518abd2133358", null ],
+    [ "getShowLfeChannel", "classUmsciUpmixSettingsComponent.html#a6b48af43f7729637e7eac6152472cf80", null ],
+    [ "getStartSoundobjectId", "classUmsciUpmixSettingsComponent.html#afd2583bd950633cdf8c3a94cb7667a15", null ],
+    [ "getVisualizationIsSolidBar", "classUmsciUpmixSettingsComponent.html#a70a063fa8f18310b326a3b35d174db64", null ],
+    [ "resized", "classUmsciUpmixSettingsComponent.html#a59f2c86111cb5cb52d86a87c07500303", null ],
+    [ "setControlFormatItems", "classUmsciUpmixSettingsComponent.html#a2a5cbd4f932bab467757d3a04a98b12b", null ],
+    [ "setLiveMode", "classUmsciUpmixSettingsComponent.html#a44e9d69e55f8d67022e4f083524fc237", null ],
+    [ "setShapeIsRectangle", "classUmsciUpmixSettingsComponent.html#a301ca6bc3a614bb93768b48454d92ec0", null ],
+    [ "setShowAllSources", "classUmsciUpmixSettingsComponent.html#a9c966fe45d1424e2da6414597d60a310", null ],
+    [ "setShowChannelLabels", "classUmsciUpmixSettingsComponent.html#a70f5500087344bfd1f8807a93758713b", null ],
+    [ "setShowLevelMeter", "classUmsciUpmixSettingsComponent.html#aa4cd3a7ad89c69f61deccd30a8f99ff1", null ],
+    [ "setShowLfeChannel", "classUmsciUpmixSettingsComponent.html#a6501eca681bb1cc4020778dd1972dc78", null ],
+    [ "setStartSoundobjectId", "classUmsciUpmixSettingsComponent.html#a64267b89590ca28b0aae262a45633aca", null ],
+    [ "setVisualizationIsSolidBar", "classUmsciUpmixSettingsComponent.html#a63f67284a7945c33ea26fefba7a9f002", null ]
+];

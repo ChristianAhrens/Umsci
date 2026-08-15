@@ -1,0 +1,9 @@
+<map id="MainComponent" name="MainComponent">
+<area shape="rect" id="Node000001" title="Root JUCE component — the top&#45;level UI that wires together the device connection, the visualisation,..." alt="" coords="184,93,313,119"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,13,137,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,41,224,91,222,96,108,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="161,5,336,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="251,59,251,93,246,93,246,59"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="360,5,535,45"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="388,53,279,96,277,91,386,48"/>
+</map>

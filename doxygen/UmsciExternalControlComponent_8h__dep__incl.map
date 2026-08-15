@@ -1,0 +1,26 @@
+<map id="Source/UmsciExternalControlComponent.h" name="Source/UmsciExternalControlComponent.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="334,5,546,45"/>
+<area shape="rect" id="Node000002" href="$MainComponent_8cpp.html" title=" " alt="" coords="78,255,282,280"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="321,31,263,38,201,50,140,69,83,96,56,113,37,131,23,152,11,182,8,196,10,208,26,227,54,242,88,252,86,257,52,247,22,231,5,210,3,196,6,181,18,150,33,127,52,109,80,91,138,64,200,45,262,33,320,26"/>
+<area shape="rect" id="Node000003" href="$MainComponent_8h.html" title=" " alt="" coords="474,181,663,207"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="510,49,537,67,560,92,570,115,574,140,573,181,568,181,569,140,565,117,555,95,534,72,507,54"/>
+<area shape="rect" id="Node000005" href="$UmsciExternalControlComponent_8cpp.html" title=" " alt="" coords="334,93,546,133"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="443,59,443,93,438,93,438,59"/>
+<area shape="rect" id="Node000006" href="$UpmixMidiController_8h.html" title=" " alt="" coords="94,101,310,126"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="376,52,234,103,232,98,374,47"/>
+<area shape="rect" id="Node000009" href="$UpmixOscController_8h.html" title=" " alt="" coords="650,101,862,126"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="523,46,715,98,714,103,522,52"/>
+<area shape="poly" id="edge4_Node000003_Node000002" title=" " alt="" coords="493,212,244,257,243,252,492,206"/>
+<area shape="rect" id="Node000004" href="$Main_8cpp.html" title=" " alt="" coords="504,255,633,280"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="571,220,571,255,566,255,566,220"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="269,126,515,179,514,184,268,131"/>
+<area shape="rect" id="Node000007" href="$MidiController_8h.html" title=" " alt="" coords="20,181,194,207"/>
+<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="179,137,123,183,119,179,175,133"/>
+<area shape="rect" id="Node000008" href="$UpmixMidiController_8cpp.html" title=" " alt="" coords="218,181,449,207"/>
+<area shape="poly" id="edge9_Node000006_Node000008" title=" " alt="" coords="234,131,315,179,313,183,231,135"/>
+<area shape="poly" id="edge11_Node000009_Node000003" title=" " alt="" coords="717,134,597,184,595,179,715,129"/>
+<area shape="rect" id="Node000010" href="$OscController_8h.html" title=" " alt="" coords="688,181,857,207"/>
+<area shape="poly" id="edge12_Node000009_Node000010" title=" " alt="" coords="764,139,773,181,767,182,759,140"/>
+<area shape="rect" id="Node000011" href="$UpmixOscController_8cpp.html" title=" " alt="" coords="882,181,1108,207"/>
+<area shape="poly" id="edge13_Node000009_Node000011" title=" " alt="" coords="805,128,961,179,959,184,803,133"/>
+</map>
