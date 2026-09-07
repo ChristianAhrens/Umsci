@@ -1,0 +1,22 @@
+name: CI Umsci macOS
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build Umsci
+        run: |
+          cd Resources/Deployment/macOS
+          chmod +x build_Umsci_CI.sh
+          ./build_Umsci_CI.sh
