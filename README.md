@@ -12,6 +12,7 @@ Full code documentation available at [![Documentation](https://img.shields.io/ba
 |macOS Xcode| [![Build status](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-macos.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-macos.yml) |
 |Windows Visual Studio| [![Build status](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-windows.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-windows.yml) |
 |Linux makefile| [![Build status](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-linux.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-linux.yml) |
+|Unit Tests| [![Unit Tests](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-tests.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-tests.yml) |
 
 <a name="toc" />
 
