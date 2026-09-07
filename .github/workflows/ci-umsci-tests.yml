@@ -1,4 +1,4 @@
-name: CI Umsci Tests
+name: CI Tests
 
 on:
   push:

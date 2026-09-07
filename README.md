@@ -7,7 +7,7 @@ See [LATEST RELEASE](https://github.com/ChristianAhrens/Umsci/releases/latest) f
 
 Full code documentation available at [![Documentation](https://img.shields.io/badge/docs-doxygen-blue)](https://ChristianAhrens.github.io/Umsci/doxygen/)
 
-|GitHub Actions CI build status|Umsci|
+|Platform|Status|
 |-|-|
 |macOS Xcode| [![Build status](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-macos.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-macos.yml) |
 |Windows Visual Studio| [![Build status](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-windows.yml/badge.svg?branch=main)](https://github.com/ChristianAhrens/Umsci/actions/workflows/ci-umsci-windows.yml) |

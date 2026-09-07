@@ -1,4 +1,4 @@
-name: CI Umsci macOS
+name: CI macOS
 
 on:
   push:
