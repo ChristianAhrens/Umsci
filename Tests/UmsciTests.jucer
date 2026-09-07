@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="ut01te" name="UmsciTests" projectType="consoleapp" useAppConfig="0"
+              jucerFormatVersion="1" version="1.0.0" bundleIdentifier="com.ChristianAhrens.UmsciTests"
+              headerPath="../../../submodules/JUCE-AppBasics/Source&#10;../../../submodules/SQLiteCpp/include&#10;../../../submodules/SQLiteCpp/sqlite3&#10;../../../Source"
+              defines="USE_DBPR_PROJECT_UTILS=1,&#10;SQLITE_ENABLE_COLUMN_METADATA=1"
+              companyName="ChristianAhrens" companyCopyright="Copyright (c) 2026 Christian Ahrens.">
+  <MAINGROUP id="ut02mg" name="UmsciTests">
+    <GROUP id="{9E9E9E9E-0002-0002-0002-000000000001}" name="Source">
+      <FILE id="ut03s1" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="ut04s2" name="SanityTest.cpp" compile="1" resource="0" file="Source/SanityTest.cpp"/>
+      <FILE id="ut05s3" name="UmsciAppConfigurationTest.cpp" compile="1" resource="0"
+            file="Source/UmsciAppConfigurationTest.cpp"/>
+      <FILE id="ut06s4" name="dbprProjectUtilsTest.cpp" compile="1" resource="0"
+            file="Source/dbprProjectUtilsTest.cpp"/>
+    </GROUP>
+    <GROUP id="{9E9E9E9E-0002-0002-0002-000000000002}" name="ProductionSourcesUnderTest">
+      <FILE id="ut07p1" name="UmsciAppConfiguration.cpp" compile="1" resource="0"
+            file="../Source/UmsciAppConfiguration.cpp"/>
+      <FILE id="ut08p2" name="AppConfigurationBase.cpp" compile="1" resource="0"
+            file="../submodules/JUCE-AppBasics/Source/AppConfigurationBase.cpp"/>
+      <!-- Embedded so UmsciAppConfiguration.cpp's ResetToDefault() resolves BinaryData::UmsciDefault_config,
+           exactly like Umsci.jucer itself does; without this, compiling UmsciAppConfiguration.cpp would
+           fail outright (the symbol wouldn't exist in this project's generated BinaryData.h). -->
+      <FILE id="ut09p3" name="UmsciDefault.config" compile="0" resource="1" file="../Resources/UmsciDefault.config"/>
+      <FILE id="ut10p4" name="dbprProjectUtils.cpp" compile="1" resource="0"
+            file="../Source/dbprProjectUtils.cpp"/>
+      <GROUP id="{9E9E9E9E-0002-0002-0002-000000000003}" name="SQLiteCpp">
+        <FILE id="ut11p5" name="sqlite3.c" compile="1" resource="0" file="../submodules/SQLiteCpp/sqlite3/sqlite3.c"/>
+        <FILE id="ut12p6" name="Backup.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Backup.cpp"/>
+        <FILE id="ut13p7" name="Column.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Column.cpp"/>
+        <FILE id="ut14p8" name="Database.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Database.cpp"/>
+        <FILE id="ut15p9" name="Exception.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Exception.cpp"/>
+        <FILE id="ut16pa" name="Savepoint.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Savepoint.cpp"/>
+        <FILE id="ut17pb" name="Statement.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Statement.cpp"/>
+        <FILE id="ut18pc" name="Transaction.cpp" compile="1" resource="0" file="../submodules/SQLiteCpp/src/Transaction.cpp"/>
+      </GROUP>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_processors_headless" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+  </MODULES>
+  <EXPORTFORMATS>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="0" name="Release"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../submodules/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../submodules/JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+  </EXPORTFORMATS>
+  <JUCEOPTIONS/>
+</JUCERPROJECT>

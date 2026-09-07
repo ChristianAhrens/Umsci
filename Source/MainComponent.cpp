@@ -1634,7 +1634,17 @@ void MainComponent::onConfigUpdated()
         resized();
     }
 
-    // window geometry — restore size, position, and fullscreen state
+    // window geometry — restore size, position, and fullscreen state.
+    // Desktop-only: on iOS (and any other non-windowed platform) the top-level window must
+    // always track the full device screen. Applying a persisted desktop WIDTH/HEIGHT here via
+    // setSize()/setTopLeftPosition() goes through Component::setBounds() rather than
+    // ResizableWindow::setFullScreen(), which permanently clears UIViewComponentPeer's internal
+    // fullScreen flag (juce_UIViewComponentPeer_ios.mm) — nothing ever re-asserts it afterwards,
+    // so every later updateScreenBounds() call (including on device rotation) takes the
+    // "re-centre, keep old size" branch instead of "resize to fill the new orientation", leaving
+    // the window permanently stuck at the wrong size after rotating. See iOS9 rotation
+    // investigation for the full trace that pinned this down.
+#if JUCE_WINDOWS || JUCE_MAC
     auto windowConfigState = m_config->getConfigState(
         UmsciAppConfiguration::getTagName(UmsciAppConfiguration::TagID::WINDOWCONFIG));
     if (windowConfigState)
@@ -1659,13 +1669,12 @@ void MainComponent::onConfigUpdated()
             }
         }
 
-#if JUCE_WINDOWS || JUCE_MAC
         if (windowConfigState->getIntAttribute("FULLSCREEN", 0) == 1)
             juce::Timer::callAfterDelay(150, [this] {
                 if (onSetFullscreenWindow) onSetFullscreenWindow(true);
             });
-#endif
     }
+#endif
 }
 
 bool MainComponent::isFullscreenEnabled()
