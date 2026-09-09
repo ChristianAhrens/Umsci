@@ -1,0 +1,7 @@
+<map id="DeviceController" name="DeviceController">
+<area shape="rect" id="Node000001" title="JUCE&#45;aware singleton that wraps NanoOcp1::SoundscapeController." alt="" coords="173,79,303,104"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,244,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="156,36,221,76,218,81,153,40"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="268,5,435,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="323,40,258,81,255,76,320,36"/>
+</map>

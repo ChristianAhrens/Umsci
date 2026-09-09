@@ -1,0 +1,7 @@
+<map id="UmsciZeroconfDiscoverComboComponent" name="UmsciZeroconfDiscoverComboComponent">
+<area shape="rect" id="Node000001" title="A ComboBox that continuously scans the local network for DS100 devices announced via Zeroconf/mDNS an..." alt="" coords="67,93,291,133"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,13,137,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,45,157,91,154,95,95,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="161,5,416,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="255,56,205,95,202,91,252,52"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="Source/CustomParameterControl/CustomParameterOscController.h" name="Source/CustomParameterControl/CustomParameterOscController.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="137,5,379,45"/>
+<area shape="rect" id="Node000002" href="$CustomParameterOscController_8cpp.html" title=" " alt="" coords="5,93,263,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="221,55,163,95,160,91,218,51"/>
+<area shape="rect" id="Node000003" href="$MainComponent_8h.html" title=" " alt="" coords="287,101,477,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="299,51,367,98,364,103,295,56"/>
+<area shape="rect" id="Node000004" href="$Main_8cpp.html" title=" " alt="" coords="221,181,351,207"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="359,137,302,183,299,179,356,133"/>
+<area shape="rect" id="Node000005" href="$MainComponent_8cpp.html" title=" " alt="" coords="375,181,579,207"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="408,133,464,179,461,183,405,137"/>
+</map>

@@ -1,0 +1,58 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="67,482,199,507"/>
+<area shape="rect" id="Node000001" href="$classAboutComponent.html" title="Small overlay panel showing the application icon, version info, and a link to the project repository." alt="" coords="370,182,505,207"/>
+<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="140,468,161,414,196,346,244,276,273,245,307,218,337,203,369,195,370,200,338,208,309,222,277,249,248,279,200,349,166,416,145,470"/>
+<area shape="rect" id="Node000002" href="$classCustomParameterControlConfigDialog.html" title="Settings panel for user&#45;defined OSC parameter control." alt="" coords="324,232,551,272"/>
+<area shape="poly" id="edge5_Node000000_Node000002" title=" " alt="" coords="145,468,170,427,206,377,252,325,307,282,330,270,332,275,309,286,256,329,211,380,175,430,150,471"/>
+<area shape="rect" id="Node000003" href="$classMainComponent.html" title="Root JUCE component — the top&#45;level UI that wires together the device connection, the visualisation,..." alt="" coords="373,77,502,102"/>
+<area shape="poly" id="edge6_Node000000_Node000003" title=" " alt="" coords="140,468,169,388,211,283,259,183,283,144,306,118,338,100,372,91,373,96,340,105,310,122,287,147,263,185,216,285,174,390,145,470"/>
+<area shape="rect" id="Node000006" href="$classUmsciConnectingComponent.html" title="Fullscreen progress overlay shown while the OCP.1 connection is being established,..." alt="" coords="332,297,543,322"/>
+<area shape="poly" id="edge7_Node000000_Node000006" title=" " alt="" coords="150,469,214,399,258,362,307,331,336,320,338,325,309,336,261,366,218,403,154,472"/>
+<area shape="rect" id="Node000007" href="$classUmsciControlComponent.html" title="The main visualisation and interaction surface for Umsci." alt="" coords="345,133,530,158"/>
+<area shape="poly" id="edge8_Node000000_Node000007" title=" " alt="" coords="137,468,155,405,188,323,210,280,237,238,269,200,307,167,343,150,346,154,309,172,273,204,242,241,215,283,193,325,160,407,142,469"/>
+<area shape="rect" id="Node000009" href="$classUmsciDbprProjectComponent.html" title="Floating side&#45;panel that shows a condensed summary of a loaded .dbpr project." alt="" coords="330,723,545,749"/>
+<area shape="poly" id="edge9_Node000000_Node000009" title=" " alt="" coords="155,517,310,709,337,721,334,726,306,713,151,520"/>
+<area shape="rect" id="Node000018" href="$classUmsciDiscoveringHintComponent.html" title="Fullscreen overlay shown when no DS100 connection has been configured yet." alt="" coords="316,346,559,371"/>
+<area shape="poly" id="edge10_Node000000_Node000018" title=" " alt="" coords="158,471,223,425,264,400,307,380,343,369,345,374,309,385,267,405,226,429,161,476"/>
+<area shape="rect" id="Node000019" href="$classUmsciExternalControlComponent.html" title="Settings panel for MIDI&#45; and OSC&#45;based external control of the six upmix transform parameters (rotati..." alt="" coords="318,395,557,421"/>
+<area shape="poly" id="edge11_Node000000_Node000019" title=" " alt="" coords="177,475,238,452,307,431,362,418,363,423,309,436,240,457,179,480"/>
+<area shape="rect" id="Node000020" href="$classUmsciExternalControlComponent_1_1MidiTab.html" title=" " alt="" coords="318,659,557,699"/>
+<area shape="poly" id="edge12_Node000000_Node000020" title=" " alt="" coords="156,516,220,579,263,614,309,643,340,656,338,661,307,648,260,618,216,583,152,519"/>
+<area shape="rect" id="Node000022" href="$classUmsciExternalControlComponent_1_1OscTab.html" title=" " alt="" coords="318,445,557,485"/>
+<area shape="poly" id="edge13_Node000000_Node000022" title=" " alt="" coords="212,484,317,474,318,479,212,490"/>
+<area shape="rect" id="Node000011" href="$classUmsciLevelMeterPaintComponent.html" title="Transparent overlay component that paints circular radial level meters for the upmix channels,..." alt="" coords="316,773,559,798"/>
+<area shape="poly" id="edge14_Node000000_Node000011" title=" " alt="" coords="157,516,208,575,262,652,276,683,281,710,289,735,310,758,330,770,328,775,306,762,285,737,276,712,271,685,258,655,204,579,153,519"/>
+<area shape="rect" id="Node000013" href="$classUmsciPaintNControlComponentBase.html" title="Abstract base class for all three overlaid visualisation layers in UmsciControlComponent." alt="" coords="308,510,567,535"/>
+<area shape="poly" id="edge15_Node000000_Node000013" title=" " alt="" coords="213,499,308,508,308,513,212,505"/>
+<area shape="rect" id="Node000023" href="$classUmsciSnapshotComponent.html" title="Floating side&#45;panel for storing and recalling a single upmix transform snapshot." alt="" coords="338,559,537,585"/>
+<area shape="poly" id="edge19_Node000000_Node000023" title=" " alt="" coords="187,509,309,544,366,557,365,562,307,549,185,514"/>
+<area shape="rect" id="Node000017" href="$classUmsciUpmixParamsComponent.html" title="Floating left&#45;side panel for batch&#45;controlling Positioning_SourceSpread and Positioning_SourceDelayMo..." alt="" coords="323,822,552,847"/>
+<area shape="poly" id="edge20_Node000000_Node000017" title=" " alt="" coords="158,515,210,574,238,612,262,652,272,676,277,698,279,738,285,774,294,791,310,809,326,820,323,824,306,813,290,794,280,775,274,738,272,699,267,677,258,655,234,615,206,578,154,519"/>
+<area shape="rect" id="Node000024" href="$classUmsciUpmixSettingsComponent.html" title="Body of the &quot;Upmix control settings&quot; dialog, presented inside a juce::AlertWindow via addCustomCompon..." alt="" coords="320,609,555,634"/>
+<area shape="poly" id="edge21_Node000000_Node000024" title=" " alt="" coords="164,513,229,554,268,576,309,593,352,606,350,611,307,599,266,580,226,559,161,517"/>
+<area shape="rect" id="Node000025" href="$classUmsciZeroconfDiscoverComboComponent.html" title="A ComboBox that continuously scans the local network for DS100 devices announced via Zeroconf/mDNS an..." alt="" coords="325,872,549,912"/>
+<area shape="poly" id="edge22_Node000000_Node000025" title=" " alt="" coords="159,515,212,574,239,612,262,652,274,683,278,712,277,763,277,787,281,811,291,834,310,858,327,871,324,875,306,862,286,837,276,812,272,788,272,763,273,712,269,685,258,654,235,615,207,577,155,519"/>
+<area shape="rect" id="Node000014" href="$classUmsciLoudspeakersPaintComponent.html" title="The bottom layer of the UmsciControlComponent stack — paints a speaker SVG icon at each loudspeaker&#39;s..." alt="" coords="615,535,873,561"/>
+<area shape="poly" id="edge16_Node000013_Node000014" title=" " alt="" coords="580,532,615,535,614,540,580,537"/>
+<area shape="rect" id="Node000015" href="$classUmsciSoundobjectsPaintComponent.html" title="The middle layer of the UmsciControlComponent stack — paints a filled circle for each sound object an..." alt="" coords="615,486,873,511"/>
+<area shape="poly" id="edge17_Node000013_Node000015" title=" " alt="" coords="580,509,615,506,615,511,581,514"/>
+<area shape="rect" id="Node000012" href="$classUmsciUpmixIndicatorPaintNControlComponent.html" title="The top layer of the UmsciControlComponent stack — renders an interactive upmix speaker ring and lets..." alt="" coords="647,929,841,969"/>
+<area shape="poly" id="edge18_Node000013_Node000012" title=" " alt="" coords="562,540,568,545,613,588,649,639,678,694,701,750,730,855,743,929,738,930,725,856,696,752,673,696,644,641,609,591,565,549,559,545"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="45,69,220,109"/>
+<area shape="poly" id="edge23_Node000004_Node000003" title=" " alt="" coords="234,87,372,87,372,92,234,92"/>
+<area shape="rect" id="Node000021" title=" " alt="" coords="39,666,227,691"/>
+<area shape="poly" id="edge24_Node000021_Node000020" title=" " alt="" coords="241,676,318,676,318,681,241,681"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="85,798,180,823"/>
+<area shape="poly" id="edge25_Node000010_Node000009" title=" " alt="" coords="186,791,307,757,361,746,362,751,309,763,187,797"/>
+<area shape="poly" id="edge26_Node000010_Node000011" title=" " alt="" coords="194,803,315,793,316,798,194,808"/>
+<area shape="poly" id="edge27_Node000010_Node000012" title=" " alt="" coords="194,824,229,838,262,858,277,875,285,893,293,908,309,922,350,940,393,953,437,962,482,968,569,969,646,963,647,969,570,975,482,973,437,968,392,959,348,945,307,926,289,912,280,895,273,878,258,862,226,843,192,829"/>
+<area shape="poly" id="edge28_Node000010_Node000017" title=" " alt="" coords="194,813,322,823,322,828,194,818"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="324,987,551,1013"/>
+<area shape="poly" id="edge29_Node000016_Node000012" title=" " alt="" coords="528,982,646,963,647,968,529,988"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="45,5,220,45"/>
+<area shape="poly" id="edge30_Node000005_Node000003" title=" " alt="" coords="234,44,377,74,376,79,233,49"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="37,133,229,173"/>
+<area shape="poly" id="edge31_Node000008_Node000007" title=" " alt="" coords="242,148,344,145,344,150,242,153"/>
+<area shape="rect" id="Node000026" title=" " alt="" coords="5,872,260,912"/>
+<area shape="poly" id="edge32_Node000026_Node000025" title=" " alt="" coords="274,889,325,889,325,895,274,895"/>
+</map>

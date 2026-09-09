@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Spatial audio control surface for
+d&amp;b Soundscape. Visualise soundobject positions, align and control
+an upmix renderer, and drive its parameters via OSC — all from one
+interface. macOS, Windows and iOS.">
+  <meta property="og:title" content="Umsci">
+  <meta property="og:description" content="Spatial audio control surface
+for d&amp;b Soundscape. Visualise soundobject positions, align and
+control an upmix renderer, and drive its parameters via OSC — all from
+one interface. macOS, Windows and iOS.">
+  <meta property="og:type" content="website">
+  <title>Umsci</title>
+  <style>
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --surface-2:   #21262d;
+      --border:      #30363d;
+      --text:        #e6edf3;
+      --text-muted:  #848d97;
+      --accent:      #58a6ff;
+      --accent-dim:  #1f3a5f;
+      --accent-hover:#79b8ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Navigation ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 17, 23, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-brand img {
+      height: 28px;
+      width: auto;
+      border: none;
+      border-radius: 6px;
+      margin: 0;
+      display: block;
+    }
+
+    .hero-icon {
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-icon img {
+      height: 96px;
+      width: auto;
+      border: none;
+      border-radius: 16px;
+      margin: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .nav-links a {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-links .btn-docs {
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-links .btn-docs:hover {
+      background: var(--accent-dim);
+      color: var(--text);
+    }
+
+    /* ── Main content ── */
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    /* ── Headings ── */
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, var(--text) 55%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-top: 3.25rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.6rem;
+    }
+
+    h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-top: 1.5rem;
+      margin-bottom: 0.4rem;
+    }
+
+    /* ── Body text ── */
+    p { margin-bottom: 1rem; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    strong { color: var(--text); font-weight: 600; }
+
+    /* ── CTA button row ── */
+    .cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1.5rem 0 2rem;
+    }
+
+    .cta p { margin: 0; }
+
+    .cta p a {
+      display: inline-block;
+      padding: 0.55rem 1.3rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.925rem;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .cta p:first-child a {
+      background: var(--accent);
+      color: #0d1117;
+    }
+
+    .cta p:first-child a:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .cta p:not(:first-child) a {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .cta p:not(:first-child) a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    /* ── Lists ── */
+    ul, ol {
+      margin: 0.5rem 0 1.25rem 1.4rem;
+    }
+
+    li { margin-bottom: 0.45rem; }
+    li p { margin-bottom: 0.25rem; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background: var(--surface-2);
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(88, 166, 255, 0.04); }
+
+    /* ── Code ── */
+    code {
+      font-family: "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.875em;
+      background: var(--surface-2);
+      color: #e06c75;
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    pre {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 0.875rem;
+    }
+
+    /* ── Images ── */
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin: 1.25rem 0;
+      display: block;
+      border: 1px solid var(--border);
+    }
+
+    img[src*="shields.io"],
+    img[src*="img.shields.io"],
+    img[src*="ci.appveyor.com"] {
+      display: inline;
+      margin: 0 0.2rem 0 0;
+      border: none;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+
+    /* ── Blockquote ── */
+    blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 1.25rem 0;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+      border-radius: 0 8px 8px 0;
+      color: var(--text-muted);
+    }
+
+    blockquote p { margin-bottom: 0; }
+
+    /* ── Horizontal rule ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .footer-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      h1 { font-size: 2rem; }
+      h2 { font-size: 1.25rem; margin-top: 2.5rem; }
+      main { padding: 2rem 1rem 3.5rem; }
+      nav { padding: 0 1rem; }
+      .nav-links { gap: 0.75rem; }
+      table { font-size: 0.82rem; }
+      th, td { padding: 0.5rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a class="nav-brand" href="#"><img src="Resources/Images/UmsciRect.png" alt="">Umsci</a>
+    <div class="nav-links">
+      <a href="https://github.com/ChristianAhrens/Umsci">GitHub</a>
+      <a href="doxygen/" class="btn-docs">API Docs</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+<div class="hero-icon"><img src="Resources/Images/UmsciRect.png" alt="Umsci icon"></div>
+<h1 id="umsci">Umsci</h1>
+<p>A spatial audio control surface for d&amp;b Soundscape. See the room,
+move objects, align an upmix renderer’s output to the physical speaker
+layout, and drive the renderer’s own parameters — all from one
+interface, in real time.</p>
+<div class="cta">
+<p><a
+href="https://github.com/ChristianAhrens/Umsci/releases/latest">Download
+latest release</a></p>
+<p><a href="doxygen/">API Documentation</a></p>
+<p><a href="https://github.com/ChristianAhrens/Umsci">GitHub
+Repository</a></p>
+</div>
+<hr />
+<figure>
+<img src="Resources/Documentation/Showreel/Showreel.002.png"
+alt="Umsci overview" />
+<figcaption aria-hidden="true">Umsci overview</figcaption>
+</figure>
+<h2 id="what-it-does">What it does</h2>
+<p>Umsci connects to a <strong>d&amp;b Soundscape processing
+engine</strong> (DS100, DS100M, DS100D, DS110 or vCore) over the
+OCA/OCP.1 network protocol and renders a live 2D top-down map of the
+room as configured in the processing engine. Three transparent layers
+share the same coordinate space: loudspeaker icons at the bottom,
+draggable sound object circles in the middle, and an interactive upmix
+indicator ring on top.</p>
+<p>Its core workflow addresses the <strong>upmix alignment
+problem</strong>: an external upmix renderer — a standalone application,
+DAW plug-in or hardware processor — produces a set of spatialised output
+channels fed into consecutive sound objects on the processing engine.
+Umsci gives a single graphic handle on that block of objects. Drag five
+transform handles on the indicator ring to rotate, scale, stretch and
+shift the virtual speaker geometry until it matches the physical room.
+In Live mode every adjustment is forwarded to the processing engine in
+real time.</p>
+<p>Beyond alignment, Umsci can also send OSC messages directly to the
+upmix renderer itself, so its internal parameters — such as room size,
+reverb characteristics or format-specific controls — can be adjusted
+from the same interface without switching to the renderer’s own UI.</p>
+<h2 id="the-scene-view">The scene view</h2>
+<p>All three layers render in the same normalised coordinate space used
+by the processing engine and share the same zoom and pan state:</p>
+<table>
+<colgroup>
+<col style="width: 43%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Layer</th>
+<th style="text-align: left;">Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Bottom</td>
+<td style="text-align: left;">Physical loudspeaker positions read from
+the processing engine — display only.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Middle</td>
+<td style="text-align: left;">Live sound object positions, draggable in
+Live mode.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Top</td>
+<td style="text-align: left;">Upmix indicator ring with interactive
+transform handles.</td>
+</tr>
+</tbody>
+</table>
+<p>Zoom and pan via mouse wheel, trackpad pinch, or two-finger touch on
+iOS/iPadOS.</p>
+<h2 id="upmix-indicator-control">Upmix indicator control</h2>
+<p>The indicator ring represents the ideal geometry for the selected
+immersive format — from Stereo up to 9.1.6 Atmos. Five interactive
+handles let you adapt it to the physical room without entering
+coordinates manually:</p>
+<ul>
+<li><strong>Ring arc drag (tangential)</strong> — rotates both floor and
+height rings together</li>
+<li><strong>Ring arc drag (radial, floor)</strong> — scales floor ring
+width and height independently</li>
+<li><strong>Ring arc drag (radial, height)</strong> — scales height ring
+independently of the floor ring</li>
+<li><strong>Centre cross drag</strong> — shifts the ring centre in
+XY</li>
+<li><strong>Stretch arrow drag</strong> — compresses or expands
+front/rear angular spread</li>
+<li><strong>Refit button</strong> — auto-fits the ring to the
+loudspeaker bounding box in one click</li>
+</ul>
+<p>Double-click any handle to reset it to its default. Both Circle and
+Rectangle indicator shapes are supported.</p>
+<h3 id="control-modes">Control modes</h3>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Mode</th>
+<th style="text-align: left;">Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Manual</strong></td>
+<td style="text-align: left;">Geometry changes are previewed locally.
+Double-click to commit positions to the processing engine.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Live</strong></td>
+<td style="text-align: left;">Every handle movement is sent to the
+processing engine immediately. Echo-backs from the processing engine are
+absorbed to prevent spurious visual feedback.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="midi-external-control">MIDI external control</h2>
+<p>All eight upmix transform parameters — rotation, floor H/V scale,
+height H/V scale, angle stretch, and XY offset — can be mapped to MIDI
+continuous controllers via a MidiLearner dialog. Click Learn on a
+parameter row, move the controller, and the assignment is captured
+automatically. MIDI control works alongside all other interaction modes
+with no switching required.</p>
+<h2 id="osc-renderer-control">OSC renderer control</h2>
+<p>Umsci can send OSC messages directly to a upmix renderer — whether it
+is a standalone application, a DAW plug-in (via a virtual OSC bridge) or
+a hardware unit with an OSC interface. Custom parameter mappings are
+configured in Umsci’s settings: assign an OSC address and value range to
+each renderer parameter you want to expose, and those controls become
+available alongside the spatial view.</p>
+<p>This closes the loop between spatial alignment and renderer
+operation. Instead of switching back and forth between Umsci and the
+renderer’s own UI, the complete upmix workflow — geometry alignment,
+live processing-engine position updates and renderer parameter
+adjustments — is accessible from a single interface.</p>
+<h2 id="db-project-integration">d&amp;b project integration</h2>
+<p>Load a <code>.dbpr</code> d&amp;b audiotechnik software project file
+to use as a reference. Umsci reads coordinate mappings, speaker
+positions, sound object names and function groups from the file’s
+internal SQLite database and displays a compact summary. Continuous
+mismatch detection highlights any divergence between the loaded project
+data and the live processing-engine state; a single Sync button pushes
+the project data back to the device.</p>
+<h2 id="ios-and-ipados">iOS and iPadOS</h2>
+<p>Umsci runs natively on iOS and iPadOS with full touch support:
+two-finger pinch zoom on the scene view, correct safe-area handling for
+notch, Dynamic Island and home indicator, and automatic discovery of
+Soundscape processing engines via Zeroconf/mDNS — no IP address
+required. An iPad or iPhone becomes a wireless spatial control surface
+for any Soundscape processing engine reachable on the local network.</p>
+<h2 id="getting-started">Getting started</h2>
+<ol type="1">
+<li>Open <strong>Settings → Connection settings</strong> and enter the
+processing engine’s IP address, port (<code>50014</code>) and the IOsize
+matching your device license (<code>64x64</code> for L,
+<code>128x64</code> for XL).</li>
+<li>Click the connection toggle in the top-right corner. Loudspeaker
+icons and live sound object positions populate the scene view.</li>
+<li>Open <strong>Settings → Upmix control settings</strong>, select the
+channel format your upmix renderer produces and the first
+processing-engine input it occupies.</li>
+<li>Click <strong>Refit</strong> on the indicator ring as a starting
+point, then drag handles to align the geometry with the physical speaker
+layout. Switch to Live mode to send positions in real time.</li>
+</ol>
+<p>The full step-by-step walkthrough, settings reference and
+architecture documentation are in the <a
+href="https://github.com/ChristianAhrens/Umsci/blob/main/README.md">README</a>.</p>
+<h2 id="platform-support">Platform support</h2>
+<table>
+<colgroup>
+<col style="width: 58%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Platform</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">macOS</td>
+<td style="text-align: left;">Desktop app; mouse wheel and trackpad
+pinch zoom.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Windows</td>
+<td style="text-align: left;">Desktop app; mouse wheel zoom.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">iOS / iPadOS</td>
+<td style="text-align: left;">Native app; full touch, pinch zoom,
+Zeroconf discovery. TestFlight beta available.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="get-it">Get it</h2>
+<p>Binary packages for macOS and Windows are attached to every <a
+href="https://github.com/ChristianAhrens/Umsci/releases/latest">GitHub
+release</a>. The iOS TestFlight beta is linked from the <a
+href="https://github.com/ChristianAhrens/Umsci#readme">repository
+page</a>.</p>
+<p>Source code, build scripts and full technical documentation are in
+the <a href="https://github.com/ChristianAhrens/Umsci">GitHub
+repository</a>. Code-level API documentation is in the <a
+href="doxygen/">Doxygen reference</a>.</p>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-links">
+      <a href="https://github.com/ChristianAhrens/Umsci">GitHub Repository</a>
+      <a href="doxygen/">API Documentation</a>
+      <a href="https://github.com/ChristianAhrens/Umsci/blob/main/README.md">Full README</a>
+    </div>
+    <p>Open source &mdash; use what is provided here at your own risk.</p>
+  </div>
+</footer>
+
+</body>
+</html>
