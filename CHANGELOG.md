@@ -4,12 +4,16 @@ All notable changes to Umsci will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.3] 2026-09-09
 ### Added
+- Added Github Workflows CI definitions for linux/macOS/windows
+- Added unit testing infrastructure, incl. basic test coverage
 
 ### Changed
+- Changed submodule JUCE to tag 9.0.2
 
 ### Fixed
+- Fixed iOS rotation / window size change adaption issue
 
 ## [0.6.2] 2026-08-15
 ### Added
