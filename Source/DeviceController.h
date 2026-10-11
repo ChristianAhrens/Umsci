@@ -22,6 +22,9 @@
 
 #include <SoundscapeController.h>
 #include <Variant.h>
+#include <internal/NanoTimerScheduler.h>
+
+#include <memory>
 
 
 /**
@@ -43,11 +46,17 @@
  * handled automatically by the base class.
  *
  * ## Threading
- * NanoOcp1::SoundscapeController fires its callbacks on the socket thread.
+ * NanoOcp1::SoundscapeController fires all of its callbacks (message-driven ones as
+ * well as the GetValues response-timeout) on the shared NanoTimerScheduler thread;
+ * NanoOcp no longer has a separate dispatcher thread for the message-driven ones.
  * DeviceController intercepts both callbacks in the constructor, wraps
  * the payload in a juce::Message, and posts it to the JUCE message thread.
  * handleMessage() then calls the public onRemoteObjectReceived /
  * onStateChanged on the message thread.
+ *
+ * The NanoTimerScheduler backing the base class' timers is created by
+ * DeviceController's constructor and owned by the base class; NanoOcp itself
+ * provides no default instance.
  */
 class DeviceController : public NanoOcp1::SoundscapeController,
                          public juce::MessageListener
@@ -181,91 +190,19 @@ public:
     /**
      * @brief A fully-qualified DS100 remote parameter: type, address, value.
      *
-     * Uses the same RemObjIdent enum as NanoOcp1::SoundscapeController::RemoteObject
-     * (values are identical) and a DeviceController::RemObjAddr (adds JUCE helpers).
+     * RemObjIdent is the actual NanoOcp1::SoundscapeController::RemoteObject::RemObjIdent
+     * enum (aliased, not duplicated) so the two can never drift out of numeric sync with
+     * each other - a hand-maintained duplicate enum silently went out of alignment here
+     * once before, when NanoOcp inserted a new entry mid-enum without a matching change
+     * on this side, and the resulting cross-wiring of OCA properties is hard to spot since
+     * most mismatched pairs don't share an assert-catchable data type.
+     * Addr stays a DeviceController::RemObjAddr (adds JUCE helpers) rather than aliasing too.
      */
     struct RemoteObject
     {
-        enum RemObjIdent
-        {
-            HeartbeatPing = 0,
-            HeartbeatPong,
-            Invalid,
-            Fixed_GUID,
-            Settings_DeviceName,
-            Status_StatusText,
-            Status_AudioNetworkSampleStatus,
-            Error_GnrlErr,
-            Error_ErrorText,
-            MatrixInput_Mute,
-            MatrixInput_Gain,
-            MatrixInput_Delay,
-            MatrixInput_DelayEnable,
-            MatrixInput_EqEnable,
-            MatrixInput_Polarity,
-            MatrixInput_ChannelName,
-            MatrixInput_LevelMeterPreMute,
-            MatrixInput_LevelMeterPostMute,
-            MatrixInput_ReverbSendGain,
-            MatrixNode_Enable,
-            MatrixNode_Gain,
-            MatrixNode_DelayEnable,
-            MatrixNode_Delay,
-            MatrixOutput_Mute,
-            MatrixOutput_Gain,
-            MatrixOutput_Delay,
-            MatrixOutput_DelayEnable,
-            MatrixOutput_EqEnable,
-            MatrixOutput_Polarity,
-            MatrixOutput_ChannelName,
-            MatrixOutput_LevelMeterPreMute,
-            MatrixOutput_LevelMeterPostMute,
-            Positioning_SourceSpread,
-            Positioning_SourceDelayMode,
-            Positioning_SourceEnable,
-            Positioning_SourcePosition_XY,
-            Positioning_SourcePosition_X,
-            Positioning_SourcePosition_Y,
-            Positioning_SourcePosition,
-            CoordinateMapping_SourcePosition_XY,
-            CoordinateMapping_SourcePosition_X,
-            CoordinateMapping_SourcePosition_Y,
-            CoordinateMapping_SourcePosition,
-            MatrixSettings_ReverbRoomId,
-            MatrixSettings_ReverbPredelayFactor,
-            MatrixSettings_ReverbRearLevel,
-            FunctionGroup_Name,
-            FunctionGroup_Delay,
-            FunctionGroup_Mode,
-            FunctionGroup_SpreadFactor,
-            ReverbInput_Gain,
-            ReverbInputProcessing_Mute,
-            ReverbInputProcessing_Gain,
-            ReverbInputProcessing_EqEnable,
-            ReverbInputProcessing_LevelMeter,
-            Scene_SceneIndex,
-            Scene_SceneName,
-            Scene_SceneComment,
-            Scene_Previous,
-            Scene_Next,
-            Scene_Recall,
-            CoordinateMappingSettings_P1real,
-            CoordinateMappingSettings_P2real,
-            CoordinateMappingSettings_P3real,
-            CoordinateMappingSettings_P4real,
-            CoordinateMappingSettings_P1virtual,
-            CoordinateMappingSettings_P3virtual,
-            CoordinateMappingSettings_Flip,
-            CoordinateMappingSettings_Name,
-            Positioning_SpeakerPosition,
-            Positioning_SpeakerGroup,
-            SoundObjectRouting_Mute,
-            SoundObjectRouting_Gain,
-            Device_Clear,
-            InvalidMAX
-        };
+        using RemObjIdent = NanoOcp1::SoundscapeController::RemoteObject::RemObjIdent;
 
-        RemObjIdent    Id  {Invalid};
+        RemObjIdent    Id  {RemObjIdent::Invalid};
         RemObjAddr     Addr;
         NanoOcp1::Variant Var;
 
@@ -291,16 +228,12 @@ public:
 
         static juce::String GetObjectDescription(RemObjIdent roi)
         {
-            using BaseROI = NanoOcp1::SoundscapeController::RemoteObject::RemObjIdent;
-            return juce::String(NanoOcp1::SoundscapeController::RemoteObject::GetObjectDescription(
-                static_cast<BaseROI>(roi)));
+            return juce::String(NanoOcp1::SoundscapeController::RemoteObject::GetObjectDescription(roi));
         }
 
         static bool IsFlickering(RemObjIdent roi)
         {
-            using BaseROI = NanoOcp1::SoundscapeController::RemoteObject::RemObjIdent;
-            return NanoOcp1::SoundscapeController::RemoteObject::IsFlickering(
-                static_cast<BaseROI>(roi));
+            return NanoOcp1::SoundscapeController::RemoteObject::IsFlickering(roi);
         }
 
         JUCE_LEAK_DETECTOR(RemoteObject)

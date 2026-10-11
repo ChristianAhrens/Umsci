@@ -500,7 +500,7 @@ MainComponent::MainComponent()
         {
             DeviceController::getInstance()->SetObjectValue(
                 DeviceController::RemoteObject(
-                    DeviceController::RemoteObject::Positioning_SourceSpread,
+                    DeviceController::RemoteObject::RemObjIdent::Positioning_SourceSpread,
                     DeviceController::RemObjAddr(id, DeviceController::RemObjAddr::sc_INV),
                     NanoOcp1::Variant(spread)));
         }
@@ -515,7 +515,7 @@ MainComponent::MainComponent()
         {
             DeviceController::getInstance()->SetObjectValue(
                 DeviceController::RemoteObject(
-                    DeviceController::RemoteObject::Positioning_SourceDelayMode,
+                    DeviceController::RemoteObject::RemObjIdent::Positioning_SourceDelayMode,
                     DeviceController::RemObjAddr(id, DeviceController::RemObjAddr::sc_INV),
                     NanoOcp1::Variant(modeUint16)));
         }
@@ -2147,9 +2147,9 @@ void MainComponent::syncProjectToDevice()
         const auto addr = DeviceController::RemObjAddr(
             static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::MatrixInput_ChannelName, addr, NanoOcp1::Variant(name)));
+            DeviceController::RemoteObject::RemObjIdent::MatrixInput_ChannelName, addr, NanoOcp1::Variant(name)));
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::Positioning_SourceEnable, addr, NanoOcp1::Variant(inputMode)));
+            DeviceController::RemoteObject::RemObjIdent::Positioning_SourceEnable, addr, NanoOcp1::Variant(inputMode)));
     }
 
     // Speaker positions — all 64; unused → all-zero 6DOF
@@ -2159,7 +2159,7 @@ void MainComponent::syncProjectToDevice()
         const bool active = (it != projectData.speakerPositionData.end() && !it->second.isNull());
         const auto& pp = active ? it->second : dbpr::SpeakerPositionData{};
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::Positioning_SpeakerPosition,
+            DeviceController::RemoteObject::RemObjIdent::Positioning_SpeakerPosition,
             DeviceController::RemObjAddr(static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV),
             NanoOcp1::Variant(
                 NanoOcp1::DataFromAimingAndPosition(
@@ -2179,9 +2179,9 @@ void MainComponent::syncProjectToDevice()
         const auto addr = DeviceController::RemObjAddr(
             static_cast<std::int16_t>(i), DeviceController::RemObjAddr::sc_INV);
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::FunctionGroup_Mode, addr, NanoOcp1::Variant(mode)));
+            DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Mode, addr, NanoOcp1::Variant(mode)));
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::FunctionGroup_Name, addr, NanoOcp1::Variant(name)));
+            DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Name, addr, NanoOcp1::Variant(name)));
     }
 
     // Coordinate mapping settings — all 4 areas; unused → zero points, no flip, empty name
@@ -2202,18 +2202,18 @@ void MainComponent::syncProjectToDevice()
                     NanoOcp1::OCP1DATATYPE_BLOB)));
         };
 
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1real,    cm.rp1x, cm.rp1y, cm.rp1z);
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P2real,    cm.rp2x, cm.rp2y, cm.rp2z);
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3real,    cm.rp3x, cm.rp3y, cm.rp3z);
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P4real,    cm.rp4x, cm.rp4y, cm.rp4z);
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P1virtual, cm.vp1x, cm.vp1y, cm.vp1z);
-        sendPos(DeviceController::RemoteObject::CoordinateMappingSettings_P3virtual, cm.vp3x, cm.vp3y, cm.vp3z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P1real,    cm.rp1x, cm.rp1y, cm.rp1z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P2real,    cm.rp2x, cm.rp2y, cm.rp2z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P3real,    cm.rp3x, cm.rp3y, cm.rp3z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P4real,    cm.rp4x, cm.rp4y, cm.rp4z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P1virtual, cm.vp1x, cm.vp1y, cm.vp1z);
+        sendPos(DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P3virtual, cm.vp3x, cm.vp3y, cm.vp3z);
 
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::CoordinateMappingSettings_Flip, addr,
+            DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_Flip, addr,
             NanoOcp1::Variant(static_cast<std::uint16_t>(active && cm.flip ? 1 : 0))));
         dc->SetObjectValue(DeviceController::RemoteObject(
-            DeviceController::RemoteObject::CoordinateMappingSettings_Name, addr,
+            DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_Name, addr,
             NanoOcp1::Variant(active ? cm.name : std::string{})));
     }
 

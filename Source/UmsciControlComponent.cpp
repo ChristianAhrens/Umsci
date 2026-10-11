@@ -47,7 +47,7 @@ UmsciControlComponent::UmsciControlComponent()
         m_sourcePosition[sourceId] = position;
         DeviceController::getInstance()->SetObjectValue(
             DeviceController::RemoteObject(
-                DeviceController::RemoteObject::Positioning_SourcePosition,
+                DeviceController::RemoteObject::RemObjIdent::Positioning_SourcePosition,
                 DeviceController::RemObjAddr(sourceId, DeviceController::RemObjAddr::sc_INV),
                 NanoOcp1::Variant(position.at(0), position.at(1), position.at(2))
             )
@@ -67,7 +67,7 @@ UmsciControlComponent::UmsciControlComponent()
         m_soundobjectsInAreaPaintComponent->setSourcePosition(sourceId, position);
         DeviceController::getInstance()->SetObjectValue(
             DeviceController::RemoteObject(
-                DeviceController::RemoteObject::Positioning_SourcePosition,
+                DeviceController::RemoteObject::RemObjIdent::Positioning_SourcePosition,
                 DeviceController::RemObjAddr(sourceId, DeviceController::RemObjAddr::sc_INV),
                 NanoOcp1::Variant(position.at(0), position.at(1), position.at(2))
             )
@@ -221,30 +221,30 @@ void UmsciControlComponent::rebuildOcp1ObjectTree()
     // rebuild the object tree
     auto ocp1ObjectTree = std::vector<DeviceController::RemoteObject>();
 
-    ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Settings_DeviceName, DeviceController::RemObjAddr(), NanoOcp1::Variant()));
+    ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Settings_DeviceName, DeviceController::RemObjAddr(), NanoOcp1::Variant()));
     for (std::int16_t i = 1; i <= m_ocp1IOSize.first; i++)
     {
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_ChannelName, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_Mute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_Gain, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceSpread, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceDelayMode, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourceEnable, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SourcePosition, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixInput_LevelMeterPostMute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixInput_ChannelName, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixInput_Mute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixInput_Gain, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SourceSpread, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SourceDelayMode, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SourceEnable, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SourcePosition, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixInput_LevelMeterPostMute, DeviceController::RemObjAddr(i, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
     for (std::int16_t o = 1; o <= m_ocp1IOSize.second; o++)
     {
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_ChannelName, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Mute, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::MatrixOutput_Gain, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerPosition, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::Positioning_SpeakerGroup, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixOutput_ChannelName, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Mute, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Gain, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SpeakerPosition, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::Positioning_SpeakerGroup, DeviceController::RemObjAddr(o, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
     for (std::int16_t g = 1; g <= std::min(static_cast<int>(DeviceController::sc_MAX_FUNCTION_GROUPS), m_ocp1IOSize.second); g++)
     {
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Name, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
-        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::FunctionGroup_Mode, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Name, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
+        ocp1ObjectTree.push_back(DeviceController::RemoteObject(DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Mode, DeviceController::RemObjAddr(g, DeviceController::RemObjAddr::sc_INV), NanoOcp1::Variant()));
     }
 
     DeviceController::getInstance()->SetActiveRemoteObjects(ocp1ObjectTree);
@@ -257,123 +257,123 @@ void UmsciControlComponent::setRemoteObject(const DeviceController::RemoteObject
 
     switch (obj.Id)
     {
-    case DeviceController::RemoteObject::Settings_DeviceName:
+    case DeviceController::RemoteObject::RemObjIdent::Settings_DeviceName:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
         setDeviceName(obj.Var.ToString());
         break;
-    case DeviceController::RemoteObject::MatrixInput_ChannelName:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_ChannelName:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
         setSourceName(obj.Addr.pri, obj.Var.ToString());
         break;
-    case DeviceController::RemoteObject::MatrixInput_Mute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_Mute:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8 == obj.Var.GetDataType());
         setSourceMute(obj.Addr.pri, obj.Var.ToUInt8());
         break;
-    case DeviceController::RemoteObject::MatrixInput_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_Gain:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType());
         setSourceGain(obj.Addr.pri, obj.Var.ToFloat());
         break;
-    case DeviceController::RemoteObject::Positioning_SourcePosition:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SourcePosition:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_BLOB /*OCP1DATATYPE_DB_POSITION ?!*/ == obj.Var.GetDataType());
         setSourcePosition(obj.Addr.pri, obj.Var.ToPosition());
         break;
-    case DeviceController::RemoteObject::Positioning_SourceDelayMode:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SourceDelayMode:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16 == obj.Var.GetDataType());
         setSourceDelayMode(obj.Addr.pri, obj.Var.ToUInt16());
         break;
-    case DeviceController::RemoteObject::Positioning_SourceSpread:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SourceSpread:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType());
         setSourceSpread(obj.Addr.pri, obj.Var.ToFloat());
         break;
-    case DeviceController::RemoteObject::Positioning_SourceEnable:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SourceEnable:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16 == obj.Var.GetDataType());
         setSourceEnable(obj.Addr.pri, obj.Var.ToUInt16());
         break;
-    case DeviceController::RemoteObject::MatrixOutput_ChannelName:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_ChannelName:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
         setSpeakerName(obj.Addr.pri, obj.Var.ToString());
         break;
-    case DeviceController::RemoteObject::MatrixOutput_Mute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Mute:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8 == obj.Var.GetDataType());
         setSpeakerMute(obj.Addr.pri, obj.Var.ToUInt8());
         break;
-    case DeviceController::RemoteObject::MatrixOutput_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Gain:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType());
         setSpeakerGain(obj.Addr.pri, obj.Var.ToFloat());
         break;
-    case DeviceController::RemoteObject::Positioning_SpeakerPosition:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SpeakerPosition:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_BLOB /*OCP1DATATYPE_DB_POSITION ?!*/ == obj.Var.GetDataType());
         setSpeakerPosition(obj.Addr.pri, obj.Var.ToAimingAndPosition());
         break;
-    case DeviceController::RemoteObject::Positioning_SpeakerGroup:
+    case DeviceController::RemoteObject::RemObjIdent::Positioning_SpeakerGroup:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32 == obj.Var.GetDataType());
         setSpeakerGroup(obj.Addr.pri, obj.Var.ToInt32());
         break;
-    case DeviceController::RemoteObject::FunctionGroup_Name:
+    case DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Name:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING == obj.Var.GetDataType());
         setFunctionGroupName(obj.Addr.pri, obj.Var.ToString());
         break;
-    case DeviceController::RemoteObject::FunctionGroup_Mode:
+    case DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Mode:
         jassert(NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16 == obj.Var.GetDataType());
         setFunctionGroupMode(obj.Addr.pri, obj.Var.ToUInt16());
         break;
     //all below fallthrough as unhandled
-    case DeviceController::RemoteObject::CoordinateMappingSettings_Flip:
-    case DeviceController::RemoteObject::MatrixNode_Enable:
-    case DeviceController::RemoteObject::MatrixNode_DelayEnable:
-    case DeviceController::RemoteObject::MatrixInput_DelayEnable:
-    case DeviceController::RemoteObject::MatrixInput_EqEnable:
-    case DeviceController::RemoteObject::MatrixOutput_DelayEnable:
-    case DeviceController::RemoteObject::MatrixOutput_EqEnable:
-    case DeviceController::RemoteObject::MatrixSettings_ReverbRoomId:
-    case DeviceController::RemoteObject::ReverbInputProcessing_EqEnable:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_Flip:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixNode_Enable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixNode_DelayEnable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_DelayEnable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_EqEnable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_DelayEnable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_EqEnable:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixSettings_ReverbRoomId:
+    case DeviceController::RemoteObject::RemObjIdent::ReverbInputProcessing_EqEnable:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT16;
-    case DeviceController::RemoteObject::ReverbInputProcessing_Mute:
-    case DeviceController::RemoteObject::SoundObjectRouting_Mute:
+    case DeviceController::RemoteObject::RemObjIdent::ReverbInputProcessing_Mute:
+    case DeviceController::RemoteObject::RemObjIdent::SoundObjectRouting_Mute:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
-    case DeviceController::RemoteObject::MatrixNode_Delay:
-    case DeviceController::RemoteObject::MatrixInput_Delay:
-    case DeviceController::RemoteObject::MatrixOutput_Delay:
-    case DeviceController::RemoteObject::FunctionGroup_Delay:
-    case DeviceController::RemoteObject::MatrixNode_Gain:
-    case DeviceController::RemoteObject::MatrixInput_ReverbSendGain:
-    case DeviceController::RemoteObject::MatrixInput_LevelMeterPostMute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixNode_Delay:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_Delay:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Delay:
+    case DeviceController::RemoteObject::RemObjIdent::FunctionGroup_Delay:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixNode_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_ReverbSendGain:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_LevelMeterPostMute:
         if (NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32 == obj.Var.GetDataType())
             setUpmixLevelValue(obj.Addr.pri, obj.Var.ToFloat());
         break;
-    case DeviceController::RemoteObject::MatrixInput_LevelMeterPreMute:
-    case DeviceController::RemoteObject::MatrixOutput_LevelMeterPreMute:
-    case DeviceController::RemoteObject::MatrixOutput_LevelMeterPostMute:
-    case DeviceController::RemoteObject::MatrixSettings_ReverbPredelayFactor:
-    case DeviceController::RemoteObject::MatrixSettings_ReverbRearLevel:
-    case DeviceController::RemoteObject::FunctionGroup_SpreadFactor:
-    case DeviceController::RemoteObject::ReverbInput_Gain:
-    case DeviceController::RemoteObject::ReverbInputProcessing_Gain:
-    case DeviceController::RemoteObject::ReverbInputProcessing_LevelMeter:
-    case DeviceController::RemoteObject::SoundObjectRouting_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_LevelMeterPreMute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_LevelMeterPreMute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_LevelMeterPostMute:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixSettings_ReverbPredelayFactor:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixSettings_ReverbRearLevel:
+    case DeviceController::RemoteObject::RemObjIdent::FunctionGroup_SpreadFactor:
+    case DeviceController::RemoteObject::RemObjIdent::ReverbInput_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::ReverbInputProcessing_Gain:
+    case DeviceController::RemoteObject::RemObjIdent::ReverbInputProcessing_LevelMeter:
+    case DeviceController::RemoteObject::RemObjIdent::SoundObjectRouting_Gain:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_FLOAT32;
-    case DeviceController::RemoteObject::CoordinateMappingSettings_Name:
-    case DeviceController::RemoteObject::Fixed_GUID:
-    case DeviceController::RemoteObject::Status_StatusText:
-    case DeviceController::RemoteObject::Error_ErrorText:
-    case DeviceController::RemoteObject::Scene_SceneIndex:
-    case DeviceController::RemoteObject::Scene_SceneName:
-    case DeviceController::RemoteObject::Scene_SceneComment:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_Name:
+    case DeviceController::RemoteObject::RemObjIdent::Fixed_GUID:
+    case DeviceController::RemoteObject::RemObjIdent::Status_StatusText:
+    case DeviceController::RemoteObject::RemObjIdent::Error_ErrorText:
+    case DeviceController::RemoteObject::RemObjIdent::Scene_SceneIndex:
+    case DeviceController::RemoteObject::RemObjIdent::Scene_SceneName:
+    case DeviceController::RemoteObject::RemObjIdent::Scene_SceneComment:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_STRING;
-    case DeviceController::RemoteObject::CoordinateMapping_SourcePosition:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P1real:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P2real:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P3real:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P4real:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P1virtual:
-    case DeviceController::RemoteObject::CoordinateMappingSettings_P3virtual:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMapping_SourcePosition:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P1real:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P2real:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P3real:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P4real:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P1virtual:
+    case DeviceController::RemoteObject::RemObjIdent::CoordinateMappingSettings_P3virtual:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_DB_POSITION;
-    case DeviceController::RemoteObject::Status_AudioNetworkSampleStatus:
+    case DeviceController::RemoteObject::RemObjIdent::Status_AudioNetworkSampleStatus:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_INT32;
-    case DeviceController::RemoteObject::Error_GnrlErr:
+    case DeviceController::RemoteObject::RemObjIdent::Error_GnrlErr:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
-    case DeviceController::RemoteObject::MatrixInput_Polarity:
-    case DeviceController::RemoteObject::MatrixOutput_Polarity:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixInput_Polarity:
+    case DeviceController::RemoteObject::RemObjIdent::MatrixOutput_Polarity:
         //datatype = NanoOcp1::Ocp1DataType::OCP1DATATYPE_UINT8;
     default:
         DBG(juce::String(__FUNCTION__) << " unhandled/unkown: " << DeviceController::RemoteObject::GetObjectDescription(obj.Id)

@@ -24,8 +24,16 @@ JUCE_IMPLEMENT_SINGLETON(DeviceController)
 /**
  * Wires NanoOcp1::SoundscapeController callbacks to post JUCE messages so that
  * onStateChanged and onRemoteObjectReceived are delivered on the message thread.
+ *
+ * NanoOcp provides no default/singleton NanoTimerScheduler, so the timer thread backing
+ * the base class' reconnect and response-timeout timers is created here and kept alive by
+ * the base class for as long as this singleton lives. Umsci has exactly one OCP.1
+ * controller, so a single scheduler owned by it is all that is needed. Note that the
+ * scheduler must not be released from within one of its own callbacks - it never is here,
+ * because the singleton is torn down from Main.cpp on the message thread.
  */
 DeviceController::DeviceController()
+    : NanoOcp1::SoundscapeController(std::make_shared<NanoOcp1::NanoTimerScheduler>())
 {
     m_ocp1IPAddress = juce::IPAddress("127.0.0.1");
 
@@ -155,14 +163,10 @@ DeviceController::RemObjAddr DeviceController::fromCtrlAddr(const NanoOcp1::Soun
 
 NanoOcp1::SoundscapeController::RemoteObject DeviceController::toCtrlObj(const RemoteObject& o)
 {
-    return { static_cast<NanoOcp1::SoundscapeController::RemoteObject::RemObjIdent>(o.Id),
-             toCtrlAddr(o.Addr),
-             o.Var };
+    return { o.Id, toCtrlAddr(o.Addr), o.Var };
 }
 
 DeviceController::RemoteObject DeviceController::fromCtrlObj(const NanoOcp1::SoundscapeController::RemoteObject& o)
 {
-    return { static_cast<RemoteObject::RemObjIdent>(o.Id),
-             fromCtrlAddr(o.Addr),
-             o.Var };
+    return { o.Id, fromCtrlAddr(o.Addr), o.Var };
 }
